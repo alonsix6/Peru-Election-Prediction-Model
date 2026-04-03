@@ -81,18 +81,21 @@ function HistoryCard() {
   const minsAgo = Math.floor((Date.now() - latest) / 60000);
   const dotColor = minsAgo < 35 ? '#059669' : minsAgo < 90 ? '#D97706' : '#DC2626';
 
-  // Filter out identical consecutive entries — keep most recent of each group
-  const filtered = history.history.reduce((acc, entry) => {
-    if (acc.length === 0) return [entry];
-    const prev = acc[acc.length - 1];
-    const changed = Math.abs(entry.top3[0].pct_mean - prev.top3[0].pct_mean) >= 0.1;
-    if (changed) acc.push(entry);
-    // If no change, skip — the first (most recent) entry of each group is already kept
-    return acc;
-  }, []);
+  // Always show the last few runs so the card doesn't look empty.
+  // Mark entries where top1 changed >= 0.1% vs previous.
+  const allRuns = history.history;
+  const totalRuns = allRuns.length;
 
-  const visible = filtered.slice(0, 8);
-  const totalRuns = history.history.length;
+  // Show up to 8: always include latest 3, plus any where a change happened
+  const visible = [];
+  for (let i = 0; i < allRuns.length && visible.length < 8; i++) {
+    const entry = allRuns[i];
+    const prev = allRuns[i + 1];
+    const changed = prev ? Math.abs(entry.top3[0].pct_mean - prev.top3[0].pct_mean) >= 0.1 : false;
+    entry._changed = changed;
+    // Always show first 3 (most recent), plus any that changed
+    if (i < 3 || changed) visible.push(entry);
+  }
 
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
@@ -119,15 +122,20 @@ function HistoryCard() {
             fontFamily: 'monospace', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6,
             color: isLatest ? '#1C1917' : '#78716C', fontWeight: isLatest ? 500 : 400
           }}>
-            {isLatest && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />}
+            {isLatest
+              ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
+              : <span style={{ width: 6, flexShrink: 0 }} />
+            }
             <span style={{ color: '#A8A29E', flexShrink: 0 }}>{timeStr}</span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{top3Str}</span>
           </div>
         );
       })}
 
-      {visible.length <= 1 && (
-        <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 6 }}>Sin cambios en las últimas {totalRuns} corridas</div>
+      {totalRuns > visible.length && (
+        <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 6 }}>
+          Modelo estable en las últimas {totalRuns} corridas
+        </div>
       )}
     </div>
   );

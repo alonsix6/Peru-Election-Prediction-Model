@@ -142,26 +142,32 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
         <span style={{ color: '#1C1917', fontSize: 14, fontWeight: 600 }}>Fuentes de datos</span>
       </div>
 
-      {/* Encuestas */}
+      {/* Encuestas — grid alineado */}
       <div style={{ color: '#78716C', fontSize: 11, fontWeight: 500, marginBottom: 6 }}>ENCUESTAS</div>
-      {pollList.map((p, i) => {
-        const pColor = POLLSTER_COLORS[p.pollster] || '#6B7280';
-        const days = daysAgo(p.field_end);
-        const isSimulacro = p.poll_type === 'simulacro';
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 12 }}>
-            <span style={{ color: pColor, fontWeight: 600, width: 38, flexShrink: 0 }}>{p.pollster}</span>
-            <span style={{
-              fontSize: 10, borderRadius: 4, padding: '1px 5px', flexShrink: 0,
-              background: isSimulacro ? '#ECFDF5' : '#EFF6FF',
-              color: isSimulacro ? '#065F46' : '#1E40AF'
-            }}>{isSimulacro ? 'Simulacro' : 'Intención'}</span>
-            <span style={{ color: '#A8A29E', width: 55, flexShrink: 0 }}>hace {days}d</span>
-            <span style={{ display: 'flex', gap: 1 }}>{weightBlocks(p.effective_weight, pColor)}</span>
-          </div>
-        );
-      })}
-      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 6, fontStyle: 'italic' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '42px 62px 56px 1fr', gap: '0', alignItems: 'center', fontSize: 12 }}>
+        {pollList.map((p, i) => {
+          const pColor = POLLSTER_COLORS[p.pollster] || '#6B7280';
+          const days = daysAgo(p.field_end);
+          const isSimulacro = p.poll_type === 'simulacro';
+          return [
+            <span key={`n${i}`} style={{ color: pColor, fontWeight: 600, padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>{p.pollster}</span>,
+            <span key={`t${i}`} style={{ padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>
+              <span style={{
+                fontSize: 10, borderRadius: 4, padding: '1px 5px',
+                background: isSimulacro ? '#ECFDF5' : '#EFF6FF',
+                color: isSimulacro ? '#065F46' : '#1E40AF'
+              }}>{isSimulacro ? 'Simulacro' : 'Intención'}</span>
+            </span>,
+            <span key={`d${i}`} style={{ color: '#A8A29E', padding: '5px 0', borderBottom: '1px solid #F0EDE8', textAlign: 'right', paddingRight: 8 }}>
+              {days}d
+            </span>,
+            <span key={`w${i}`} style={{ display: 'flex', gap: 2, padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>
+              {weightBlocks(p.effective_weight, pColor)}
+            </span>
+          ];
+        })}
+      </div>
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 8, fontStyle: 'italic' }}>
         El peso disminuye con la antigüedad
       </div>
 

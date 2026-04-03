@@ -360,7 +360,7 @@ function SimulationCard() {
   }
 
   if (state === 'done' && simData) {
-    const top5 = (simData.candidates || []).sort((a, b) => b.prob_win - a.prob_win).slice(0, 5);
+    const top5 = (simData.candidates || []).sort((a, b) => b.mean - a.mean).slice(0, 5);
     return (
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -558,7 +558,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
     );
   }
 
-  const sorted = [...predictions.candidates].sort((a, b) => b.prob_win - a.prob_win);
+  const sorted = [...predictions.candidates].sort((a, b) => b.mean - a.mean);
   const top = sorted[0];
   const second = sorted[1];
   const topParty = getPartyColor(top.candidate);

@@ -114,9 +114,9 @@ function aggregatePolls(polls, pollsterWeights) {
     }
 
     // Drift temporal: más días hasta la elección = más incertidumbre
-    // 10 días × 0.15 = 1.5 pts adicionales de incertidumbre
+    // 9 días × 0.30 = 2.7 pts adicionales (calibrado para volatilidad peruana)
     const { days } = timeToElection();
-    const temporalDrift = Math.max(0, days) * 0.15;
+    const temporalDrift = Math.max(0, days) * 0.30;
     combined_error = Math.sqrt(combined_error * combined_error + temporalDrift * temporalDrift);
 
     aggregated[candidate] = {

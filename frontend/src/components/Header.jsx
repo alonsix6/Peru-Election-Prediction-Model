@@ -4,8 +4,8 @@ import { Clock, Timer, RefreshCw } from 'lucide-react';
 const PHASE_STYLES = {
   pre_veda: { label: 'Pre-Veda', color: '#38BDF8', bg: '#0C4A6E' },
   veda: { label: 'Veda Electoral', color: '#FB923C', bg: '#7C2D12' },
-  election_day: { label: 'Dia de Eleccion', color: '#F87171', bg: '#7F1D1D' },
-  post_election: { label: 'Post-Eleccion', color: '#94A3B8', bg: '#334155' },
+  election_day: { label: 'Día de Elección', color: '#F87171', bg: '#7F1D1D' },
+  post_election: { label: 'Post-Elección', color: '#94A3B8', bg: '#334155' },
 };
 
 export default function Header({ status, predictions }) {
@@ -55,7 +55,7 @@ export default function Header({ status, predictions }) {
       }}>
         <div>
           <h1 style={{ color: '#F1F5F9', fontSize: '20px', fontWeight: 700, margin: 0 }}>
-            Modelo Electoral Peru 2026
+            Modelo Electoral Perú 2026
           </h1>
           <p style={{ color: '#94A3B8', fontSize: '13px', margin: '2px 0 0' }}>
             Primera vuelta {'\u00B7'} 12 abril 2026

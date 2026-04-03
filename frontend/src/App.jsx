@@ -60,7 +60,7 @@ function SimulationToast({ data, onClose }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Sparkles size={14} style={{ color: '#38BDF8' }} />
           <span style={{ color: '#F1F5F9', fontSize: 13, fontWeight: 600 }}>
-            Tu simulacion -- 10,000 escenarios
+            Tu simulación — 10,000 escenarios
           </span>
         </div>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
@@ -79,7 +79,7 @@ function SimulationToast({ data, onClose }) {
         </div>
       ))}
       <p style={{ color: '#64748B', fontSize: 10, margin: '10px 0 0', lineHeight: 1.4 }}>
-        Los resultados del dashboard oficial se actualizan automaticamente cada 30 min.
+        Los resultados del dashboard oficial se actualizan automáticamente cada 30 min.
       </p>
     </div>
   );
@@ -156,7 +156,7 @@ function AppContent() {
             display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12
           }}>
             <span>
-              Ultima actualizacion: {lastUpdated.toLocaleString('es-PE', { timeZone: 'America/Lima' })}
+              Última actualización: {lastUpdated.toLocaleString('es-PE', { timeZone: 'America/Lima' })}
             </span>
             <button
               onClick={runSimulation}
@@ -169,7 +169,7 @@ function AppContent() {
               }}
             >
               {simLoading ? <Loader2 size={10} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={10} />}
-              Mi simulacion
+              Mi simulación
             </button>
           </div>
         )}

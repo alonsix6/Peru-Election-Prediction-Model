@@ -151,7 +151,7 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
         );
       })}
       <div style={{ color: '#475569', fontSize: 10, marginTop: 6, fontStyle: 'italic' }}>
-        El peso disminuye con la antiguedad
+        El peso disminuye con la antigüedad
       </div>
 
       {/* Polymarket */}
@@ -169,7 +169,7 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
           color: '#38BDF8', fontSize: 11, padding: '3px 8px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 4
         }}>
-          Ver senales <ExternalLink size={10} />
+          Ver señales <ExternalLink size={10} />
         </button>
       </div>
     </div>
@@ -225,7 +225,7 @@ function PolymarketModal({ polymarket, onClose }) {
         }}><X size={20} /></button>
 
         {/* Header */}
-        <h3 style={{ color: '#F1F5F9', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Senales de Polymarket</h3>
+        <h3 style={{ color: '#F1F5F9', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Señales de Polymarket</h3>
         <p style={{ color: '#94A3B8', fontSize: 13, margin: '0 0 16px' }}>
           Mercado de predicciones {'\u00B7'} ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
         </p>
@@ -268,7 +268,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
         <Loader2 size={24} style={{ color: '#38BDF8', animation: 'spin 1s linear infinite', marginBottom: 12 }} />
         <div style={{ color: '#94A3B8', fontSize: 14 }}>
-          El modelo esta inicializando. Los datos estaran disponibles en los proximos minutos.
+          El modelo está inicializando. Los datos estarán disponibles en los próximos minutos.
         </div>
         <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
       </div>

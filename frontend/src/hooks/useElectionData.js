@@ -54,10 +54,12 @@ export function useElectionData() {
         safeFetch(`${API}/api/polls`),
       ]);
 
-      // If no predictions yet (model hasn't run), auto-run it
+      // If no predictions or no runoff scenarios, run the model fresh
+      // /api/predictions loads from DB (no runoff_scenarios)
+      // /api/run-model generates everything live (with runoff_scenarios)
       let finalPredictions = predictions;
-      if (!predictions?.candidates?.length) {
-        console.log('No predictions found — running model...');
+      if (!predictions?.candidates?.length || !predictions?.runoff_scenarios?.length) {
+        console.log('Running model for complete data (candidates + runoff scenarios)...');
         finalPredictions = await safeFetch(`${API}/api/run-model`);
       }
 

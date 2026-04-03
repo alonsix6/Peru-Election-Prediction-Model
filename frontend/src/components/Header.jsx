@@ -58,14 +58,14 @@ export default function Header({ status, predictions }) {
           <h1 style={{ color: '#1C1917', fontSize: '20px', fontWeight: 700, margin: 0 }}>
             Modelo Electoral Perú 2026
           </h1>
-          <p style={{ color: '#78716C', fontSize: '13px', margin: '2px 0 0' }}>
+          <p style={{ color: '#6B6560', fontSize: '13px', margin: '2px 0 0' }}>
             Primera vuelta {'\u00B7'} 12 abril 2026
           </p>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
-          <span style={{ color: '#78716C', fontSize: '13px', fontVariantNumeric: 'tabular-nums', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock size={12} style={{ color: '#A8A29E' }} />
+          <span style={{ color: '#6B6560', fontSize: '13px', fontVariantNumeric: 'tabular-nums', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={12} style={{ color: '#8C877F' }} />
             {limaTime}
           </span>
 
@@ -79,7 +79,7 @@ export default function Header({ status, predictions }) {
             color: '#1C1917', fontVariantNumeric: 'tabular-nums',
             fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4
           }}>
-            <Timer size={12} style={{ color: '#A8A29E' }} />
+            <Timer size={12} style={{ color: '#8C877F' }} />
             {days}d {String(hours).padStart(2, '0')}h {String(mins).padStart(2, '0')}m {String(secs).padStart(2, '0')}s
           </span>
 
@@ -94,14 +94,14 @@ export default function Header({ status, predictions }) {
           {updatedText && (
             <span style={{
               display: 'flex', alignItems: 'center', gap: 5,
-              color: '#A8A29E', fontSize: '11px'
+              color: '#8C877F', fontSize: '11px'
             }}>
               <span style={{
                 width: 7, height: 7, borderRadius: '50%', background: updatedDotColor,
                 display: 'inline-block',
                 boxShadow: updatedDotColor === '#059669' ? `0 0 6px ${updatedDotColor}` : 'none'
               }} />
-              <RefreshCw size={10} style={{ color: '#A8A29E' }} />
+              <RefreshCw size={10} style={{ color: '#8C877F' }} />
               {updatedText}
             </span>
           )}

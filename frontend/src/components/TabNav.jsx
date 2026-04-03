@@ -7,7 +7,7 @@ const TABS = [
 
 export default function TabNav({ activeTab, onTabChange }) {
   return (
-    <nav style={{
+    <nav role="tablist" style={{
       display: 'flex', gap: '4px', padding: '0 16px',
       background: 'transparent', borderBottom: '1px solid #E5E0D8',
       overflowX: 'auto', scrollbarWidth: 'none',
@@ -18,6 +18,8 @@ export default function TabNav({ activeTab, onTabChange }) {
         return (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={active}
             onClick={() => onTabChange(tab.id)}
             onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#1C1917'; }}
             onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#78716C'; }}
@@ -33,6 +35,7 @@ export default function TabNav({ activeTab, onTabChange }) {
               whiteSpace: 'nowrap',
               minHeight: '44px',
               transition: 'color 0.2s, border-color 0.2s',
+              outline: 'none',
             }}
           >
             {tab.label}

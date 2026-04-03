@@ -24,6 +24,10 @@ export default function RunoffCard({ scenario: s, expanded, onToggle }) {
   return (
     <div
       onClick={onToggle}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
+      tabIndex={0}
+      role="button"
+      aria-expanded={expanded}
       style={{
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: '12px',
         padding: '16px', cursor: 'pointer',
@@ -66,7 +70,7 @@ export default function RunoffCard({ scenario: s, expanded, onToggle }) {
       {/* Labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
         <span style={{ color: colorA.primary }}>{candA}</span>
-        <span style={{ color: '#A8A29E' }}>Blanco: {s.avg_blank_pct.toFixed(1)}%</span>
+        <span style={{ color: '#8C877F' }}>Blanco: {s.avg_blank_pct.toFixed(1)}%</span>
         <span style={{ color: colorB.primary }}>{candB}</span>
       </div>
 

@@ -10,7 +10,7 @@
   /* Texto */
   --text-primary:   #1C1917;
   --text-secondary: #78716C;
-  --text-hint:      #A8A29E;
+  --text-hint:      #8C877F;
   /* Accent */
   --accent:         #1D4ED8;
   --accent-bg:      #EFF6FF;
@@ -83,4 +83,9 @@ code {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

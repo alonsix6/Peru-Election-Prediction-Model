@@ -281,4 +281,8 @@ INSERT INTO polymarket_snapshots (captured_at_lima, candidate, probability, volu
   ('2026-04-02 21:53:00-05', 'Carlos Álvarez',           16.30, 5100000, 'pre_veda'),
   ('2026-04-02 21:53:00-05', 'Roberto Sánchez Palomino', 11.70, 5100000, 'pre_veda'),
   ('2026-04-02 21:53:00-05', 'López Chau',                8.00, 5100000, 'pre_veda'),
-  ('2026-04-02 21:53:00-05', 'Jorge Nieto',               6.00, 5100000, 'pre_veda');
+  ('2026-04-02 21:53:00-05', 'Jorge Nieto',               6.00, 5100000, 'pre_veda'),
+  ('2026-04-02 21:53:00-05', 'Ricardo Belmont',           4.50, 5100000, 'pre_veda'),
+  ('2026-04-02 21:53:00-05', 'Marisol Pérez Tello',       4.00, 5100000, 'pre_veda'),
+  ('2026-04-02 21:53:00-05', 'Carlos Espá',               1.00, 5100000, 'pre_veda'),
+  ('2026-04-02 21:53:00-05', 'Wolfgang Grozo',            0.90, 5100000, 'pre_veda');

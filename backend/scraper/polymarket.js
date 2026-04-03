@@ -3,107 +3,141 @@ const { nowPeru, electoralPhase } = require('../model/clock');
 const { handleError } = require('../errors/errorHandler');
 const db = require('../db');
 
-const MARKET_SLUG = 'peru-presidential-election-winner';
-const CLOB_BASE_URL = 'https://clob.polymarket.com';
+const EVENT_SLUG = 'peru-presidential-election-winner';
 const GAMMA_BASE_URL = 'https://gamma-api.polymarket.com';
 const FETCH_TIMEOUT_MS = 15_000;
 
-// Mapeo de tokens/outcomes del mercado a nombres normalizados de candidatos
+// Regex para filtrar placeholders genéricos (candidate A, candidate B, another candidate, etc.)
+const PLACEHOLDER_RE = /^candidate\s+[a-z]$/i;
+const GENERIC_NAMES = new Set(['another candidate', 'other', '']);
+
+// Mapeo de nombres de la API a nombres canónicos del seed.
+// La key es el nombre tal cual viene de la API (extraído del question).
 const CANDIDATE_MAP = {
-  'rafael lopez aliaga':      'Rafael López Aliaga',
-  'lopez aliaga':             'Rafael López Aliaga',
-  'keiko fujimori':           'Keiko Fujimori',
-  'keiko':                    'Keiko Fujimori',
-  'carlos alvarez':           'Carlos Álvarez',
-  'alvarez':                  'Carlos Álvarez',
-  'roberto sanchez palomino': 'Roberto Sánchez Palomino',
-  'roberto sanchez':          'Roberto Sánchez Palomino',
-  'sanchez':                  'Roberto Sánchez Palomino',
-  'lopez chau':               'López Chau',
-  'chau':                     'López Chau',
-  'jorge nieto':              'Jorge Nieto',
-  'nieto':                    'Jorge Nieto',
-  'wolfgang grozo':           'Wolfgang Grozo',
-  'grozo':                    'Wolfgang Grozo',
-  'cesar acuna':              'César Acuña',
-  'acuna':                    'César Acuña',
-  'ricardo belmont':          'Ricardo Belmont',
-  'belmont':                  'Ricardo Belmont',
-  'martin vizcarra':          'Martín Vizcarra',
-  'vizcarra':                 'Martín Vizcarra',
-  'yonhy lescano':            'Yonhy Lescano',
-  'lescano':                  'Yonhy Lescano'
+  'Alfonso López Chau':       'López Chau',
+  'Rafael López Aliaga':      'Rafael López Aliaga',
+  'Roberto Sánchez Palomino': 'Roberto Sánchez Palomino',
+  'Jorge Nieto':              'Jorge Nieto',
+  'Carlos Álvarez':           'Carlos Álvarez',
+  'Keiko Fujimori':           'Keiko Fujimori',
+  'Ricardo Belmont':          'Ricardo Belmont',
+  'Marisol Pérez Tello':      'Marisol Pérez Tello',
+  'Wolfgang Grozo':           'Wolfgang Grozo',
+  'Carlos Espá':              'Carlos Espá',
+  'César Acuña':              'César Acuña',
+  'Yonhy Lescano':            'Yonhy Lescano',
+  'Martín Vizcarra':          'Martín Vizcarra',
+  'Mesías Guevara':           'Mesías Guevara',
+  'George Forsyth':           'George Forsyth',
+  'Mario Vizcarra':           'Mario Vizcarra',
+  'Vladimir Cerrón':          'Vladimir Cerrón',
+  'Roberto Chiabra':          'Roberto Chiabra',
+  'Fiorella Molinelli':       'Fiorella Molinelli',
+  'José Williams':            'José Williams',
+  'Fernando Olivera':         'Fernando Olivera',
+  'Rafael Belaúnde Llosa':    'Rafael Belaúnde Llosa',
+  'José Luna':                'José Luna',
+  'Enrique Valderrama':       'Enrique Valderrama'
 };
 
-function normalizeCandidateName(rawName) {
-  const key = rawName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-  return CANDIDATE_MAP[key] || rawName.trim();
+// Candidatos que esperamos encontrar en la API (los del seed con encuestas)
+const EXPECTED_CANDIDATES = [
+  'Rafael López Aliaga', 'Keiko Fujimori', 'Carlos Álvarez',
+  'Roberto Sánchez Palomino', 'López Chau', 'Jorge Nieto',
+  'Wolfgang Grozo', 'César Acuña', 'Ricardo Belmont', 'Yonhy Lescano'
+];
+
+/**
+ * Extrae el nombre del candidato del question de cada mercado binario.
+ * "Will Rafael López Aliaga win the 2026 Peruvian presidential election?" → "Rafael López Aliaga"
+ */
+function extractCandidateName(question) {
+  return question
+    .replace(/^Will\s+/i, '')
+    .replace(/\s+win the 2026 Peruvian presidential election\?$/i, '')
+    .trim();
 }
 
 /**
- * Obtiene datos del mercado de elecciones de Perú desde Polymarket.
- * Usa la Gamma API para obtener mercados por slug, luego CLOB para precios.
+ * Normaliza un nombre de la API al nombre canónico del seed.
+ */
+function normalizeCandidateName(apiName) {
+  return CANDIDATE_MAP[apiName] || apiName;
+}
+
+/**
+ * Determina si un nombre es un placeholder genérico que debe filtrarse.
+ */
+function isPlaceholder(name) {
+  if (GENERIC_NAMES.has(name.toLowerCase())) return true;
+  if (PLACEHOLDER_RE.test(name)) return true;
+  return false;
+}
+
+/**
+ * Obtiene datos del evento de elecciones de Perú desde Polymarket Gamma API.
+ * Estructura: 1 evento → N mercados binarios (uno por candidato).
  */
 async function fetchPolymarketData() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    // 1. Buscar el mercado por slug en Gamma API
-    const marketRes = await fetch(
-      `${GAMMA_BASE_URL}/markets?slug=${MARKET_SLUG}`,
+    const res = await fetch(
+      `${GAMMA_BASE_URL}/events?slug=${EVENT_SLUG}`,
       { signal: controller.signal }
     );
 
-    if (!marketRes.ok) {
-      throw new Error(`Gamma API responded ${marketRes.status}: ${marketRes.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Gamma API responded ${res.status}: ${res.statusText}`);
     }
 
-    const markets = await marketRes.json();
-    if (!markets || markets.length === 0) {
-      throw new Error(`Market '${MARKET_SLUG}' not found in Gamma API`);
+    const events = await res.json();
+    if (!events || events.length === 0) {
+      throw new Error(`Event '${EVENT_SLUG}' not found in Gamma API`);
     }
 
-    const market = markets[0];
-    const conditionId = market.conditionId || market.condition_id;
-    const volume = parseFloat(market.volume || market.volumeNum || 0);
+    const event = events[0];
+    const eventVolume = parseFloat(event.volume || event.volumeNum || 0);
+    const markets = event.markets || [];
 
-    // 2. Obtener precios actuales de los outcomes
     const candidates = [];
 
-    // Si el mercado tiene outcomes directos (multi-outcome market)
-    if (market.outcomes && market.outcomePrices) {
-      const outcomes = JSON.parse(typeof market.outcomes === 'string' ? market.outcomes : JSON.stringify(market.outcomes));
-      const prices = JSON.parse(typeof market.outcomePrices === 'string' ? market.outcomePrices : JSON.stringify(market.outcomePrices));
+    for (const market of markets) {
+      // Extraer nombre del candidato del question
+      const rawName = extractCandidateName(market.question || '');
 
-      for (let i = 0; i < outcomes.length; i++) {
-        const name = normalizeCandidateName(outcomes[i]);
-        const priceYes = parseFloat(prices[i] || 0);
-        candidates.push({
-          candidate: name,
-          probability: priceYes * 100,
-          price_yes: priceYes,
-          price_no: 1 - priceYes,
-          volume_usd: volume
-        });
+      // Filtrar placeholders
+      if (isPlaceholder(rawName)) continue;
+
+      // Obtener precio Yes
+      let priceYes = 0;
+      try {
+        const rawPrices = market.outcomePrices;
+        const prices = typeof rawPrices === 'string' ? JSON.parse(rawPrices) : rawPrices;
+        if (prices && prices.length > 0) {
+          priceYes = parseFloat(prices[0]);
+        }
+      } catch {
+        // Si no hay precios, saltar este mercado
+        continue;
       }
+
+      // Solo incluir candidatos con probabilidad > 0
+      if (priceYes <= 0) continue;
+
+      const canonicalName = normalizeCandidateName(rawName);
+
+      candidates.push({
+        candidate: canonicalName,
+        probability: priceYes * 100,
+        price_yes: priceYes,
+        price_no: 1 - priceYes,
+        volume_usd: eventVolume  // Volumen total del evento
+      });
     }
 
-    // Si es un grupo de mercados (grouped market con tokens separados)
-    if (candidates.length === 0 && market.tokens) {
-      for (const token of market.tokens) {
-        const name = normalizeCandidateName(token.outcome);
-        candidates.push({
-          candidate: name,
-          probability: parseFloat(token.price || 0) * 100,
-          price_yes: parseFloat(token.price || 0),
-          price_no: 1 - parseFloat(token.price || 0),
-          volume_usd: volume
-        });
-      }
-    }
-
-    return { candidates, volume, conditionId };
+    return { candidates, volume: eventVolume };
 
   } finally {
     clearTimeout(timeout);
@@ -111,16 +145,16 @@ async function fetchPolymarketData() {
 }
 
 /**
- * Valida que las probabilidades sumen ~100% (tolerancia ±5%).
+ * Valida que las probabilidades sumen ~100% (rango 95–105%).
  * Si no, renormaliza y loguea ERR_PM_003.
  */
 function validateAndNormalize(candidates) {
   const totalProb = candidates.reduce((sum, c) => sum + c.probability, 0);
 
-  if (Math.abs(totalProb - 100) > 5) {
+  if (totalProb < 95 || totalProb > 105) {
     handleError('POLYMARKET_PRICE_ANOMALY', {
       module: 'scraper/polymarket',
-      totalProbability: totalProb,
+      totalProbability: totalProb.toFixed(2),
       candidateCount: candidates.length
     });
 
@@ -136,6 +170,24 @@ function validateAndNormalize(candidates) {
 }
 
 /**
+ * Verifica que todos los candidatos esperados del seed aparezcan en la API.
+ * Si falta alguno, loguea ERR_PM_004 por cada uno.
+ */
+function checkExpectedCandidates(candidates) {
+  const found = new Set(candidates.map(c => c.candidate));
+
+  for (const expected of EXPECTED_CANDIDATES) {
+    if (!found.has(expected)) {
+      handleError('POLYMARKET_CANDIDATE_MISSING', {
+        module: 'scraper/polymarket',
+        candidate: expected,
+        message: `Candidato '${expected}' no encontrado en Polymarket`
+      });
+    }
+  }
+}
+
+/**
  * Guarda snapshot en polymarket_snapshots.
  */
 async function saveSnapshot(candidates) {
@@ -148,7 +200,7 @@ async function saveSnapshot(candidates) {
        (captured_at_lima, candidate, probability, price_yes, price_no, volume_usd, market_slug, phase)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [now.toISO(), c.candidate, c.probability, c.price_yes, c.price_no,
-       c.volume_usd, MARKET_SLUG, phase]
+       c.volume_usd, EVENT_SLUG, phase]
     );
   }
 
@@ -174,20 +226,23 @@ async function scrapePolymarket() {
       return;
     }
 
+    checkExpectedCandidates(data.candidates);
+
     const validated = validateAndNormalize(data.candidates);
     await saveSnapshot(validated);
 
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      await handleError('POLYMARKET_API_TIMEOUT', {
-        module: 'scraper/polymarket',
-        timeout_ms: FETCH_TIMEOUT_MS
-      }, err);
-    } else {
-      await handleError('POLYMARKET_API_TIMEOUT', {
-        module: 'scraper/polymarket'
-      }, err);
+    // Log resumen
+    const top = validated.sort((a, b) => b.probability - a.probability).slice(0, 6);
+    console.log(`   Volume total: $${(data.volume / 1_000_000).toFixed(2)}M`);
+    for (const c of top) {
+      console.log(`   ${c.candidate}: ${c.probability.toFixed(1)}%`);
     }
+
+  } catch (err) {
+    await handleError('POLYMARKET_API_TIMEOUT', {
+      module: 'scraper/polymarket',
+      timeout_ms: FETCH_TIMEOUT_MS
+    }, err);
   }
 }
 

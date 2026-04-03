@@ -12,6 +12,31 @@ async function safeFetch(url) {
   }
 }
 
+/**
+ * Normaliza candidatos de /api/predictions (DB format) al formato
+ * que usan los componentes (run-model format).
+ * /api/predictions: predicted_pct_mean, prob_win_overall, prob_first_round
+ * /api/run-model:   mean, prob_win, prob_runoff, p10, p90
+ */
+function normalizePredictions(data) {
+  if (!data?.candidates) return data;
+  return {
+    ...data,
+    candidates: data.candidates.map(c => ({
+      candidate: c.candidate,
+      mean: c.mean ?? c.predicted_pct_mean ?? 0,
+      p10: c.p10 ?? c.predicted_pct_p10 ?? 0,
+      p90: c.p90 ?? c.predicted_pct_p90 ?? 0,
+      prob_runoff: c.prob_runoff ?? c.prob_first_round ?? 0,
+      prob_win: c.prob_win ?? c.prob_win_overall ?? 0,
+      polls_pct: c.polls_pct ?? null,
+      polymarket_pct: c.polymarket_pct ?? null,
+      posterior_pct: c.posterior_pct ?? null,
+    })),
+    runoff_scenarios: data.runoff_scenarios || data.runoff_summary || [],
+  };
+}
+
 export function useElectionData() {
   const [data, setData] = useState({
     status: null, predictions: null, polymarket: null, polls: null,
@@ -36,11 +61,14 @@ export function useElectionData() {
         finalPredictions = await safeFetch(`${API}/api/run-model`);
       }
 
-      const anyFailed = [status, finalPredictions, polymarket, polls].some(d => d === null);
+      // Normalize field names so components always get the same shape
+      const normalized = normalizePredictions(finalPredictions);
+
+      const anyFailed = [status, normalized, polymarket, polls].some(d => d === null);
 
       setData({
         status,
-        predictions: finalPredictions,
+        predictions: normalized,
         polymarket,
         polls,
         loading: false,

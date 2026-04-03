@@ -1,0 +1,20 @@
+{
+  "name": "peru-election-model-2026",
+  "version": "1.0.0",
+  "description": "Modelo de predicción electoral Perú 2026 — primera vuelta 12 abril",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": ["peru", "election", "prediction", "polymarket"],
+  "author": "Alonso + Claude",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "luxon": "^3.7.2",
+    "node-cron": "^4.2.1",
+    "pg": "^8.20.0"
+  }
+}

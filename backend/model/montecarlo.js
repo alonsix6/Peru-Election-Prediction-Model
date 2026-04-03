@@ -1,3 +1,18 @@
+// NOTA DE CALIBRACIÓN — 2 abril 2026
+// P(Aliaga gana) modelo: 75.7%
+// P(Aliaga gana) Polymarket: 30%
+// Gap de ~45 pts es esperado y documentado:
+// - Polymarket incluye incertidumbre de eventos
+//   futuros (escándalos, retiros, shocks)
+// - Traders internacionales sin contexto peruano
+// - Liquidez baja = precios ineficientes
+// - Nuestro modelo mide: dado el estado actual
+//   del electorado, ¿quién gana?
+// - Polymarket mide: en todos los escenarios
+//   posibles, ¿quién gana?
+// Ver sección 3 del Master Plan para justificación
+// del peso α dinámico de Polymarket.
+
 const { handleError } = require('../errors/errorHandler');
 
 /**

@@ -1,3 +1,33 @@
+:root {
+  /* Fondos */
+  --bg-page:      #F7F4EF;
+  --bg-card:      #FFFFFF;
+  --bg-subtle:    #F0EDE8;
+  --bg-hover:     #EDE9E3;
+  /* Bordes */
+  --border:       #E5E0D8;
+  --border-strong:#C9C4BB;
+  /* Texto */
+  --text-primary:   #1C1917;
+  --text-secondary: #78716C;
+  --text-hint:      #A8A29E;
+  /* Accent */
+  --accent:         #1D4ED8;
+  --accent-bg:      #EFF6FF;
+  --accent-border:  #BFDBFE;
+  --accent-text:    #1E40AF;
+  /* Semánticos */
+  --success:        #059669;
+  --success-bg:     #ECFDF5;
+  --success-border: #A7F3D0;
+  --warning:        #D97706;
+  --warning-bg:     #FFFBEB;
+  --warning-border: #FDE68A;
+  --danger:         #DC2626;
+  --danger-bg:      #FEF2F2;
+  --danger-border:  #FECACA;
+}
+
 *,
 *::before,
 *::after {
@@ -11,10 +41,11 @@ html {
 }
 
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  background: #0F172A;
-  color: #F1F5F9;
-  line-height: 1.5;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,7 +60,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: var(--border-strong);
   border-radius: 3px;
 }
 
@@ -43,8 +74,13 @@ button {
 
 code {
   font-family: 'SF Mono', 'Fira Code', monospace;
-  background: #334155;
+  background: var(--bg-subtle);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.85em;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

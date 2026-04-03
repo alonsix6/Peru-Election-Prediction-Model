@@ -25,9 +25,11 @@ const POLLSTER_COLORS = {
 function weightBlocks(w, color) {
   const filled = w >= 0.8 ? 5 : w >= 0.6 ? 4 : w >= 0.4 ? 3 : w >= 0.2 ? 2 : 1;
   return Array.from({ length: 5 }, (_, i) => (
-    <span key={i} style={{ color: i < filled ? color : '#334155', fontSize: 10 }}>
-      {i < filled ? '\u2588' : '\u2591'}
-    </span>
+    <span key={i} style={{
+      display: 'inline-block', width: 10, height: 10, marginRight: 2, borderRadius: 2,
+      background: i < filled ? color : '#F0EDE8',
+      border: i < filled ? 'none' : '1px solid #E5E0D8'
+    }} />
   ));
 }
 
@@ -37,41 +39,30 @@ function daysAgo(dateStr) {
   return Math.floor((now - d) / 86400000);
 }
 
-// ─── Hero Card ──────────────────────────────────────────────
-function HeroCard({ title, value, subtitle, color, icon: Icon }) {
-  return (
-    <div style={{
-      background: '#1E293B', border: '1px solid #334155', borderRadius: 12, padding: 16, textAlign: 'center'
-    }}>
-      {Icon && <Icon size={16} style={{ color: '#94A3B8', marginBottom: 4 }} />}
-      <div style={{ color: '#94A3B8', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>{title}</div>
-      <div style={{ color: color || '#F1F5F9', fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-      {subtitle && <div style={{ color: '#94A3B8', fontSize: 12, marginTop: 2 }}>{subtitle}</div>}
-    </div>
-  );
-}
-
 // ─── Compact Candidate Row ──────────────────────────────────
 function CompactRow({ c }) {
   const party = getPartyColor(c.candidate);
   const initials = c.candidate.split(' ').map(w => w[0]).filter((_, i, a) => i === 0 || i === a.length - 1).join('').toUpperCase();
   const barW = Math.min(100, (c.mean / 30) * 100);
+  const probColor = c.prob_win >= 50 ? '#059669' : c.prob_win >= 10 ? '#D97706' : '#A8A29E';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #1E293B' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #E5E0D8' }}>
       <div style={{
-        width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center',
+        width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center',
         justifyContent: 'center', flexShrink: 0, background: party.bg, color: party.text,
         border: `2px solid ${party.primary}`, fontWeight: 600, fontSize: 11
       }}>{initials}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ color: '#F1F5F9', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.candidate}</div>
-        <div style={{ marginTop: 4, height: 6, borderRadius: 3, background: '#334155' }}>
-          <div style={{ width: `${barW}%`, height: '100%', background: party.primary, borderRadius: 3 }} />
+        <div style={{ color: '#1C1917', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.candidate}</div>
+        <div style={{ color: '#78716C', fontSize: 11 }}>{party.party}</div>
+        <div style={{ marginTop: 4, height: 8, borderRadius: 4, background: '#F0EDE8' }}>
+          <div style={{ width: `${barW}%`, height: '100%', background: party.primary, borderRadius: 4 }} />
         </div>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ color: '#F1F5F9', fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.mean.toFixed(1)}%</div>
-        <div style={{ color: c.prob_win >= 10 ? '#22C55E' : '#94A3B8', fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>P: {c.prob_win.toFixed(1)}%</div>
+        <div style={{ color: party.primary, fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.mean.toFixed(1)}%</div>
+        <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 2 }}>P(Ganar)</div>
+        <div style={{ color: probColor, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{c.prob_win.toFixed(1)}%</div>
       </div>
     </div>
   );
@@ -88,39 +79,55 @@ function HistoryCard() {
 
   const latest = new Date(history.history[0].generated_at_lima);
   const minsAgo = Math.floor((Date.now() - latest) / 60000);
-  const dotColor = minsAgo < 35 ? '#22C55E' : minsAgo < 90 ? '#F59E0B' : '#EF4444';
+  const dotColor = minsAgo < 35 ? '#059669' : minsAgo < 90 ? '#D97706' : '#DC2626';
+
+  // Filter out identical consecutive entries
+  const filtered = history.history.reduce((acc, entry) => {
+    if (acc.length === 0) return [entry];
+    const prev = acc[acc.length - 1];
+    const changed = Math.abs(entry.top3[0].pct_mean - prev.top3[0].pct_mean) >= 0.1;
+    if (changed) acc.push(entry);
+    else acc[acc.length - 1] = entry;
+    return acc;
+  }, []);
+
+  const visible = filtered.slice(0, 8);
 
   return (
-    <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: 12, padding: 16 }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Activity size={14} style={{ color: '#94A3B8' }} />
-          <span style={{ color: '#F1F5F9', fontSize: 14, fontWeight: 600 }}>Historial del modelo</span>
+          <Activity size={14} style={{ color: '#A8A29E' }} />
+          <span style={{ color: '#1C1917', fontSize: 14, fontWeight: 600 }}>Historial del modelo</span>
         </div>
         <span style={{
           width: 8, height: 8, borderRadius: '50%', background: dotColor,
           display: 'inline-block', boxShadow: minsAgo < 35 ? `0 0 6px ${dotColor}` : 'none'
         }} />
       </div>
-      <div style={{ color: '#64748B', fontSize: 11, marginBottom: 10 }}>Auto-actualiza cada 30 min</div>
+      <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 10 }}>Auto-actualiza cada 30 min</div>
 
-      {history.history.slice(0, 8).map((h, i) => {
+      {visible.map((h, i) => {
         const t = new Date(h.generated_at_lima);
         const timeStr = t.toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hour12: false });
         const isLatest = i === 0;
         const top3Str = h.top3.map(c => `${abbrev(c.candidate)} ${c.pct_mean.toFixed(1)}%`).join(' \u00B7 ');
         return (
           <div key={i} style={{
-            padding: '5px 0', borderBottom: '1px solid #1E293B',
+            padding: '5px 0', borderBottom: '1px solid #E5E0D8',
             fontFamily: 'monospace', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6,
-            color: isLatest ? '#F1F5F9' : '#94A3B8', fontWeight: isLatest ? 500 : 400
+            color: isLatest ? '#1C1917' : '#78716C', fontWeight: isLatest ? 500 : 400
           }}>
-            {isLatest && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />}
-            <span style={{ color: '#64748B', flexShrink: 0 }}>{timeStr}</span>
+            {isLatest && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />}
+            <span style={{ color: '#A8A29E', flexShrink: 0 }}>{timeStr}</span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{top3Str}</span>
           </div>
         );
       })}
+
+      {visible.length <= 1 && (
+        <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 6 }}>Sin cambios en las últimas corridas</div>
+      )}
     </div>
   );
 }
@@ -129,47 +136,54 @@ function HistoryCard() {
 function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
   const pollList = polls?.polls?.slice(0, 10) || [];
   return (
-    <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: 12, padding: 16 }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <BarChart3 size={14} style={{ color: '#94A3B8' }} />
-        <span style={{ color: '#F1F5F9', fontSize: 14, fontWeight: 600 }}>Fuentes de datos</span>
+        <BarChart3 size={14} style={{ color: '#A8A29E' }} />
+        <span style={{ color: '#1C1917', fontSize: 14, fontWeight: 600 }}>Fuentes de datos</span>
       </div>
 
       {/* Encuestas */}
-      <div style={{ color: '#94A3B8', fontSize: 11, fontWeight: 500, marginBottom: 6 }}>ENCUESTAS</div>
+      <div style={{ color: '#78716C', fontSize: 11, fontWeight: 500, marginBottom: 6 }}>ENCUESTAS</div>
       {pollList.map((p, i) => {
         const pColor = POLLSTER_COLORS[p.pollster] || '#6B7280';
         const days = daysAgo(p.field_end);
-        const typeLabel = p.poll_type === 'simulacro' ? 'sim' : 'int';
+        const isSimulacro = p.poll_type === 'simulacro';
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 12 }}>
             <span style={{ color: pColor, fontWeight: 600, width: 38, flexShrink: 0 }}>{p.pollster}</span>
-            <span style={{ color: '#64748B', width: 24, flexShrink: 0 }}>{typeLabel}</span>
-            <span style={{ color: '#64748B', width: 55, flexShrink: 0 }}>hace {days}d</span>
+            <span style={{
+              fontSize: 10, borderRadius: 4, padding: '1px 5px', flexShrink: 0,
+              background: isSimulacro ? '#ECFDF5' : '#EFF6FF',
+              color: isSimulacro ? '#065F46' : '#1E40AF'
+            }}>{isSimulacro ? 'Simulacro' : 'Intención'}</span>
+            <span style={{ color: '#A8A29E', width: 55, flexShrink: 0 }}>hace {days}d</span>
             <span style={{ display: 'flex', gap: 1 }}>{weightBlocks(p.effective_weight, pColor)}</span>
           </div>
         );
       })}
-      <div style={{ color: '#475569', fontSize: 10, marginTop: 6, fontStyle: 'italic' }}>
-        El peso disminuye con la antiguedad
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 6, fontStyle: 'italic' }}>
+        El peso disminuye con la antigüedad
       </div>
 
       {/* Polymarket */}
-      <div style={{ color: '#94A3B8', fontSize: 11, fontWeight: 500, marginTop: 14, marginBottom: 6 }}>POLYMARKET</div>
+      <div style={{ color: '#78716C', fontSize: 11, fontWeight: 500, marginTop: 14, marginBottom: 6 }}>POLYMARKET</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <TrendingUp size={14} style={{ color: '#38BDF8' }} />
-          <span style={{ color: '#F1F5F9', fontSize: 13, fontWeight: 500 }}>Polymarket</span>
-          <span style={{ color: '#64748B', fontSize: 11 }}>
+          <TrendingUp size={14} style={{ color: '#1D4ED8' }} />
+          <span style={{ color: '#1C1917', fontSize: 13, fontWeight: 500 }}>Polymarket</span>
+          <span style={{ color: '#A8A29E', fontSize: 11 }}>
             ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M vol' : '--'}
           </span>
         </div>
         <button onClick={onOpenPolymarket} style={{
-          background: 'transparent', border: '1px solid #334155', borderRadius: 6,
-          color: '#38BDF8', fontSize: 11, padding: '3px 8px', cursor: 'pointer',
+          background: 'transparent', border: '1px solid #E5E0D8', borderRadius: 6,
+          color: '#1D4ED8', fontSize: 11, padding: '3px 8px', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 4
-        }}>
-          Ver senales <ExternalLink size={10} />
+        }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = '#C9C4BB'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E0D8'}
+        >
+          Ver señales <ExternalLink size={10} />
         </button>
       </div>
     </div>
@@ -199,34 +213,34 @@ function PolymarketModal({ polymarket, onClose }) {
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#CBD5E1', usePointStyle: true, font: { size: 11 } } },
-      tooltip: { backgroundColor: '#1E293B', titleColor: '#F1F5F9', bodyColor: '#CBD5E1', borderColor: '#334155', borderWidth: 1 }
+      legend: { position: 'bottom', labels: { color: '#1C1917', usePointStyle: true, font: { size: 11 } } },
+      tooltip: { backgroundColor: '#FFFFFF', titleColor: '#1C1917', bodyColor: '#78716C', borderColor: '#E5E0D8', borderWidth: 1 }
     },
     scales: {
-      x: { grid: { color: '#334155' }, ticks: { color: '#94A3B8', font: { size: 10 } } },
-      y: { min: 0, max: 40, grid: { color: '#334155' }, ticks: { color: '#94A3B8', callback: v => v + '%', font: { size: 10 } } }
+      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', font: { size: 10 } } },
+      y: { min: 0, max: 40, grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 10 } } }
     }
   };
 
   return (
     <div onClick={onClose} style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50,
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
       <div onClick={e => e.stopPropagation()} style={{
         width: 'min(600px, 90vw)', maxHeight: '80vh', overflowY: 'auto',
-        background: '#1E293B', border: '1px solid #334155', borderRadius: 16, padding: 24,
+        background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 16, padding: 24,
         position: 'relative'
       }}>
         {/* Close button */}
         <button onClick={onClose} style={{
           position: 'absolute', top: 12, right: 12, background: 'transparent',
-          border: 'none', color: '#94A3B8', cursor: 'pointer'
+          border: 'none', color: '#A8A29E', cursor: 'pointer'
         }}><X size={20} /></button>
 
         {/* Header */}
-        <h3 style={{ color: '#F1F5F9', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Senales de Polymarket</h3>
-        <p style={{ color: '#94A3B8', fontSize: 13, margin: '0 0 16px' }}>
+        <h3 style={{ color: '#1C1917', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Señales de Polymarket</h3>
+        <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 16px' }}>
           Mercado de predicciones {'\u00B7'} ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
         </p>
 
@@ -237,19 +251,19 @@ function PolymarketModal({ polymarket, onClose }) {
 
         {/* Table */}
         <div style={{ fontSize: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 4, padding: '6px 0', borderBottom: '1px solid #334155' }}>
-            <span style={{ color: '#94A3B8', fontWeight: 500 }}>Candidato</span>
-            <span style={{ color: '#94A3B8', fontWeight: 500, textAlign: 'right' }}>Prob</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 4, padding: '6px 0', borderBottom: '1px solid #E5E0D8' }}>
+            <span style={{ color: '#78716C', fontWeight: 500 }}>Candidato</span>
+            <span style={{ color: '#78716C', fontWeight: 500, textAlign: 'right' }}>Prob</span>
           </div>
           {candidates.slice(0, 15).map((c, i) => {
             const party = getPartyColor(c.candidate);
             return (
               <div key={c.candidate} style={{
                 display: 'grid', gridTemplateColumns: '1fr 80px', gap: 4, padding: '5px 0',
-                borderBottom: '1px solid #1E293B', background: i % 2 ? '#1a2536' : 'transparent'
+                borderBottom: '1px solid #E5E0D8', background: i % 2 ? '#F7F4EF' : 'transparent'
               }}>
                 <span style={{ color: party.primary, fontWeight: 500 }}>{c.candidate}</span>
-                <span style={{ color: '#F1F5F9', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
+                <span style={{ color: '#1C1917', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
               </div>
             );
           })}
@@ -266,11 +280,10 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
   if (!predictions?.candidates?.length) {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <Loader2 size={24} style={{ color: '#38BDF8', animation: 'spin 1s linear infinite', marginBottom: 12 }} />
-        <div style={{ color: '#94A3B8', fontSize: 14 }}>
-          El modelo esta inicializando. Los datos estaran disponibles en los proximos minutos.
+        <Loader2 size={24} style={{ color: '#1D4ED8', animation: 'spin 1s linear infinite', marginBottom: 12 }} />
+        <div style={{ color: '#78716C', fontSize: 14 }}>
+          El modelo está inicializando. Los datos estarán disponibles en los próximos minutos.
         </div>
-        <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
@@ -289,6 +302,16 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
   const runoff = predictions.runoff_scenarios?.[0];
   const blankPct = runoff?.avg_blank_pct;
 
+  // Runoff pair candidates for bicolor bar
+  let runoffC1 = null, runoffC2 = null, runoffC1Party = null, runoffC2Party = null;
+  if (runoff) {
+    const winKeys = Object.keys(runoff.wins);
+    runoffC1 = winKeys[0];
+    runoffC2 = winKeys[1];
+    runoffC1Party = getPartyColor(runoffC1);
+    runoffC2Party = getPartyColor(runoffC2);
+  }
+
   return (
     <>
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
@@ -296,27 +319,60 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Hero Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-            <HeroCard title="Favorito" value={`${top.prob_win.toFixed(1)}%`} subtitle={`${top.candidate} \u00B7 ${topParty.party}`} color={topParty.primary} />
-            <HeroCard title="Segundo" value={`${second.prob_win.toFixed(1)}%`} subtitle={`${second.candidate} \u00B7 ${secondParty.party}`} color={secondParty.primary} />
-            <HeroCard
-              title="Escenario probable"
-              value={runoff ? `${abbrev(Object.keys(runoff.wins)[0])} vs ${abbrev(Object.keys(runoff.wins)[1])}` : '---'}
-              subtitle={runoff ? `${runoff.frequency}% de simulaciones` : ''}
-              color="#CBD5E1"
-            />
-            <HeroCard title="Voto blanco esperado" value={blankPct ? `~${blankPct.toFixed(0)}%` : '---'} subtitle={runoff ? `En ${runoff.pair.split(' vs ').map(n => n.split(' ').pop()).join(' vs ')}` : ''} color="#F59E0B" />
+            {/* Card 1: Favorito */}
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>Favorito · P(Ganar)</div>
+              <div style={{ color: topParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{top.prob_win.toFixed(1)}%</div>
+              <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{top.candidate}</div>
+              <div style={{ color: '#78716C', fontSize: 11 }}>{topParty.party}</div>
+            </div>
+
+            {/* Card 2: Segundo */}
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>Segundo · P(Ganar)</div>
+              <div style={{ color: secondParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{second.prob_win.toFixed(1)}%</div>
+              <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{second.candidate}</div>
+              <div style={{ color: '#78716C', fontSize: 11 }}>{secondParty.party}</div>
+            </div>
+
+            {/* Card 3: Escenario probable */}
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>2da vuelta más probable</div>
+              {runoff && runoffC1 && runoffC2 ? (
+                <>
+                  <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 8, marginBottom: 6 }}>
+                    <div style={{ width: `${runoff.wins[runoffC1]}%`, background: runoffC1Party.primary, height: '100%' }} />
+                    <div style={{ width: `${runoff.wins[runoffC2]}%`, background: runoffC2Party.primary, height: '100%' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ color: '#1C1917' }}>{abbrev(runoffC1)} {runoff.wins[runoffC1].toFixed(0)}%</span>
+                    <span style={{ color: '#1C1917' }}>{abbrev(runoffC2)} {runoff.wins[runoffC2].toFixed(0)}%</span>
+                  </div>
+                  <div style={{ color: '#78716C', fontSize: 11, marginTop: 4 }}>{runoff.frequency}% de simulaciones</div>
+                </>
+              ) : (
+                <div style={{ color: '#1C1917', fontSize: 16, fontWeight: 600, marginTop: 4 }}>---</div>
+              )}
+            </div>
+
+            {/* Card 4: Voto blanco */}
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>Voto blanco esperado</div>
+              <div style={{ color: '#1C1917', fontSize: 30, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{blankPct ? `~${blankPct.toFixed(0)}%` : '---'}</div>
+              {runoff && <div style={{ color: '#78716C', fontSize: 11, marginTop: 2 }}>En {runoff.pair.split(' vs ').map(n => n.split(' ').pop()).join(' vs ')}</div>}
+            </div>
           </div>
 
           {/* Candidate list + Polymarket side by side */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-            <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ color: '#F1F5F9', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+              <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
               {sorted.map(c => <CompactRow key={c.candidate} c={c} />)}
             </div>
 
-            <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ color: '#F1F5F9', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Monitor Polymarket</h3>
-              <div style={{ color: '#94A3B8', fontSize: 12, marginBottom: 12 }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+              <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Monitor Polymarket</h3>
+              <div style={{ color: '#78716C', fontSize: 12, marginBottom: 12 }}>
                 Volumen: ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M' : '--'}
               </div>
               {pmTop.map(c => {
@@ -326,14 +382,14 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                 return (
                   <div key={c.candidate} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '8px 0', borderBottom: '1px solid #0F172A'
+                    padding: '8px 0', borderBottom: '1px solid #E5E0D8'
                   }}>
                     <span style={{ color: party.primary, fontWeight: 500, fontSize: 13 }}>{c.candidate}</span>
                     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                      <span style={{ color: '#F1F5F9', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
+                      <span style={{ color: '#1C1917', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
                       {delta !== null && (
                         <span style={{
-                          color: delta > 0 ? '#22C55E' : delta < 0 ? '#EF4444' : '#94A3B8',
+                          color: delta > 0 ? '#059669' : delta < 0 ? '#DC2626' : '#A8A29E',
                           fontSize: 12, fontVariantNumeric: 'tabular-nums', fontWeight: 500, minWidth: 50, textAlign: 'right'
                         }}>{delta > 0 ? '+' : ''}{delta.toFixed(1)}</span>
                       )}
@@ -341,6 +397,9 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                   </div>
                 );
               })}
+              <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 8 }}>
+                Δ = diferencia entre probabilidad de mercado y estimación del modelo
+              </div>
             </div>
           </div>
         </div>

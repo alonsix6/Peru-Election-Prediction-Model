@@ -38,13 +38,13 @@ const options = {
   plugins: {
     legend: {
       position: 'bottom',
-      labels: { color: '#CBD5E1', padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12 } }
+      labels: { color: '#78716C', padding: 16, usePointStyle: true, pointStyleWidth: 10, font: { size: 12 } }
     },
     tooltip: {
-      backgroundColor: '#1E293B',
-      titleColor: '#F1F5F9',
-      bodyColor: '#CBD5E1',
-      borderColor: '#334155',
+      backgroundColor: '#FFFFFF',
+      titleColor: '#1C1917',
+      bodyColor: '#78716C',
+      borderColor: '#E5E0D8',
       borderWidth: 1,
       callbacks: {
         label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%`
@@ -53,14 +53,14 @@ const options = {
   },
   scales: {
     x: {
-      grid: { color: '#334155' },
-      ticks: { color: '#94A3B8', font: { size: 11 } }
+      grid: { color: '#E5E0D8' },
+      ticks: { color: '#A8A29E', font: { size: 11 } }
     },
     y: {
       min: 0,
       max: 20,
-      grid: { color: '#334155' },
-      ticks: { color: '#94A3B8', callback: v => v + '%', font: { size: 11 } }
+      grid: { color: '#E5E0D8' },
+      ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 11 } }
     }
   }
 };
@@ -68,10 +68,10 @@ const options = {
 export default function TrendChart() {
   return (
     <div style={{
-      background: '#1E293B', border: '1px solid #334155', borderRadius: 12,
+      background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12,
       padding: 16
     }}>
-      <h3 style={{ color: '#F1F5F9', fontSize: '16px', fontWeight: 600, margin: '0 0 12px' }}>
+      <h3 style={{ color: '#1C1917', fontSize: '16px', fontWeight: 600, margin: '0 0 12px' }}>
         Tendencia de encuestas
       </h3>
       <div style={{ height: 350 }}>

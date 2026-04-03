@@ -43,7 +43,7 @@ router.get('/predictions', async (req, res) => {
              prob_first_round, prob_win_overall, electoral_phase,
              polymarket_weight, polls_weight, generated_at_lima, model_version
       FROM model_predictions
-      WHERE generated_at = (SELECT MAX(generated_at) FROM model_predictions)
+      WHERE generated_at_lima = (SELECT MAX(generated_at_lima) FROM model_predictions)
       ORDER BY predicted_pct_mean DESC
     `);
 
@@ -81,7 +81,7 @@ router.get('/polymarket', async (req, res) => {
       SELECT candidate, probability, price_yes, price_no,
              volume_usd, phase, captured_at_lima
       FROM polymarket_snapshots
-      WHERE captured_at = (SELECT MAX(captured_at) FROM polymarket_snapshots)
+      WHERE captured_at_lima = (SELECT MAX(captured_at_lima) FROM polymarket_snapshots)
       ORDER BY probability DESC
     `);
 
@@ -215,7 +215,7 @@ router.get('/run-model', async (req, res) => {
     // Promedio ponderado de indecisos de las encuestas recientes
     const recentPolls = polls
       .filter(p => p.pct_undecided !== null)
-      .sort((a, b) => b.field_end.localeCompare(a.field_end))
+      .sort((a, b) => new Date(b.field_end) - new Date(a.field_end))
       .slice(0, 5);
     const avgUndecided = recentPolls.length > 0
       ? recentPolls.reduce((s, p) => s + p.pct_undecided, 0) / recentPolls.length

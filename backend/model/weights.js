@@ -43,7 +43,10 @@ function getPollDecayWeight(fieldEndDate) {
   const phase = electoralPhase();
   const λ = phase === 'pre_veda' ? 0.08 : 0.12;
   const now = nowPeru();
-  const pollEnd = DateTime.fromISO(fieldEndDate, { zone: 'America/Lima' });
+  // fieldEndDate puede ser string ISO o Date object (PostgreSQL)
+  const pollEnd = fieldEndDate instanceof Date
+    ? DateTime.fromJSDate(fieldEndDate, { zone: 'America/Lima' })
+    : DateTime.fromISO(fieldEndDate, { zone: 'America/Lima' });
   const daysOld = now.diff(pollEnd, 'days').days;
   return Math.exp(-λ * Math.max(0, daysOld));
 }

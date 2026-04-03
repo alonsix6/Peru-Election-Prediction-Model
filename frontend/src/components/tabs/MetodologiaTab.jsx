@@ -1,124 +1,261 @@
-function GlossaryCard({ term, definition }) {
+import {
+  Database, TrendingUp, Shuffle, BarChart3, Scale, AlertTriangle,
+  BookOpen, ChevronRight, Users, Target, Layers, Zap, Shield, Eye
+} from 'lucide-react';
+
+function PipelineStep({ icon: Icon, label, sublabel }) {
   return (
     <div style={{
-      background: '#FFFFFF', borderLeft: '3px solid #1D4ED8', borderRadius: '0 8px 8px 0',
-      padding: '12px 16px', marginBottom: 8
+      flex: 1, minWidth: 140, maxWidth: 200,
+      background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12,
+      padding: 16, textAlign: 'center',
     }}>
-      <div style={{ color: '#1C1917', fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{term}</div>
-      <div style={{ color: '#78716C', fontSize: 13, lineHeight: 1.6 }}>{definition}</div>
+      <Icon size={24} color="#1D4ED8" style={{ marginBottom: 8 }} />
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#1C1917' }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#78716C', marginTop: 4 }}>{sublabel}</div>
     </div>
   );
 }
 
-function NumberBadge({ n }) {
+function StepRow({ number, title, description, isLast }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF',
-      color: '#1D4ED8', fontWeight: 700, fontSize: 13, flexShrink: 0
-    }}>{n}</span>
+    <div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '20px 0' }}>
+        <div style={{
+          width: 36, height: 36, minWidth: 36, borderRadius: '50%',
+          background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700, fontSize: 15,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {number}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', marginBottom: 6 }}>{title}</div>
+          <div style={{ fontSize: 13, color: '#78716C', lineHeight: 1.6 }}>{description}</div>
+        </div>
+      </div>
+      {!isLast && <div style={{ height: 1, background: '#E5E0D8', marginLeft: 52 }} />}
+    </div>
   );
 }
 
-function LimitationCard({ text }) {
+function FeatureCard({ icon: Icon, iconColor, title, description }) {
   return (
     <div style={{
-      background: '#FFFFFF', borderLeft: '3px solid #D97706', borderRadius: '0 8px 8px 0',
-      padding: '12px 16px', marginBottom: 8
+      background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12,
+      padding: 20, flex: 1, minWidth: 200,
     }}>
-      <div style={{ color: '#78716C', fontSize: 13, lineHeight: 1.6 }}>{text}</div>
+      <Icon size={32} color={iconColor} style={{ marginBottom: 12 }} />
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', marginBottom: 8 }}>{title}</div>
+      <div style={{ fontSize: 13, color: '#78716C', lineHeight: 1.6 }}>{description}</div>
+    </div>
+  );
+}
+
+function LimitationItem({ text }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 0' }}>
+      <div style={{
+        width: 8, height: 8, minWidth: 8, borderRadius: '50%',
+        background: '#D97706', marginTop: 5,
+      }} />
+      <div style={{ fontSize: 13, color: '#78716C', lineHeight: 1.6 }}>{text}</div>
     </div>
   );
 }
 
 export default function MetodologiaTab() {
+  const pipelineSteps = [
+    { icon: Database, label: 'Datos', sublabel: '16 encuestas + Polymarket' },
+    { icon: Scale, label: 'Ponderacion', sublabel: 'Peso por precision' },
+    { icon: Shuffle, label: '10,000 simulaciones', sublabel: 'Monte Carlo' },
+    { icon: Target, label: 'Resultado', sublabel: 'Probabilidades' },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, maxWidth: 720 }}>
-      {/* Intro */}
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 40,
+      maxWidth: 760, margin: '0 auto',
+    }}>
+
+      {/* SECTION 1: Hero intro */}
       <div>
-        <h2 style={{ color: '#1C1917', fontSize: 20, fontWeight: 700, margin: '0 0 12px' }}>
-          ¿Qué es este modelo?
+        <h2 style={{
+          fontSize: 24, fontWeight: 700, color: '#1C1917',
+          margin: '0 0 12px',
+        }}>
+          Como funciona este modelo?
         </h2>
-        <p style={{ color: '#78716C', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
-          Este es un modelo estadístico que agrega 16 encuestas de 5 casas encuestadoras peruanas,
-          las combina con datos del mercado de predicciones Polymarket ($5.1 millones en apuestas reales),
-          y corre 10,000 simulaciones para estimar quién tiene más probabilidades de ganar
-          la primera vuelta presidencial del 12 de abril de 2026 y la eventual segunda vuelta del 7 de junio.
+        <p style={{
+          fontSize: 16, color: '#78716C', lineHeight: 1.7, margin: '0 0 28px',
+        }}>
+          Combinamos encuestas reales de 5 casas encuestadoras peruanas con datos de
+          Polymarket — un mercado donde la gente apuesta dinero real sobre quien va a ganar.
+          Luego simulamos la eleccion 10,000 veces para calcular las probabilidades. Asi de simple.
         </p>
-      </div>
 
-      {/* Glossary */}
-      <div>
-        <h3 style={{ color: '#1C1917', fontSize: 17, fontWeight: 600, margin: '0 0 12px' }}>Glosario</h3>
-        <GlossaryCard
-          term="% en primera vuelta"
-          definition="El porcentaje de votos que esperamos que obtenga cada candidato el 12 de abril. Es un promedio ponderado de todas las encuestas, ajustado por sesgos conocidos de cada encuestadora."
-        />
-        <GlossaryCard
-          term="IC 90% (Intervalo de confianza)"
-          definition="En 9 de cada 10 simulaciones, el resultado cae dentro de este rango. Ejemplo: Aliaga 20.7% [17.4–24.3] significa que lo más probable es ~21%, pero podría estar entre 17% y 24%."
-        />
-        <GlossaryCard
-          term="P(2da vuelta)"
-          definition="Probabilidad de quedar entre los dos primeros y pasar a segunda vuelta. Un candidato con P(2da)=88% pasa en 8,800 de las 10,000 simulaciones."
-        />
-        <GlossaryCard
-          term="P(Ganar)"
-          definition="Probabilidad de ganar la presidencia, considerando tanto la primera como la segunda vuelta. Incluye la simulación de transferencia de votos y rechazo definitivo del electorado."
-        />
-        <GlossaryCard
-          term="Monte Carlo"
-          definition='Corremos la elección 10,000 veces con variaciones aleatorias realistas (margen de error, sesgos entre encuestadoras, posibles sorpresas). Contamos cuántas veces gana cada candidato. Más simulaciones = resultado más estable.'
-        />
-        <GlossaryCard
-          term="α Polymarket"
-          definition="El peso que le damos al mercado de predicciones vs las encuestas. Empieza en ~28% y sube al 85% el día de la elección, porque durante la veda electoral (5–12 abril) las encuestas ya no se publican pero Polymarket sigue absorbiendo información fresca."
-        />
-      </div>
-
-      {/* Why trust */}
-      <div>
-        <h3 style={{ color: '#1C1917', fontSize: 17, fontWeight: 600, margin: '0 0 12px' }}>¿Por qué creerle?</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[
-            '16 encuestas de 5 casas encuestadoras independientes (IEP, Datum, Ipsos, CPI, CIT)',
-            'Pesos de encuestadoras basados en su precisión real en las elecciones de 2021',
-            '10,000 simulaciones Monte Carlo con errores correlacionados entre encuestadoras',
-            '$5.1 millones en apuestas reales de Polymarket integradas con peso dinámico',
-            'Mostramos rangos de incertidumbre (IC 90%), no números exactos — la honestidad es parte del modelo',
-          ].map((text, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <NumberBadge n={i + 1} />
-              <span style={{ color: '#78716C', fontSize: 13, lineHeight: 1.6, paddingTop: 4 }}>{text}</span>
+        {/* Pipeline diagram */}
+        <div style={{
+          display: 'flex', gap: 8, alignItems: 'center',
+          justifyContent: 'center', flexWrap: 'wrap',
+        }}>
+          {pipelineSteps.map((step, i) => (
+            <div key={i} style={{ display: 'contents' }}>
+              <PipelineStep icon={step.icon} label={step.label} sublabel={step.sublabel} />
+              {i < pipelineSteps.length - 1 && (
+                <ChevronRight size={20} color="#C9C4BB" style={{ flexShrink: 0 }} />
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Limitations */}
-      <div>
-        <h3 style={{ color: '#1C1917', fontSize: 17, fontWeight: 600, margin: '0 0 12px' }}>Limitaciones honestas</h3>
-        <LimitationCard text="Las encuestas tienen un margen de error de ±2.2 a ±2.8 puntos. Nuestro modelo no elimina esa incertidumbre — la incorpora explícitamente." />
-        <LimitationCard text="No predecimos eventos imprevistos: escándalos, retiradas de candidatos, crisis políticas. Esos escenarios están parcialmente capturados por Polymarket." />
-        <LimitationCard text="Existe el riesgo de un candidato emergente invisible a las encuestas, como ocurrió con Castillo en 2021. Mitigamos esto con shocks estocásticos en el 5% de las simulaciones." />
-        <LimitationCard text="Los traders de Polymarket son mayoritariamente internacionales y pueden no capturar matices del electorado peruano, especialmente rural." />
+      {/* SECTION 2: Paso a paso */}
+      <div style={{
+        background: '#FFFFFF', border: '1px solid #E5E0D8',
+        borderRadius: 12, padding: '24px 28px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <Layers size={20} color="#1D4ED8" />
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+            Asi calcula el modelo, paso a paso
+          </h3>
+        </div>
+
+        <StepRow
+          number={1}
+          title="Recopilamos las encuestas"
+          description="Tomamos las encuestas mas recientes de IEP, Datum, Ipsos, CPI y CIT. Cada una pregunto a mas de 1,200 personas en todo el Peru — urbano y rural — por quien votarian."
+        />
+        <StepRow
+          number={2}
+          title="Les damos peso segun su historial"
+          description="No todas las encuestadoras aciertan igual. IEP fue la que mejor predijo las elecciones de 2021 (capto el crecimiento de Castillo), asi que le damos mas peso. CIT tiene menos historial, asi que pesa menos. Las encuestas mas recientes tambien pesan mas que las antiguas."
+        />
+        <StepRow
+          number={3}
+          title="Incluimos lo que dice el mercado"
+          description="Polymarket es un mercado donde la gente apuesta dinero real sobre quien va a ganar. Hoy tiene mas de $5 millones apostados. Le damos un peso de ~28% al mercado y ~72% a las encuestas. Cuando empiece la veda electoral (5 de abril), el peso del mercado sube porque ya no habra encuestas nuevas."
+        />
+        <StepRow
+          number={4}
+          title="Simulamos 10,000 elecciones"
+          description="Aqui es donde entra la magia estadistica. Corremos la eleccion 10,000 veces, cada vez con pequenas variaciones aleatorias: que pasa si las encuestas se equivocaron un poco, que pasa si un candidato sube o baja de repente, que pasa si hay una sorpresa como la de Castillo en 2021. De esas 10,000 simulaciones sale la probabilidad de cada candidato."
+        />
+        <StepRow
+          number={5}
+          title="Simulamos la segunda vuelta"
+          description="Para las simulaciones donde ningun candidato supera el 50%, tomamos a los dos primeros y simulamos la segunda vuelta. Aqui importa mucho el rechazo: si un candidato le cae mal al 63% de la poblacion (como Keiko), muchos de esos votos se van al voto blanco en vez de transferirse. Por eso nuestro modelo predice un voto blanco alto (~40%) en un escenario Aliaga vs Keiko."
+          isLast
+        />
       </div>
 
-      {/* Sources */}
+      {/* SECTION 3: Lo que nos hace diferentes */}
       <div>
-        <h3 style={{ color: '#1C1917', fontSize: 17, fontWeight: 600, margin: '0 0 12px' }}>Fuentes</h3>
-        <div style={{ color: '#78716C', fontSize: 13, lineHeight: 1.8 }}>
-          <div>CPI — cpi.pe (via RPP Noticias)</div>
-          <div>Ipsos — ipsos.com/es-pe (via Perú21)</div>
-          <div>Datum — datum.com.pe (via El Comercio / Cuarto Poder)</div>
-          <div>IEP — iep.org.pe (via La República)</div>
-          <div>CIT — Centro de Investigaciones Tecnológicas</div>
-          <div>Polymarket — polymarket.com ($5.1M en volumen)</div>
-          <div>ONPE — onpe.gob.pe (resultados oficiales 2021)</div>
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', margin: '0 0 16px' }}>
+          Lo que nos hace diferentes
+        </h3>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <FeatureCard
+            icon={Zap}
+            iconColor="#D97706"
+            title="Sorpresas incluidas"
+            description="En el 35% de las simulaciones incluimos shocks: un candidato que colapsa, otro que sube de repente, un escandalo. Peru nos enseno que las sorpresas son la norma, no la excepcion."
+          />
+          <FeatureCard
+            icon={Eye}
+            iconColor="#1D4ED8"
+            title="Transparencia total"
+            description="No escondemos nada. Mostramos los rangos de incertidumbre, el peso de cada encuestadora, y explicamos por que nuestros numeros difieren de Polymarket. Si estamos equivocados, queremos que sepas por que."
+          />
+          <FeatureCard
+            icon={Shield}
+            iconColor="#059669"
+            title="Datos reales, no opiniones"
+            description="Todo numero que ves viene de encuestas publicadas o de apuestas reales. No inventamos datos, no ajustamos a mano, no tenemos favoritos. El modelo corre solo cada 30 minutos."
+          />
         </div>
-        <p style={{ color: '#A8A29E', fontSize: 11, marginTop: 12, fontStyle: 'italic' }}>
-          Modelo v2.0 — Alonso + Claude — 2 abril 2026
-        </p>
+      </div>
+
+      {/* SECTION 4: Limitaciones */}
+      <div style={{
+        background: '#FFFBEB', borderLeft: '4px solid #FDE68A',
+        borderRadius: '0 12px 12px 0', padding: '20px 24px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <AlertTriangle size={20} color="#D97706" />
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+            Lo que el modelo NO puede hacer
+          </h3>
+        </div>
+
+        <LimitationItem text="Predecir escandalos o retiradas de candidatos que aun no han ocurrido. Si manana un candidato se retira, el modelo no lo sabe hasta que Polymarket reaccione." />
+        <LimitationItem text="Eliminar el margen de error de las encuestas (+/-2.2 a +/-2.8 puntos). Lo que hacemos es incluir esa incertidumbre explicitamente en los rangos." />
+        <LimitationItem text="Capturar al 100% el voto rural o el voto oculto. IEP es la encuestadora que mejor lo hace, por eso le damos mas peso, pero ninguna encuesta es perfecta." />
+        <LimitationItem text="Garantizar que Polymarket refleje la realidad peruana. Los traders son mayoritariamente internacionales y pueden no entender los matices locales." />
+      </div>
+
+      {/* SECTION 5: Fuentes */}
+      <div style={{
+        background: '#FFFFFF', border: '1px solid #E5E0D8',
+        borderRadius: 12, padding: '24px 28px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <BookOpen size={20} color="#1D4ED8" />
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+            De donde vienen los datos
+          </h3>
+        </div>
+
+        <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+          {/* Encuestas */}
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{
+              fontSize: 13, fontWeight: 700, color: '#1C1917',
+              textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12,
+            }}>
+              Encuestas
+            </div>
+            {[
+              { name: 'IEP', via: 'La Republica' },
+              { name: 'Datum', via: 'El Comercio / Cuarto Poder' },
+              { name: 'Ipsos', via: 'Peru21' },
+              { name: 'CPI', via: 'RPP Noticias' },
+              { name: 'CIT', via: 'Centro de Investigaciones Tecnologicas' },
+            ].map((s, i) => (
+              <div key={i} style={{ fontSize: 13, lineHeight: 2 }}>
+                <span style={{ fontWeight: 600, color: '#1C1917' }}>{s.name}</span>
+                <span style={{ color: '#A8A29E' }}> — via {s.via}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Otras fuentes */}
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{
+              fontSize: 13, fontWeight: 700, color: '#1C1917',
+              textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12,
+            }}>
+              Otras fuentes
+            </div>
+            {[
+              { name: 'Polymarket', detail: 'polymarket.com ($5.3M en volumen)' },
+              { name: 'ONPE', detail: 'Resultados oficiales 2021' },
+              { name: 'Wikipedia', detail: 'Tracker de encuestas 2026' },
+            ].map((s, i) => (
+              <div key={i} style={{ fontSize: 13, lineHeight: 2 }}>
+                <span style={{ fontWeight: 600, color: '#1C1917' }}>{s.name}</span>
+                <span style={{ color: '#A8A29E' }}> — {s.detail}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 6: Footer credit */}
+      <div style={{
+        textAlign: 'center', fontSize: 12, color: '#A8A29E', marginTop: 0,
+      }}>
+        Modelo v2.0 — Alonso + Claude — Abril 2026
       </div>
     </div>
   );

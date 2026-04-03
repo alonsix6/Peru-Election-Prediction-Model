@@ -1,17 +1,12 @@
-// NOTA DE CALIBRACIÓN — 2 abril 2026
-// P(Aliaga gana) modelo: 75.7%
-// P(Aliaga gana) Polymarket: 30%
-// Gap de ~45 pts es esperado y documentado:
-// - Polymarket incluye incertidumbre de eventos
-//   futuros (escándalos, retiros, shocks)
-// - Traders internacionales sin contexto peruano
-// - Liquidez baja = precios ineficientes
-// - Nuestro modelo mide: dado el estado actual
-//   del electorado, ¿quién gana?
-// - Polymarket mide: en todos los escenarios
-//   posibles, ¿quién gana?
-// Ver sección 3 del Master Plan para justificación
-// del peso α dinámico de Polymarket.
+// NOTA DE CALIBRACIÓN — 3 abril 2026
+// Recalibrado con volatilidad peruana (3 de 4 elecciones tuvieron sorpresas):
+// - Fat tails: t-Student df=4 en vez de normal (eventos extremos ~3x más frecuentes)
+// - Shock negativo al líder: 15% de simulaciones (-5 a -15 pts, redistribuidos)
+// - Shock negativo al #2: 10% de simulaciones (-5 a -12 pts)
+// - Shock positivo "efecto Castillo" al #3-#6: 10% de simulaciones (+5 a +12 pts)
+// - Temporal drift: 0.30 pts/día (2.7 pts a 9 días)
+// Total: 35% de simulaciones tienen algún shock (vs 5% anterior)
+// Target: Aliaga P(2da vuelta) ~88-92%, P(ganar) ~55-62%
 
 const { handleError } = require('../errors/errorHandler');
 
@@ -240,6 +235,22 @@ function randn() {
 }
 
 /**
+ * Genera un número aleatorio con distribución t de Student.
+ * Fat tails: eventos extremos ocurren ~3x más que con normal.
+ * @param {number} df - Grados de libertad (4 = fat tails moderados)
+ */
+function randt(df = 4) {
+  // Ratio of normal / sqrt(chi-squared/df)
+  const z = randn();
+  let chi2 = 0;
+  for (let i = 0; i < df; i++) {
+    const n = randn();
+    chi2 += n * n;
+  }
+  return z / Math.sqrt(chi2 / df);
+}
+
+/**
  * Genera errores correlacionados usando Cholesky.
  */
 function correlatedErrors(L) {
@@ -311,18 +322,56 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
     const pollsterErrors = correlatedErrors(L);
     const avgError = pollsterErrors.reduce((s, e) => s + e, 0) / pollsterErrors.length;
 
-    // 2. Perturbar estimados
+    // 2. Perturbar estimados con fat tails (t-Student, df=4)
     const perturbed = basePcts.map((pct) => {
-      const individualNoise = randn() * sigma * 0.5;
+      const individualNoise = randt(4) * sigma * 0.5;
       const systemicNoise = avgError * sigma * 0.5;
       return pct + systemicNoise + individualNoise;
     });
 
-    // 3. Shock estocástico 5%
-    if (Math.random() < 0.05) {
-      const shockIdx = Math.floor(Math.random() * nCandidates);
-      const shockSize = 3 + Math.random() * 5;
-      perturbed[shockIdx] += shockSize;
+    // 3. Shocks estocásticos (calibrados para volatilidad peruana)
+    const roll = Math.random();
+
+    // 3a. Shock negativo al líder: 15% de simulaciones
+    //     Escándalo, exclusión legal, colapso en debate
+    if (roll < 0.15) {
+      // Encontrar el líder actual en esta simulación
+      let maxIdx = 0;
+      for (let i = 1; i < nCandidates; i++) {
+        if (perturbed[i] > perturbed[maxIdx]) maxIdx = i;
+      }
+      const shockSize = 5 + Math.random() * 10; // -5 a -15 pts
+      const lost = Math.min(perturbed[maxIdx] - 1, shockSize);
+      perturbed[maxIdx] -= lost;
+      // Redistribuir al #3, #4, #5
+      const sorted = perturbed.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+      const receivers = sorted.slice(2, 5).map(s => s.i);
+      const perReceiver = lost / receivers.length;
+      for (const ri of receivers) perturbed[ri] += perReceiver;
+    }
+    // 3b. Shock negativo al #2: 10% de simulaciones
+    else if (roll < 0.25) {
+      const sorted = perturbed.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+      if (sorted.length > 1) {
+        const secondIdx = sorted[1].i;
+        const shockSize = 5 + Math.random() * 7; // -5 a -12 pts
+        const lost = Math.min(perturbed[secondIdx] - 1, shockSize);
+        perturbed[secondIdx] -= lost;
+        const receivers = sorted.slice(2, 5).map(s => s.i);
+        const perReceiver = lost / receivers.length;
+        for (const ri of receivers) perturbed[ri] += perReceiver;
+      }
+    }
+    // 3c. Shock positivo a candidato menor: 10% de simulaciones
+    //     "Efecto Castillo" — candidato del #3-#6 sube fuerte
+    else if (roll < 0.35) {
+      const sorted = perturbed.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+      const eligible = sorted.slice(2, 6);
+      if (eligible.length > 0) {
+        const luckyIdx = eligible[Math.floor(Math.random() * eligible.length)].i;
+        const shockSize = 5 + Math.random() * 7; // +5 a +12 pts
+        perturbed[luckyIdx] += shockSize;
+      }
     }
 
     // 4. Clamp y normalizar

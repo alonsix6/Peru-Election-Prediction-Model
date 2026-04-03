@@ -17,15 +17,18 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Estado del sistema — se actualiza después de la validación
+let systemStatus = 'starting';
+
 // API routes
 app.use('/api', routes);
 
-// Health check
+// Health check — debe responder SIEMPRE, incluso si DB no está lista
 app.get('/', (req, res) => {
   res.json({
     name: 'Peru Election Prediction Model 2026',
     version: '2.0',
-    status: 'running',
+    status: systemStatus,
     docs: [
       'GET /api/status        — hora Lima, fase, α actual',
       'GET /api/predictions   — última predicción del modelo',
@@ -36,20 +39,19 @@ app.get('/', (req, res) => {
   });
 });
 
-// Startup
-async function start() {
-  await validateSystemIntegrity();
+// 1. Escuchar PRIMERO — Railway necesita healthcheck antes de validar DB
+app.listen(PORT, () => {
+  console.log(`🗳️  API escuchando en puerto ${PORT}`);
 
-  // Iniciar cron de Polymarket (cada hora + inmediato al arrancar)
-  startPolymarketCron();
-
-  app.listen(PORT, () => {
-    console.log(`🗳️  API escuchando en puerto ${PORT}`);
-    console.log(`   http://localhost:${PORT}/api/status`);
-  });
-}
-
-start().catch(err => {
-  console.error('❌ Error fatal al arrancar:', err);
-  process.exit(1);
+  // 2. Validar sistema DESPUÉS de que Express ya está escuchando
+  validateSystemIntegrity()
+    .then(() => {
+      systemStatus = 'ready';
+      startPolymarketCron();
+    })
+    .catch(err => {
+      console.error('⚠️  Sistema arrancó con errores:', err.message);
+      systemStatus = 'degraded';
+      // No process.exit — el servidor sigue corriendo en modo degradado
+    });
 });

@@ -38,7 +38,7 @@ router.get('/predictions', async (req, res) => {
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, electoral_phase,
              polymarket_weight, polls_weight, generated_at_lima, model_version,
-             runoff_json
+             runoff_json, polls_pct, polymarket_pct, posterior_pct
       FROM model_predictions
       WHERE trigger = 'auto_polymarket_update'
         AND generated_at_lima = (
@@ -72,7 +72,10 @@ router.get('/predictions', async (req, res) => {
         predicted_pct_p10: parseFloat(r.predicted_pct_p10),
         predicted_pct_p90: parseFloat(r.predicted_pct_p90),
         prob_first_round: parseFloat(r.prob_first_round),
-        prob_win_overall: parseFloat(r.prob_win_overall)
+        prob_win_overall: parseFloat(r.prob_win_overall),
+        polls_pct: r.polls_pct ? parseFloat(r.polls_pct) : null,
+        polymarket_pct: r.polymarket_pct ? parseFloat(r.polymarket_pct) : null,
+        posterior_pct: r.posterior_pct ? parseFloat(r.posterior_pct) : null,
       })),
       runoff_scenarios
     });

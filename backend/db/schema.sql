@@ -76,7 +76,10 @@ CREATE TABLE model_predictions (
   prob_win_overall     DECIMAL(5,2),
   model_version        VARCHAR(10),
   trigger              VARCHAR(30) DEFAULT 'auto_polymarket_update',
-  runoff_json          TEXT
+  runoff_json          TEXT,
+  polls_pct            DECIMAL(5,2),
+  polymarket_pct       DECIMAL(5,2),
+  posterior_pct        DECIMAL(5,2)
 );
 
 -- Tabla de errores del sistema

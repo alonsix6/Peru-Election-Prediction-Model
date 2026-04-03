@@ -79,7 +79,8 @@ CREATE TABLE model_predictions (
   runoff_json          TEXT,
   polls_pct            DECIMAL(5,2),
   polymarket_pct       DECIMAL(5,2),
-  posterior_pct        DECIMAL(5,2)
+  posterior_pct        DECIMAL(5,2),
+  risk_json            TEXT
 );
 
 -- Tabla de errores del sistema

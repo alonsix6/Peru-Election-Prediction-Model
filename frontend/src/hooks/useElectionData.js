@@ -32,6 +32,7 @@ function normalizePredictions(data) {
       posterior_pct: c.posterior_pct ?? null,
     })),
     runoff_scenarios: data.runoff_scenarios || [],
+    risk_scenarios: data.risk_scenarios || null,
   };
 }
 

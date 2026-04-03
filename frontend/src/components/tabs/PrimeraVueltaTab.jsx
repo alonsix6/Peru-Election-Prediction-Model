@@ -17,7 +17,7 @@ export default function PrimeraVueltaTab({ predictions, polls }) {
     return <div style={{ color: '#78716C', textAlign: 'center', padding: 40 }}>Sin datos de predicción.</div>;
   }
 
-  const sorted = [...predictions.candidates].sort((a, b) => b.prob_win - a.prob_win);
+  const sorted = [...predictions.candidates].sort((a, b) => b.mean - a.mean);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

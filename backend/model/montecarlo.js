@@ -315,7 +315,17 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
   const winCount = candidates.map(() => 0);
 
   // Acumuladores de segunda vuelta por par
-  const runoffPairStats = {};   // "A vs B" → { countA, countB, blankSum, count }
+  const runoffPairStats = {};
+
+  // Acumuladores de escenarios de riesgo
+  const riskCounters = {
+    perCandidate: {},  // { candidato: { missesRunoff: 0, winsFirstRound: 0, gets20plus: 0 } }
+    top2NotTop2Expected: 0,  // top-2 no es los 2 favoritos del modelo
+    surpriseFirstRoundWinner: 0,  // ganador 1ra vuelta fuera del top-3
+  };
+  for (const c of candidates) {
+    riskCounters.perCandidate[c] = { missesRunoff: 0, winsFirstRound: 0, gets20plus: 0, inTop2: 0 };
+  }
 
   for (let sim = 0; sim < nSimulations; sim++) {
     // 1. Errores correlacionados
@@ -391,6 +401,26 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
     runoffCount[firstIdx]++;
     runoffCount[secondIdx]++;
 
+    // 5b. Conteo de escenarios de riesgo
+    riskCounters.perCandidate[candidates[firstIdx]].winsFirstRound++;
+    riskCounters.perCandidate[candidates[firstIdx]].inTop2++;
+    riskCounters.perCandidate[candidates[secondIdx]].inTop2++;
+    for (let i = 0; i < nCandidates; i++) {
+      if (i !== firstIdx && i !== secondIdx) riskCounters.perCandidate[candidates[i]].missesRunoff++;
+      if (normalized[i] >= 20) riskCounters.perCandidate[candidates[i]].gets20plus++;
+    }
+    // Top-2 esperado: los 2 candidatos con mayor posterior base
+    const expectedTop = basePcts.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+    const exp1 = expectedTop[0].i, exp2 = expectedTop[1].i;
+    if (!((firstIdx === exp1 && secondIdx === exp2) || (firstIdx === exp2 && secondIdx === exp1))) {
+      riskCounters.top2NotTop2Expected++;
+    }
+    // Sorpresa: ganador no está en top-3 del posterior base
+    const exp3 = expectedTop[2].i;
+    if (firstIdx !== exp1 && firstIdx !== exp2 && firstIdx !== exp3) {
+      riskCounters.surpriseFirstRoundWinner++;
+    }
+
     // 6. Segunda vuelta con simulateRunoff()
     const finalistA = candidates[firstIdx];
     const finalistB = candidates[secondIdx];
@@ -449,7 +479,22 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
       avg_blank_pct: parseFloat((stats.blankSum / stats.count).toFixed(1))
     }));
 
-  return { results, runoffSummary };
+  // Escenarios de riesgo
+  const pct = (n) => parseFloat(((n / nSimulations) * 100).toFixed(1));
+  const topByMean = Object.entries(results).sort((a, b) => b[1].mean - a[1].mean);
+  const riskScenarios = {
+    top2_not_expected: pct(riskCounters.top2NotTop2Expected),
+    surprise_winner: pct(riskCounters.surpriseFirstRoundWinner),
+    candidates: topByMean.slice(0, 6).map(([name, data]) => ({
+      candidate: name,
+      misses_runoff: pct(riskCounters.perCandidate[name].missesRunoff),
+      wins_first_round: pct(riskCounters.perCandidate[name].winsFirstRound),
+      in_top2: pct(riskCounters.perCandidate[name].inTop2),
+      gets_20plus: pct(riskCounters.perCandidate[name].gets20plus),
+    }))
+  };
+
+  return { results, runoffSummary, riskScenarios };
 }
 
 module.exports = { runMonteCarlo, simulateRunoff, ERROR_CORRELATION, POLLSTER_ORDER, IDEOLOGICAL_BLOCS };

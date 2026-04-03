@@ -71,6 +71,12 @@ export const PARTY_COLORS = {
     bg: '#F5F3FF',
     text: '#5B21B6'
   },
+  'Mario Vizcarra': {
+    party: 'Perú Primero',
+    primary: '#6D28D9',
+    bg: '#F5F3FF',
+    text: '#4C1D95'
+  },
 };
 
 const DEFAULT_COLOR = { party: 'Independiente', primary: '#6B7280', bg: '#F3F4F6', text: '#374151' };

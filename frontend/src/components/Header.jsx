@@ -88,7 +88,7 @@ export default function Header({ status, predictions }) {
               background: '#EFF6FF', color: '#1E40AF', padding: '3px 10px',
               borderRadius: '9999px', fontSize: '12px', fontWeight: 600,
               border: '1px solid #BFDBFE'
-            }}>a {(alpha * 100).toFixed(1)}%</span>
+            }}>{'\u03B1'} {(alpha * 100).toFixed(1)}%</span>
           )}
 
           {updatedText && (

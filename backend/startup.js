@@ -30,17 +30,22 @@ async function autoMigrate() {
   // Migrar columnas nuevas si faltan
   const { rows: cols } = await db.query(`
     SELECT column_name FROM information_schema.columns
-    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json')
+    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct')
   `);
   const existing = cols.map(c => c.column_name);
 
-  if (!existing.includes('trigger')) {
-    await db.query(`ALTER TABLE model_predictions ADD COLUMN trigger VARCHAR(30) DEFAULT 'auto_polymarket_update'`);
-    console.log('   ✅ Columna trigger agregada a model_predictions');
-  }
-  if (!existing.includes('runoff_json')) {
-    await db.query(`ALTER TABLE model_predictions ADD COLUMN runoff_json TEXT`);
-    console.log('   ✅ Columna runoff_json agregada a model_predictions');
+  const migrations = [
+    ['trigger', `ALTER TABLE model_predictions ADD COLUMN trigger VARCHAR(30) DEFAULT 'auto_polymarket_update'`],
+    ['runoff_json', `ALTER TABLE model_predictions ADD COLUMN runoff_json TEXT`],
+    ['polls_pct', `ALTER TABLE model_predictions ADD COLUMN polls_pct DECIMAL(5,2)`],
+    ['polymarket_pct', `ALTER TABLE model_predictions ADD COLUMN polymarket_pct DECIMAL(5,2)`],
+    ['posterior_pct', `ALTER TABLE model_predictions ADD COLUMN posterior_pct DECIMAL(5,2)`],
+  ];
+  for (const [col, sql] of migrations) {
+    if (!existing.includes(col)) {
+      await db.query(sql);
+      console.log(`   ✅ Columna ${col} agregada a model_predictions`);
+    }
   }
 
   return false;

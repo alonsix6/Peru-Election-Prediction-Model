@@ -95,15 +95,18 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   if (saveToDB) {
     const runoffJson = JSON.stringify(runoffSummary);
     for (const [candidate, data] of Object.entries(mcResults)) {
+      const bc = bayesian.candidates[candidate];
       await db.query(`
         INSERT INTO model_predictions
           (generated_at_lima, electoral_phase, polymarket_weight, polls_weight,
            candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
-           prob_first_round, prob_win_overall, model_version, trigger, runoff_json)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+           prob_first_round, prob_win_overall, model_version, trigger, runoff_json,
+           polls_pct, polymarket_pct, posterior_pct)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       `, [now.toISO(), phase, α, 1 - α,
           candidate, data.mean, data.p10, data.p90,
-          data.prob_runoff, data.prob_win, '2.0', trigger, runoffJson]);
+          data.prob_runoff, data.prob_win, '2.0', trigger, runoffJson,
+          bc?.polls_pct ?? null, bc?.polymarket_pct ?? null, bc?.posterior_pct ?? null]);
     }
     console.log('   ✅ Guardado en DB (trigger: ' + trigger + ')');
   }

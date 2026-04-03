@@ -81,17 +81,18 @@ function HistoryCard() {
   const minsAgo = Math.floor((Date.now() - latest) / 60000);
   const dotColor = minsAgo < 35 ? '#059669' : minsAgo < 90 ? '#D97706' : '#DC2626';
 
-  // Filter out identical consecutive entries
+  // Filter out identical consecutive entries — keep most recent of each group
   const filtered = history.history.reduce((acc, entry) => {
     if (acc.length === 0) return [entry];
     const prev = acc[acc.length - 1];
     const changed = Math.abs(entry.top3[0].pct_mean - prev.top3[0].pct_mean) >= 0.1;
     if (changed) acc.push(entry);
-    else acc[acc.length - 1] = entry;
+    // If no change, skip — the first (most recent) entry of each group is already kept
     return acc;
   }, []);
 
   const visible = filtered.slice(0, 8);
+  const totalRuns = history.history.length;
 
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
@@ -126,7 +127,7 @@ function HistoryCard() {
       })}
 
       {visible.length <= 1 && (
-        <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 6 }}>Sin cambios en las últimas corridas</div>
+        <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 6 }}>Sin cambios en las últimas {totalRuns} corridas</div>
       )}
     </div>
   );

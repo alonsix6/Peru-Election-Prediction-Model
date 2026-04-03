@@ -13,15 +13,15 @@ export const PARTY_COLORS = {
   },
   'Carlos Álvarez': {
     party: 'País para Todos',
-    primary: '#DC2626',
-    bg: '#FEF2F2',
-    text: '#991B1B'
+    primary: '#EAB308',
+    bg: '#FEFCE8',
+    text: '#854D0E'
   },
   'López Chau': {
     party: 'Ahora Nación',
-    primary: '#059669',
-    bg: '#ECFDF5',
-    text: '#065F46'
+    primary: '#DC2626',
+    bg: '#FEF2F2',
+    text: '#991B1B'
   },
   'Roberto Sánchez Palomino': {
     party: 'Juntos por el Perú',
@@ -31,9 +31,9 @@ export const PARTY_COLORS = {
   },
   'Jorge Nieto': {
     party: 'Partido del Buen Gobierno',
-    primary: '#1E40AF',
-    bg: '#EFF6FF',
-    text: '#1E3A8A'
+    primary: '#D97706',
+    bg: '#FFFBEB',
+    text: '#92400E'
   },
   'Ricardo Belmont': {
     party: 'Partido Cívico Obras',
@@ -43,9 +43,9 @@ export const PARTY_COLORS = {
   },
   'César Acuña': {
     party: 'Alianza para el Progreso',
-    primary: '#B91C1C',
-    bg: '#FEF2F2',
-    text: '#7F1D1D'
+    primary: '#1E40AF',
+    bg: '#EFF6FF',
+    text: '#1E3A8A'
   },
   'Marisol Pérez Tello': {
     party: 'Primero la Gente',

@@ -19,20 +19,41 @@ export function useElectionData() {
   });
 
   const refresh = useCallback(async () => {
-    setData(prev => ({ ...prev, loading: true }));
-    const [status, predictions, polymarket, polls] = await Promise.all([
-      safeFetch(`${API}/api/status`),
-      safeFetch(`${API}/api/predictions`),
-      safeFetch(`${API}/api/polymarket`),
-      safeFetch(`${API}/api/polls`),
-    ]);
-    const anyFailed = [status, predictions, polymarket, polls].some(d => d === null);
-    setData({
-      status, predictions, polymarket, polls,
-      loading: false,
-      error: anyFailed ? 'Algunos datos no están disponibles' : null,
-      lastUpdated: new Date()
-    });
+    setData(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const [status, predictions, polymarket, polls] = await Promise.all([
+        safeFetch(`${API}/api/status`),
+        safeFetch(`${API}/api/predictions`),
+        safeFetch(`${API}/api/polymarket`),
+        safeFetch(`${API}/api/polls`),
+      ]);
+
+      // If no predictions yet (model hasn't run), auto-run it
+      let finalPredictions = predictions;
+      if (!predictions?.candidates?.length) {
+        console.log('No predictions found — running model...');
+        finalPredictions = await safeFetch(`${API}/api/run-model`);
+      }
+
+      const anyFailed = [status, finalPredictions, polymarket, polls].some(d => d === null);
+
+      setData({
+        status,
+        predictions: finalPredictions,
+        polymarket,
+        polls,
+        loading: false,
+        error: anyFailed ? 'Algunos datos no están disponibles' : null,
+        lastUpdated: new Date()
+      });
+    } catch (err) {
+      setData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Error de conexión: ' + (err.message || 'desconocido')
+      }));
+    }
   }, []);
 
   useEffect(() => {

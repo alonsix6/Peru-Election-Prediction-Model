@@ -31,10 +31,11 @@ app.get('/', (req, res) => {
     status: systemStatus,
     docs: [
       'GET /api/status        — hora Lima, fase, α actual',
-      'GET /api/predictions   — última predicción del modelo',
+      'GET /api/predictions   — última predicción automática (actualizada cada 30 min)',
       'GET /api/polymarket    — último snapshot de Polymarket',
       'GET /api/polls         — encuestas con pesos efectivos',
-      'GET /api/run-model     — ejecuta pipeline completo'
+      'GET /api/run-model     — simulación personal (no guarda en DB)',
+      'GET /api/model-history — últimas 20 corridas automáticas'
     ]
   });
 });

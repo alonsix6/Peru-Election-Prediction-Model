@@ -7,7 +7,9 @@ const VOTE_POTENTIAL_CIT = {
   'Keiko Fujimori':      { ceiling: 18.5, floor: 10.8, rejection: 62.7 },
   'Carlos Álvarez':      { ceiling: 18.4, floor:  4.2, rejection: 50.2 },
   'López Chau':          { ceiling: 17.2, floor:  5.4, rejection: 51.7 },
-  'Wolfgang Grozo':      { ceiling: 14.0, floor:  5.5, rejection: 45.6 }
+  'Wolfgang Grozo':      { ceiling: 14.0, floor:  5.5, rejection: 45.6 },
+  // Estimado — sin dato CIT, basado en precedente Castillo 2021 (base rural/anti-sistema)
+  'Roberto Sánchez Palomino': { ceiling: 22.0, floor: 6.0, rejection: 48.0 }
 };
 
 /**

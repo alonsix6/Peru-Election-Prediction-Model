@@ -35,11 +35,15 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     FROM polls p JOIN pollsters ps ON p.pollster_id = ps.id
   `);
 
+  // Normalización de nombres (corrige datos legacy en DB)
+  const NAME_FIX = { 'Martín Vizcarra': 'Mario Vizcarra' };
+
   const { rows: dbResults } = await db.query('SELECT * FROM poll_results');
   const resultsByPoll = {};
   for (const r of dbResults) {
     if (!resultsByPoll[r.poll_id]) resultsByPoll[r.poll_id] = [];
-    resultsByPoll[r.poll_id].push({ candidate: r.candidate, pct_raw: parseFloat(r.pct_raw) });
+    const name = NAME_FIX[r.candidate] || r.candidate;
+    resultsByPoll[r.poll_id].push({ candidate: name, pct_raw: parseFloat(r.pct_raw) });
   }
 
   const polls = dbPolls.map(p => ({

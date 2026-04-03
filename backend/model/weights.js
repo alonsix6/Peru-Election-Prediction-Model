@@ -21,11 +21,14 @@ function getPolymarketWeight(volumeUSD = 5_100_000) {
       const vedaHours = 7 * 24; // 168 horas de veda
       const hoursInVeda = vedaHours - Math.max(0, totalHours);
       const vedaProgress = Math.min(1, hoursInVeda / vedaHours);
-      return 0.30 + (vedaProgress * 0.50);
+      // Curva exponencial (^0.6): sube rápido al inicio de veda
+      // cuando la info fresca de PM es más valiosa
+      // Víspera: 80%, convergiendo con el lineal al final
+      return 0.30 + (Math.pow(vedaProgress, 0.6) * 0.50);
     }
 
     case 'election_day':
-      return 0.85;
+      return 0.87;
 
     case 'post_election':
       return null;

@@ -351,7 +351,7 @@ function SimulationCard() {
       <div style={cardStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: 0 }}>Tu proyección personal</h3>
-          <button onClick={reset} style={{
+          <button onClick={runSim} style={{
             background: 'transparent', border: 'none', color: '#1D4ED8',
             fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
           }}>

@@ -1,0 +1,50 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: #0F172A;
+  color: #F1F5F9;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+nav::-webkit-scrollbar {
+  display: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  background: #334155;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}

@@ -47,9 +47,9 @@ function AppContent() {
       <Header status={status} predictions={predictions} />
       <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
+      <main aria-label="Contenido principal" style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
         {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div role="status" aria-live="polite" style={{ textAlign: 'center', padding: '60px 20px' }}>
             <Loader2 size={24} style={{ color: '#1D4ED8', animation: 'spin 1s linear infinite', marginBottom: 8 }} />
             <div style={{ color: '#78716C', fontSize: 14 }}>Conectando con el servidor de predicciones</div>
           </div>
@@ -64,7 +64,7 @@ function AppContent() {
             <span>{error}</span>
             <button onClick={refresh} style={{
               background: '#DC2626', color: '#fff', border: 'none', borderRadius: 6,
-              padding: '4px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 500
+              padding: '10px 16px', cursor: 'pointer', fontSize: 12, fontWeight: 500, minHeight: 44
             }}>Reintentar</button>
           </div>
         )}
@@ -88,7 +88,7 @@ function AppContent() {
 
         {lastUpdated && (
           <div style={{
-            textAlign: 'center', padding: '24px 0 12px', color: '#A8A29E', fontSize: 11
+            textAlign: 'center', padding: '24px 0 12px', color: '#8C877F', fontSize: 11
           }}>
             Última actualización: {lastUpdated.toLocaleString('es-PE', { timeZone: 'America/Lima' })}
           </div>

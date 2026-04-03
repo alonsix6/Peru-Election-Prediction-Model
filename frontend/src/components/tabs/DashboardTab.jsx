@@ -61,7 +61,7 @@ function CompactRow({ c }) {
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <div style={{ color: party.primary, fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.mean.toFixed(1)}%</div>
-        <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 2 }}>P(Ganar)</div>
+        <div style={{ color: '#8C877F', fontSize: 11, marginTop: 2 }}>P(Ganar)</div>
         <div style={{ color: probColor, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{c.prob_win.toFixed(1)}%</div>
       </div>
     </div>
@@ -101,7 +101,7 @@ function HistoryCard() {
     <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Activity size={14} style={{ color: '#A8A29E' }} />
+          <Activity size={14} style={{ color: '#8C877F' }} />
           <span style={{ color: '#1C1917', fontSize: 14, fontWeight: 600 }}>Historial del modelo</span>
         </div>
         <span style={{
@@ -109,7 +109,7 @@ function HistoryCard() {
           display: 'inline-block', boxShadow: minsAgo < 35 ? `0 0 6px ${dotColor}` : 'none'
         }} />
       </div>
-      <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 10 }}>Auto-actualiza cada 30 min</div>
+      <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 10 }}>Auto-actualiza cada 30 min</div>
 
       {visible.map((h, i) => {
         const t = new Date(h.generated_at_lima);
@@ -126,14 +126,14 @@ function HistoryCard() {
               ? <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
               : <span style={{ width: 6, flexShrink: 0 }} />
             }
-            <span style={{ color: '#A8A29E', flexShrink: 0 }}>{timeStr}</span>
+            <span style={{ color: '#8C877F', flexShrink: 0 }}>{timeStr}</span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{top3Str}</span>
           </div>
         );
       })}
 
       {totalRuns > visible.length && (
-        <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 6 }}>
+        <div style={{ color: '#8C877F', fontSize: 11, marginTop: 6 }}>
           Modelo estable en las últimas {totalRuns} corridas
         </div>
       )}
@@ -147,7 +147,7 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <BarChart3 size={14} style={{ color: '#A8A29E' }} />
+        <BarChart3 size={14} style={{ color: '#8C877F' }} />
         <span style={{ color: '#1C1917', fontSize: 14, fontWeight: 600 }}>Fuentes de datos</span>
       </div>
 
@@ -162,12 +162,12 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
             <span key={`n${i}`} style={{ color: pColor, fontWeight: 600, padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>{p.pollster}</span>,
             <span key={`t${i}`} style={{ padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>
               <span style={{
-                fontSize: 10, borderRadius: 4, padding: '1px 5px',
+                fontSize: 11, borderRadius: 4, padding: '1px 5px',
                 background: isSimulacro ? '#ECFDF5' : '#EFF6FF',
                 color: isSimulacro ? '#065F46' : '#1E40AF'
               }}>{isSimulacro ? 'Simulacro' : 'Intención'}</span>
             </span>,
-            <span key={`d${i}`} style={{ color: '#A8A29E', padding: '5px 0', borderBottom: '1px solid #F0EDE8', textAlign: 'right', paddingRight: 8 }}>
+            <span key={`d${i}`} style={{ color: '#8C877F', padding: '5px 0', borderBottom: '1px solid #F0EDE8', textAlign: 'right', paddingRight: 8 }}>
               {days}d
             </span>,
             <span key={`w${i}`} style={{ display: 'flex', gap: 2, padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>
@@ -176,7 +176,7 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
           ];
         })}
       </div>
-      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 8, fontStyle: 'italic' }}>
+      <div style={{ color: '#8C877F', fontSize: 11, marginTop: 8, fontStyle: 'italic' }}>
         El peso disminuye con la antigüedad
       </div>
 
@@ -186,13 +186,13 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <TrendingUp size={14} style={{ color: '#1D4ED8' }} />
           <span style={{ color: '#1C1917', fontSize: 13, fontWeight: 500 }}>Polymarket</span>
-          <span style={{ color: '#A8A29E', fontSize: 11 }}>
+          <span style={{ color: '#8C877F', fontSize: 11 }}>
             ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M vol' : '--'}
           </span>
         </div>
         <button onClick={onOpenPolymarket} style={{
           background: 'transparent', border: '1px solid #E5E0D8', borderRadius: 6,
-          color: '#1D4ED8', fontSize: 11, padding: '3px 8px', cursor: 'pointer',
+          color: '#1D4ED8', fontSize: 11, padding: '8px 12px', minHeight: 44, cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 4
         }}
         onMouseEnter={e => e.currentTarget.style.borderColor = '#C9C4BB'}
@@ -209,6 +209,12 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
 function PolymarketModal({ polymarket, onClose }) {
   const [history, setHistory] = useState(null);
   const candidates = polymarket?.candidates || [];
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   useEffect(() => {
     fetch(`${API}/api/polymarket/history`).then(r => r.json()).then(setHistory).catch(() => {});
@@ -251,8 +257,8 @@ function PolymarketModal({ polymarket, onClose }) {
       }
     },
     scales: {
-      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', font: { size: 9 }, maxRotation: 45, maxTicksLimit: 10 } },
-      y: { min: 0, max: 50, grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 10 } } }
+      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#8C877F', font: { size: 9 }, maxRotation: 45, maxTicksLimit: 10 } },
+      y: { min: 0, max: 50, grid: { color: '#E5E0D8' }, ticks: { color: '#8C877F', callback: v => v + '%', font: { size: 11 } } }
     }
   };
 
@@ -261,17 +267,17 @@ function PolymarketModal({ polymarket, onClose }) {
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 50,
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
-      <div onClick={e => e.stopPropagation()} style={{
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="pm-modal-title" style={{
         width: 'min(640px, 92vw)', maxHeight: '85vh', overflowY: 'auto',
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 16, padding: 24,
         position: 'relative'
       }}>
-        <button onClick={onClose} style={{
+        <button onClick={onClose} aria-label="Cerrar modal" style={{
           position: 'absolute', top: 12, right: 12, background: 'transparent',
-          border: 'none', color: '#A8A29E', cursor: 'pointer'
+          border: 'none', color: '#8C877F', cursor: 'pointer'
         }}><X size={20} /></button>
 
-        <h3 style={{ color: '#1C1917', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Señales de Polymarket</h3>
+        <h3 id="pm-modal-title" style={{ color: '#1C1917', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Señales de Polymarket</h3>
         <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 16px' }}>
           Mercado de predicciones · ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
           {history?.snapshots && <span> · {history.snapshots.length} snapshots</span>}
@@ -281,7 +287,7 @@ function PolymarketModal({ polymarket, onClose }) {
         <div style={{ height: 200, marginBottom: 20 }}>
           {history?.snapshots?.length > 1
             ? <Line data={chartData} options={chartOpts} />
-            : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#A8A29E', fontSize: 13 }}>
+            : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#8C877F', fontSize: 13 }}>
                 {history === null ? 'Cargando historial...' : 'Se necesitan más snapshots para el gráfico (próximas horas)'}
               </div>
           }
@@ -361,7 +367,8 @@ function SimulationCard() {
           <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: 0 }}>Tu proyección personal</h3>
           <button onClick={runSim} style={{
             background: 'transparent', border: 'none', color: '#1D4ED8',
-            fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
+            fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+            padding: '8px 12px', minHeight: 44
           }}>
             <RefreshCcw size={12} /> Nueva
           </button>
@@ -375,7 +382,7 @@ function SimulationCard() {
             <div key={c.candidate} style={{ padding: '10px 0', borderBottom: i < 4 ? '1px solid #E5E0D8' : 'none' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <div>
-                  <span style={{ color: '#A8A29E', fontSize: 12, marginRight: 6 }}>{i + 1}.</span>
+                  <span style={{ color: '#8C877F', fontSize: 12, marginRight: 6 }}>{i + 1}.</span>
                   <span style={{ color: party.primary, fontSize: 14, fontWeight: 500 }}>{c.candidate}</span>
                 </div>
                 <span style={{ color: party.primary, fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -476,11 +483,12 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
   return (
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <h2 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>Resumen del modelo</h2>
           {/* Hero Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             {/* Card 1: Favorito */}
             <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>Favorito · P(Ganar)</div>
+              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Favorito · P(Ganar)</div>
               <div style={{ color: topParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{top.prob_win.toFixed(1)}%</div>
               <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{top.candidate}</div>
               <div style={{ color: '#78716C', fontSize: 11 }}>{topParty.party}</div>
@@ -488,7 +496,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
 
             {/* Card 2: Segundo */}
             <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>Segundo · P(Ganar)</div>
+              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Segundo · P(Ganar)</div>
               <div style={{ color: secondParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{second.prob_win.toFixed(1)}%</div>
               <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{second.candidate}</div>
               <div style={{ color: '#78716C', fontSize: 11 }}>{secondParty.party}</div>
@@ -496,7 +504,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
 
             {/* Card 3: Escenario probable */}
             <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>2da vuelta más probable</div>
+              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>2da vuelta más probable</div>
               {runoff && runoffC1 && runoffC2 ? (
                 <>
                   <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 8, marginBottom: 6 }}>
@@ -516,7 +524,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
 
             {/* Card 4: Voto blanco */}
             <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#A8A29E', fontSize: 11, marginBottom: 4 }}>Voto blanco esperado</div>
+              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Voto blanco esperado</div>
               <div style={{ color: '#1C1917', fontSize: 30, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{blankPct ? `~${blankPct.toFixed(0)}%` : '---'}</div>
               {runoff && <div style={{ color: '#78716C', fontSize: 11, marginTop: 2 }}>En {runoff.pair.split(' vs ').map(n => n.split(' ').pop()).join(' vs ')}</div>}
             </div>
@@ -563,7 +571,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                     </div>
                   );
                 })}
-                <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 8 }}>
+                <div style={{ color: '#8C877F', fontSize: 11, marginTop: 8 }}>
                   Δ = diferencia entre probabilidad de mercado y estimación del modelo
                 </div>
               </div>

@@ -10,7 +10,7 @@ function getInitials(name) {
 function winColor(prob) {
   if (prob >= 50) return '#059669';
   if (prob >= 10) return '#D97706';
-  return '#A8A29E';
+  return '#8C877F';
 }
 
 export default function CandidateCard({ candidate: c, rank, expanded, onToggle }) {
@@ -22,6 +22,10 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
   return (
     <div
       onClick={onToggle}
+      tabIndex={0}
+      role="button"
+      aria-expanded={expanded}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
       onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9C4BB'; }}
       onMouseLeave={e => {
         e.currentTarget.style.borderColor = '#E5E0D8';
@@ -33,7 +37,7 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
         transition: 'border-color 0.2s',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         {/* Avatar */}
         <div style={{
           width: 40, height: 40, borderRadius: '50%', display: 'flex',
@@ -47,7 +51,7 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
         {/* Name + Party + Progress bar */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ color: '#1C1917', fontWeight: 600, fontSize: '15px' }}>
-            {rank && <span style={{ color: '#A8A29E', fontWeight: 400, marginRight: 6 }}>#{rank}</span>}
+            {rank && <span style={{ color: '#8C877F', fontWeight: 400, marginRight: 6 }}>#{rank}</span>}
             {c.candidate}
           </div>
           <div style={{ color: '#78716C', fontSize: '12px' }}>{party.party}</div>
@@ -68,24 +72,24 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
               borderRadius: 5, position: 'relative', zIndex: 1
             }} />
           </div>
-          <div style={{ fontSize: '11px', color: '#A8A29E', marginTop: 2 }}>
+          <div style={{ fontSize: '11px', color: '#78716C', marginTop: 2 }}>
             IC 90%: {c.p10.toFixed(1)}% - {c.p90.toFixed(1)}%
           </div>
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', flexShrink: 0, textAlign: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', flexShrink: 0, textAlign: 'center', minWidth: 200 }}>
           <div>
             <div style={{ color: '#1C1917', fontWeight: 600, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>
               {c.mean.toFixed(1)}%
             </div>
-            <div style={{ color: '#A8A29E', fontSize: '10px' }}>1ra vuelta</div>
+            <div style={{ color: '#78716C', fontSize: '11px' }}>1ra vuelta</div>
           </div>
           <div>
             <div style={{ color: '#1C1917', fontWeight: 600, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>
               {c.prob_runoff.toFixed(0)}%
             </div>
-            <div style={{ color: '#A8A29E', fontSize: '10px' }}>P(2da)</div>
+            <div style={{ color: '#78716C', fontSize: '11px' }}>P(2da)</div>
           </div>
           <div>
             <div style={{
@@ -94,15 +98,16 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
             }}>
               {c.prob_win.toFixed(1)}%
             </div>
-            <div style={{ color: '#A8A29E', fontSize: '10px' }}>P(Ganar)</div>
+            <div style={{ color: '#78716C', fontSize: '11px' }}>P(Ganar)</div>
           </div>
         </div>
 
         {/* Chevron */}
         <ChevronDown
+          aria-hidden="true"
           size={18}
           style={{
-            color: '#A8A29E', flexShrink: 0,
+            color: '#8C877F', flexShrink: 0,
             transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease',
           }}

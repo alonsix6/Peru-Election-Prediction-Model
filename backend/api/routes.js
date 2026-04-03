@@ -3,16 +3,12 @@ const router = express.Router();
 
 const { nowPeru, electoralPhase, timeToElection } = require('../model/clock');
 const { getPolymarketWeight, getPollWeight } = require('../model/weights');
-const { aggregatePolls, HOUSE_EFFECTS } = require('../model/aggregator');
-const { redistributeUndecided } = require('../model/undecided');
-const { bayesianIntegration } = require('../model/bayesian');
-const { runMonteCarlo } = require('../model/montecarlo');
+const { HOUSE_EFFECTS } = require('../model/aggregator');
+const { runFullPipeline } = require('../model/pipeline');
 const { handleError } = require('../errors/errorHandler');
 const db = require('../db');
 
 // ─── GET /api/status ────────────────────────────────────────
-// Hora Lima, fase electoral, α actual, countdown
-
 router.get('/status', (req, res) => {
   const now = nowPeru();
   const phase = electoralPhase();
@@ -34,22 +30,35 @@ router.get('/status', (req, res) => {
 });
 
 // ─── GET /api/predictions ───────────────────────────────────
-// Última predicción guardada en DB
-
+// Sirve SIEMPRE la última predicción automática guardada en DB.
+// No corre ningún cálculo — solo lee y sirve.
 router.get('/predictions', async (req, res) => {
   try {
     const { rows } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, electoral_phase,
-             polymarket_weight, polls_weight, generated_at_lima, model_version
+             polymarket_weight, polls_weight, generated_at_lima, model_version,
+             runoff_json
       FROM model_predictions
-      WHERE generated_at_lima = (SELECT MAX(generated_at_lima) FROM model_predictions)
+      WHERE trigger = 'auto_polymarket_update'
+        AND generated_at_lima = (
+          SELECT MAX(generated_at_lima) FROM model_predictions
+          WHERE trigger = 'auto_polymarket_update'
+        )
       ORDER BY predicted_pct_mean DESC
     `);
 
     if (rows.length === 0) {
-      return res.json({ message: 'No predictions yet. Run /api/run-model first.', candidates: [] });
+      return res.json({ message: 'No predictions yet.', candidates: [], runoff_scenarios: [] });
     }
+
+    // runoff_json es el mismo para todos los rows de la misma corrida
+    let runoff_scenarios = [];
+    try {
+      if (rows[0].runoff_json) {
+        runoff_scenarios = JSON.parse(rows[0].runoff_json);
+      }
+    } catch { /* ignore parse error */ }
 
     res.json({
       generated_at_lima: rows[0].generated_at_lima,
@@ -64,7 +73,8 @@ router.get('/predictions', async (req, res) => {
         predicted_pct_p90: parseFloat(r.predicted_pct_p90),
         prob_first_round: parseFloat(r.prob_first_round),
         prob_win_overall: parseFloat(r.prob_win_overall)
-      }))
+      })),
+      runoff_scenarios
     });
   } catch (err) {
     await handleError('DB_CONNECTION_FAILED', { module: 'api/predictions' }, err);
@@ -73,8 +83,6 @@ router.get('/predictions', async (req, res) => {
 });
 
 // ─── GET /api/polymarket ────────────────────────────────────
-// Último snapshot de Polymarket
-
 router.get('/polymarket', async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -107,28 +115,18 @@ router.get('/polymarket', async (req, res) => {
 });
 
 // ─── GET /api/polls ─────────────────────────────────────────
-// Encuestas con sus pesos efectivos actuales
-
 router.get('/polls', async (req, res) => {
   try {
-    const { rows: pollsters } = await db.query('SELECT * FROM pollsters');
-    const pollsterMap = {};
-    for (const p of pollsters) {
-      pollsterMap[p.id] = p;
-    }
-
     const { rows: polls } = await db.query(`
       SELECT p.*, ps.name as pollster_name, ps.weight_multiplier
-      FROM polls p
-      JOIN pollsters ps ON p.pollster_id = ps.id
+      FROM polls p JOIN pollsters ps ON p.pollster_id = ps.id
       ORDER BY p.field_end DESC
     `);
 
-    const { rows: results } = await db.query(`
-      SELECT * FROM poll_results ORDER BY poll_id, pct_raw DESC
-    `);
+    const { rows: results } = await db.query(
+      'SELECT * FROM poll_results ORDER BY poll_id, pct_raw DESC'
+    );
 
-    // Agrupar resultados por poll_id
     const resultsByPoll = {};
     for (const r of results) {
       if (!resultsByPoll[r.poll_id]) resultsByPoll[r.poll_id] = [];
@@ -138,29 +136,21 @@ router.get('/polls', async (req, res) => {
     const pollsWithWeights = polls.map(p => {
       const weight = getPollWeight(p, parseFloat(p.weight_multiplier));
       return {
-        id: p.id,
-        pollster: p.pollster_name,
-        field_start: p.field_start,
-        field_end: p.field_end,
-        sample_n: p.sample_n,
-        margin_error: parseFloat(p.margin_error),
+        id: p.id, pollster: p.pollster_name,
+        field_start: p.field_start, field_end: p.field_end,
+        sample_n: p.sample_n, margin_error: parseFloat(p.margin_error),
         poll_type: p.poll_type,
         pct_undecided: p.pct_undecided ? parseFloat(p.pct_undecided) : null,
         pct_blank_null: p.pct_blank_null ? parseFloat(p.pct_blank_null) : null,
         effective_weight: parseFloat(weight.toFixed(4)),
         house_effects: HOUSE_EFFECTS[p.pollster_name] || {},
         results: (resultsByPoll[p.id] || []).map(r => ({
-          candidate: r.candidate,
-          party: r.party,
-          pct_raw: parseFloat(r.pct_raw)
+          candidate: r.candidate, party: r.party, pct_raw: parseFloat(r.pct_raw)
         }))
       };
     });
 
-    res.json({
-      total_polls: pollsWithWeights.length,
-      polls: pollsWithWeights
-    });
+    res.json({ total_polls: pollsWithWeights.length, polls: pollsWithWeights });
   } catch (err) {
     await handleError('DB_CONNECTION_FAILED', { module: 'api/polls' }, err);
     res.status(500).json({ error: 'Database error' });
@@ -168,123 +158,59 @@ router.get('/polls', async (req, res) => {
 });
 
 // ─── GET /api/run-model ─────────────────────────────────────
-// Ejecuta el pipeline completo y guarda predicción en DB
-
+// Simulación personal del usuario. NO guarda en DB.
 router.get('/run-model', async (req, res) => {
   try {
-    const now = nowPeru();
-    const phase = electoralPhase();
-    console.log(`\n🧮 Ejecutando modelo @ ${now.toFormat('dd/MM HH:mm')} Lima (fase: ${phase})...`);
-
-    // 1. Cargar datos de DB
-    const { rows: pollsters } = await db.query('SELECT * FROM pollsters');
-    const pollsterWeights = {};
-    const pollsterNames = {};
-    for (const p of pollsters) {
-      pollsterWeights[p.name] = parseFloat(p.weight_multiplier);
-      pollsterNames[p.id] = p.name;
-    }
-
-    const { rows: dbPolls } = await db.query(`
-      SELECT p.*, ps.name as pollster_name
-      FROM polls p JOIN pollsters ps ON p.pollster_id = ps.id
-    `);
-
-    const { rows: dbResults } = await db.query('SELECT * FROM poll_results');
-    const resultsByPoll = {};
-    for (const r of dbResults) {
-      if (!resultsByPoll[r.poll_id]) resultsByPoll[r.poll_id] = [];
-      resultsByPoll[r.poll_id].push({ candidate: r.candidate, pct_raw: parseFloat(r.pct_raw) });
-    }
-
-    const polls = dbPolls.map(p => ({
-      pollster_name: p.pollster_name,
-      field_end: p.field_end,
-      sample_n: p.sample_n,
-      poll_type: p.poll_type,
-      margin_error: parseFloat(p.margin_error),
-      pct_undecided: p.pct_undecided ? parseFloat(p.pct_undecided) : null,
-      results: resultsByPoll[p.id] || []
-    }));
-
-    // 2. Agregar encuestas
-    const aggregated = aggregatePolls(polls, pollsterWeights);
-    console.log('   ✅ Agregación:', Object.keys(aggregated).length, 'candidatos');
-
-    // 3. Redistribuir indecisos
-    // Promedio ponderado de indecisos de las encuestas recientes
-    const recentPolls = polls
-      .filter(p => p.pct_undecided !== null)
-      .sort((a, b) => new Date(b.field_end) - new Date(a.field_end))
-      .slice(0, 5);
-    const avgUndecided = recentPolls.length > 0
-      ? recentPolls.reduce((s, p) => s + p.pct_undecided, 0) / recentPolls.length
-      : 25;
-
-    const withUndecided = redistributeUndecided(aggregated, avgUndecided);
-    console.log('   ✅ Indecisos redistribuidos:', avgUndecided.toFixed(1) + '%');
-
-    // 4. Integración Bayesiana con Polymarket
-    const { rows: pmSnapshots } = await db.query(`
-      SELECT candidate, probability, volume_usd
-      FROM polymarket_snapshots
-      WHERE captured_at = (SELECT MAX(captured_at) FROM polymarket_snapshots)
-    `);
-
-    const polymarketData = {};
-    let pmVolume = 0;
-    for (const s of pmSnapshots) {
-      polymarketData[s.candidate] = parseFloat(s.probability);
-      pmVolume = parseFloat(s.volume_usd);
-    }
-
-    const bayesian = bayesianIntegration(withUndecided, polymarketData, pmVolume);
-    console.log('   ✅ Bayesian: α=' + bayesian.polymarket_weight.toFixed(3));
-
-    // 5. Monte Carlo
-    const { results: mcResults, runoffSummary } = runMonteCarlo(bayesian.candidates, 10_000);
-    console.log('   ✅ Monte Carlo: 10,000 simulaciones');
-
-    // 6. Guardar en DB
-    const α = bayesian.polymarket_weight;
-    for (const [candidate, data] of Object.entries(mcResults)) {
-      await db.query(`
-        INSERT INTO model_predictions
-          (generated_at_lima, electoral_phase, polymarket_weight, polls_weight,
-           candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
-           prob_first_round, prob_win_overall, model_version)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      `, [now.toISO(), phase, α, 1 - α,
-          candidate, data.mean, data.p10, data.p90,
-          data.prob_runoff, data.prob_win, '2.0']);
-    }
-    console.log('   ✅ Predicción guardada en DB');
-
-    // 7. Responder
-    const sorted = Object.entries(mcResults)
-      .sort((a, b) => b[1].mean - a[1].mean);
-
+    const result = await runFullPipeline({ saveToDB: false, trigger: 'user_simulation' });
     res.json({
-      generated_at_lima: now.toISO(),
-      electoral_phase: phase,
-      polymarket_weight: α,
-      polls_weight: 1 - α,
-      avg_undecided: avgUndecided,
-      polymarket_candidates: Object.keys(polymarketData).length,
-      candidates: sorted.map(([candidate, data]) => ({
-        candidate,
-        ...data,
-        polls_pct: bayesian.candidates[candidate]?.polls_pct ?? null,
-        polymarket_pct: bayesian.candidates[candidate]?.polymarket_pct ?? null,
-        posterior_pct: bayesian.candidates[candidate]?.posterior_pct ?? null
-      })),
-      runoff_scenarios: runoffSummary
+      source: 'user_simulation',
+      note: 'Simulación personal. El dashboard oficial se actualiza automáticamente cada 30 minutos.',
+      ...result
     });
-
   } catch (err) {
-    console.error('Error ejecutando modelo:', err);
+    console.error('Error en simulación:', err);
     await handleError('MONTE_CARLO_NO_CONVERGENCE', { module: 'api/run-model' }, err);
-    res.status(500).json({ error: 'Model execution failed', message: err.message });
+    res.status(500).json({ error: 'Simulation failed', message: err.message });
+  }
+});
+
+// ─── GET /api/model-history ─────────────────────────────────
+// Últimas 20 corridas automáticas
+router.get('/model-history', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT DISTINCT generated_at_lima
+      FROM model_predictions
+      WHERE trigger = 'auto_polymarket_update'
+      ORDER BY generated_at_lima DESC
+      LIMIT 20
+    `);
+
+    const history = [];
+    for (const row of rows) {
+      const { rows: candidates } = await db.query(`
+        SELECT candidate, predicted_pct_mean, prob_first_round, prob_win_overall
+        FROM model_predictions
+        WHERE generated_at_lima = $1 AND trigger = 'auto_polymarket_update'
+        ORDER BY predicted_pct_mean DESC
+        LIMIT 3
+      `, [row.generated_at_lima]);
+
+      history.push({
+        generated_at_lima: row.generated_at_lima,
+        top3: candidates.map(c => ({
+          candidate: c.candidate,
+          pct_mean: parseFloat(c.predicted_pct_mean),
+          prob_first_round: parseFloat(c.prob_first_round),
+          prob_win: parseFloat(c.prob_win_overall)
+        }))
+      });
+    }
+
+    res.json({ count: history.length, history });
+  } catch (err) {
+    await handleError('DB_CONNECTION_FAILED', { module: 'api/model-history' }, err);
+    res.status(500).json({ error: 'Database error' });
   }
 });
 

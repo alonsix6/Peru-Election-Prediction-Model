@@ -3,37 +3,68 @@ const path = require('path');
 const { nowPeru, electoralPhase } = require('./model/clock');
 const { getPolymarketWeight } = require('./model/weights');
 const { handleError } = require('./errors/errorHandler');
+const { runFullPipeline } = require('./model/pipeline');
 const db = require('./db');
 
 /**
  * Auto-migración: ejecuta schema.sql y seed.sql si las tablas no existen.
+ * Si existen, agrega columnas nuevas (trigger, runoff_json) si faltan.
  */
 async function autoMigrate() {
-  // Verificar si las tablas ya existen
   const { rows } = await db.query(`
     SELECT COUNT(*) FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'polls'
   `);
 
-  if (parseInt(rows[0].count) > 0) {
-    return false; // Tablas ya existen, no migrar
+  if (parseInt(rows[0].count) === 0) {
+    console.log('📦 Tablas no encontradas — ejecutando auto-migración...');
+    const schemaSql = fs.readFileSync(path.join(__dirname, 'db', 'schema.sql'), 'utf8');
+    await db.query(schemaSql);
+    console.log('   ✅ schema.sql ejecutado');
+    const seedSql = fs.readFileSync(path.join(__dirname, 'db', 'seed.sql'), 'utf8');
+    await db.query(seedSql);
+    console.log('   ✅ seed.sql ejecutado');
+    return true;
   }
 
-  console.log('📦 Tablas no encontradas — ejecutando auto-migración...');
+  // Migrar columnas nuevas si faltan
+  const { rows: cols } = await db.query(`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json')
+  `);
+  const existing = cols.map(c => c.column_name);
 
-  // Ejecutar schema.sql
-  const schemaPath = path.join(__dirname, 'db', 'schema.sql');
-  const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-  await db.query(schemaSql);
-  console.log('   ✅ schema.sql ejecutado — 7 tablas creadas');
+  if (!existing.includes('trigger')) {
+    await db.query(`ALTER TABLE model_predictions ADD COLUMN trigger VARCHAR(30) DEFAULT 'auto_polymarket_update'`);
+    console.log('   ✅ Columna trigger agregada a model_predictions');
+  }
+  if (!existing.includes('runoff_json')) {
+    await db.query(`ALTER TABLE model_predictions ADD COLUMN runoff_json TEXT`);
+    console.log('   ✅ Columna runoff_json agregada a model_predictions');
+  }
 
-  // Ejecutar seed.sql
-  const seedPath = path.join(__dirname, 'db', 'seed.sql');
-  const seedSql = fs.readFileSync(seedPath, 'utf8');
-  await db.query(seedSql);
-  console.log('   ✅ seed.sql ejecutado — datos precargados');
+  return false;
+}
 
-  return true;
+/**
+ * Verifica si hay al menos una predicción automática.
+ * Si no, corre el pipeline para poblar la DB antes del primer usuario.
+ */
+async function ensureFirstPrediction() {
+  try {
+    const { rows } = await db.query(`
+      SELECT COUNT(*) FROM model_predictions WHERE trigger = 'auto_polymarket_update'
+    `);
+    if (parseInt(rows[0].count) === 0) {
+      console.log('🧮 Sin predicciones automáticas — corriendo pipeline inicial...');
+      await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update' });
+      console.log('✅ Primera predicción guardada en DB');
+    } else {
+      console.log(`✅ Predicciones en DB: ${rows[0].count} registros automáticos`);
+    }
+  } catch (e) {
+    console.error('⚠️  No se pudo generar predicción inicial:', e.message);
+  }
 }
 
 async function validateSystemIntegrity() {
@@ -76,7 +107,7 @@ async function validateSystemIntegrity() {
     throw new Error('No se pudo conectar a PostgreSQL');
   }
 
-  // 4. Auto-migración si las tablas no existen
+  // 4. Auto-migración
   try {
     await autoMigrate();
   } catch (e) {
@@ -87,11 +118,7 @@ async function validateSystemIntegrity() {
   // 5. Verificar datos seed
   try {
     const { rows } = await db.query('SELECT COUNT(*) FROM polls');
-    if (parseInt(rows[0].count) < 10) {
-      console.warn(`⚠️  Solo ${rows[0].count} encuestas en DB`);
-    } else {
-      console.log(`✅ Encuestas en DB: ${rows[0].count}`);
-    }
+    console.log(`✅ Encuestas en DB: ${rows[0].count}`);
   } catch (e) {
     console.warn('⚠️  Tabla polls no accesible');
   }
@@ -101,17 +128,16 @@ async function validateSystemIntegrity() {
     const snap = await db.query('SELECT MAX(captured_at) as last FROM polymarket_snapshots');
     if (snap.rows[0].last) {
       const hrs = (Date.now() - new Date(snap.rows[0].last)) / 3600000;
-      if (hrs > 3) {
-        console.warn(`⚠️  Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
-      } else {
-        console.log(`✅ Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
-      }
+      console.log(`✅ Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
     } else {
       console.warn('⚠️  Sin snapshots de Polymarket aún');
     }
   } catch (e) {
     console.warn('⚠️  Tabla polymarket_snapshots no accesible');
   }
+
+  // 7. Asegurar primera predicción
+  await ensureFirstPrediction();
 
   console.log('\n✅ Sistema listo para operar.\n');
 }

@@ -14,9 +14,7 @@ async function safeFetch(url) {
 
 /**
  * Normaliza candidatos de /api/predictions (DB format) al formato
- * que usan los componentes (run-model format).
- * /api/predictions: predicted_pct_mean, prob_win_overall, prob_first_round
- * /api/run-model:   mean, prob_win, prob_runoff, p10, p90
+ * que usan los componentes.
  */
 function normalizePredictions(data) {
   if (!data?.candidates) return data;
@@ -33,7 +31,7 @@ function normalizePredictions(data) {
       polymarket_pct: c.polymarket_pct ?? null,
       posterior_pct: c.posterior_pct ?? null,
     })),
-    runoff_scenarios: data.runoff_scenarios || data.runoff_summary || [],
+    runoff_scenarios: data.runoff_scenarios || [],
   };
 }
 
@@ -47,6 +45,8 @@ export function useElectionData() {
     setData(prev => ({ ...prev, loading: true, error: null }));
 
     try {
+      // /api/predictions ahora sirve todo desde DB (incluyendo runoff_scenarios)
+      // No necesita llamar /api/run-model — el servidor se actualiza solo cada 30 min
       const [status, predictions, polymarket, polls] = await Promise.all([
         safeFetch(`${API}/api/status`),
         safeFetch(`${API}/api/predictions`),
@@ -54,18 +54,7 @@ export function useElectionData() {
         safeFetch(`${API}/api/polls`),
       ]);
 
-      // If no predictions or no runoff scenarios, run the model fresh
-      // /api/predictions loads from DB (no runoff_scenarios)
-      // /api/run-model generates everything live (with runoff_scenarios)
-      let finalPredictions = predictions;
-      if (!predictions?.candidates?.length || !predictions?.runoff_scenarios?.length) {
-        console.log('Running model for complete data (candidates + runoff scenarios)...');
-        finalPredictions = await safeFetch(`${API}/api/run-model`);
-      }
-
-      // Normalize field names so components always get the same shape
-      const normalized = normalizePredictions(finalPredictions);
-
+      const normalized = normalizePredictions(predictions);
       const anyFailed = [status, normalized, polymarket, polls].some(d => d === null);
 
       setData({

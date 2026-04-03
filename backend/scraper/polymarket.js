@@ -238,6 +238,16 @@ async function scrapePolymarket() {
       console.log(`   ${c.candidate}: ${c.probability.toFixed(1)}%`);
     }
 
+    // Auto-run pipeline después de scrape exitoso
+    try {
+      const { runFullPipeline } = require('../model/pipeline');
+      console.log('\n🧮 Auto-run modelo post-scrape...');
+      await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update' });
+      console.log('✅ Modelo actualizado automáticamente');
+    } catch (pipelineErr) {
+      console.error('⚠️  Auto-run pipeline falló:', pipelineErr.message);
+    }
+
   } catch (err) {
     await handleError('POLYMARKET_API_TIMEOUT', {
       module: 'scraper/polymarket',
@@ -247,17 +257,17 @@ async function scrapePolymarket() {
 }
 
 /**
- * Inicia el cron job — cada hora en punto.
+ * Inicia el cron job — cada 30 minutos.
  * También ejecuta inmediatamente al arrancar.
  */
 function startPolymarketCron() {
-  console.log('⏰ Polymarket cron job programado: cada hora en punto');
+  console.log('⏰ Polymarket cron job programado: cada 30 minutos');
 
   // Ejecutar inmediatamente al arrancar
   scrapePolymarket();
 
   // Programar cada hora
-  cron.schedule('0 * * * *', () => {
+  cron.schedule('*/30 * * * *', () => {
     scrapePolymarket();
   });
 }

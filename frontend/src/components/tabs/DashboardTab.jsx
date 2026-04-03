@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPartyColor } from '../../config/partyColors';
-import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2, Play, RefreshCcw, Info } from 'lucide-react';
+import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2, Play, RefreshCcw, Info, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js';
 
@@ -441,6 +441,108 @@ function SimulationCard() {
   );
 }
 
+// ─── Risk Scenarios ─────────────────────────────────────────
+function RiskScenarios({ risk, candidates }) {
+  if (!risk) return null;
+
+  // Candidatos con datos de riesgo interesantes
+  const topCands = risk.candidates || [];
+
+  // Cards de riesgo principales
+  const riskCards = [
+    {
+      label: '¿Y si el top-2 no es el esperado?',
+      value: risk.top2_not_expected,
+      desc: 'Probabilidad de que los dos candidatos que pasen a segunda vuelta no sean los dos favoritos actuales.',
+      color: risk.top2_not_expected > 30 ? '#D97706' : '#1D4ED8',
+      bg: risk.top2_not_expected > 30 ? '#FFFBEB' : '#EFF6FF',
+    },
+    {
+      label: '¿Puede haber un ganador sorpresa?',
+      value: risk.surprise_winner,
+      desc: 'Probabilidad de que el ganador de la primera vuelta no sea ninguno de los tres favoritos.',
+      color: risk.surprise_winner > 10 ? '#DC2626' : '#78716C',
+      bg: risk.surprise_winner > 10 ? '#FEF2F2' : '#FFFFFF',
+    },
+  ];
+
+  return (
+    <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <ShieldAlert size={16} style={{ color: '#D97706' }} />
+        <h3 style={{ color: '#1C1917', fontSize: 16, fontWeight: 600, margin: 0 }}>Escenarios de riesgo</h3>
+      </div>
+      <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
+        ¿Qué tan probable es que el modelo se equivoque? Calculado en cada corrida de 10,000 simulaciones.
+      </p>
+
+      {/* Hero risk cards */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {riskCards.map((r, i) => (
+          <div key={i} style={{
+            flex: 1, minWidth: 220, background: r.bg, border: `1px solid ${r.color}22`,
+            borderRadius: 10, padding: 14
+          }}>
+            <div style={{ color: '#78716C', fontSize: 12, marginBottom: 6 }}>{r.label}</div>
+            <div style={{ color: r.color, fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+              {r.value}%
+            </div>
+            <div style={{ color: '#8C877F', fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>{r.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-candidate risk table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid #E5E0D8' }}>
+              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'left' }}>Candidato</th>
+              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Pasa a 2da vuelta</th>
+              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>No pasa</th>
+              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Gana 1ra vuelta</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topCands.map((c, i) => {
+              const party = getPartyColor(c.candidate);
+              const missColor = c.misses_runoff > 50 ? '#DC2626' : c.misses_runoff > 20 ? '#D97706' : '#78716C';
+              return (
+                <tr key={c.candidate} style={{ borderBottom: '1px solid #F0EDE8' }}>
+                  <td style={{ padding: '8px 10px' }}>
+                    <span style={{ color: party.primary, fontWeight: 500 }}>{c.candidate}</span>
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ color: c.in_top2 > 50 ? '#059669' : '#78716C', fontWeight: 600 }}>{c.in_top2}%</span>
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ color: missColor, fontWeight: 500 }}>{c.misses_runoff}%</span>
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ color: c.wins_first_round > 10 ? '#1C1917' : '#8C877F', fontWeight: c.wins_first_round > 10 ? 600 : 400 }}>
+                      {c.wins_first_round}%
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{
+        marginTop: 14, padding: '10px 12px', background: '#FFFBEB', borderRadius: 8,
+        border: '1px solid #FDE68A', display: 'flex', gap: 8, alignItems: 'flex-start'
+      }}>
+        <AlertTriangle size={14} style={{ color: '#D97706', flexShrink: 0, marginTop: 2 }} />
+        <span style={{ color: '#78716C', fontSize: 12, lineHeight: 1.5 }}>
+          Estos porcentajes se actualizan cada 30 minutos. En Perú, 3 de las últimas 4 elecciones tuvieron sorpresas significativas en las últimas semanas. La incertidumbre es parte del proceso.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ─────────────────────────────────────────
 export default function DashboardTab({ predictions, polymarket, polls, status }) {
   const [pmModalOpen, setPmModalOpen] = useState(false);
@@ -586,6 +688,9 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
               <SourcesCard polls={polls} polymarket={polymarket} onOpenPolymarket={() => setPmModalOpen(true)} />
             </div>
           </div>
+
+          {/* Risk scenarios — debajo de col 1 + col 2, mismo ancho */}
+          <RiskScenarios risk={predictions.risk_scenarios} candidates={predictions.candidates} />
       </div>
 
       {/* Responsive */}

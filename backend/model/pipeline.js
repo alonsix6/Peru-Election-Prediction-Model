@@ -90,7 +90,7 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   console.log('   ✅ Bayesian: α=' + bayesian.polymarket_weight.toFixed(3));
 
   // 5. Monte Carlo
-  const { results: mcResults, runoffSummary } = runMonteCarlo(bayesian.candidates, 10_000);
+  const { results: mcResults, runoffSummary, riskScenarios } = runMonteCarlo(bayesian.candidates, 10_000);
   console.log('   ✅ Monte Carlo: 10,000 simulaciones');
 
   const α = bayesian.polymarket_weight;
@@ -98,6 +98,7 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   // 6. Guardar en DB si se solicita
   if (saveToDB) {
     const runoffJson = JSON.stringify(runoffSummary);
+    const riskJson = JSON.stringify(riskScenarios);
     for (const [candidate, data] of Object.entries(mcResults)) {
       const bc = bayesian.candidates[candidate];
       await db.query(`
@@ -105,12 +106,12 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
           (generated_at_lima, electoral_phase, polymarket_weight, polls_weight,
            candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
            prob_first_round, prob_win_overall, model_version, trigger, runoff_json,
-           polls_pct, polymarket_pct, posterior_pct)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+           polls_pct, polymarket_pct, posterior_pct, risk_json)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       `, [now.toISO(), phase, α, 1 - α,
           candidate, data.mean, data.p10, data.p90,
           data.prob_runoff, data.prob_win, '2.0', trigger, runoffJson,
-          bc?.polls_pct ?? null, bc?.polymarket_pct ?? null, bc?.posterior_pct ?? null]);
+          bc?.polls_pct ?? null, bc?.polymarket_pct ?? null, bc?.posterior_pct ?? null, riskJson]);
     }
     console.log('   ✅ Guardado en DB (trigger: ' + trigger + ')');
   }
@@ -139,7 +140,8 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
       polymarket_pct: bayesian.candidates[candidate]?.polymarket_pct ?? null,
       posterior_pct: bayesian.candidates[candidate]?.posterior_pct ?? null
     })),
-    runoff_scenarios: runoffSummary
+    runoff_scenarios: runoffSummary,
+    risk_scenarios: riskScenarios
   };
 }
 

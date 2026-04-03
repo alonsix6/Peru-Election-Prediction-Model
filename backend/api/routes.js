@@ -38,7 +38,7 @@ router.get('/predictions', async (req, res) => {
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, electoral_phase,
              polymarket_weight, polls_weight, generated_at_lima, model_version,
-             runoff_json, polls_pct, polymarket_pct, posterior_pct
+             runoff_json, polls_pct, polymarket_pct, posterior_pct, risk_json
       FROM model_predictions
       WHERE trigger = 'auto_polymarket_update'
         AND generated_at_lima = (
@@ -54,10 +54,10 @@ router.get('/predictions', async (req, res) => {
 
     // runoff_json es el mismo para todos los rows de la misma corrida
     let runoff_scenarios = [];
+    let risk_scenarios = null;
     try {
-      if (rows[0].runoff_json) {
-        runoff_scenarios = JSON.parse(rows[0].runoff_json);
-      }
+      if (rows[0].runoff_json) runoff_scenarios = JSON.parse(rows[0].runoff_json);
+      if (rows[0].risk_json) risk_scenarios = JSON.parse(rows[0].risk_json);
     } catch { /* ignore parse error */ }
 
     res.json({
@@ -77,7 +77,8 @@ router.get('/predictions', async (req, res) => {
         polymarket_pct: r.polymarket_pct ? parseFloat(r.polymarket_pct) : null,
         posterior_pct: r.posterior_pct ? parseFloat(r.posterior_pct) : null,
       })),
-      runoff_scenarios
+      runoff_scenarios,
+      risk_scenarios
     });
   } catch (err) {
     await handleError('DB_CONNECTION_FAILED', { module: 'api/predictions' }, err);

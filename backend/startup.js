@@ -30,7 +30,7 @@ async function autoMigrate() {
   // Migrar columnas nuevas si faltan
   const { rows: cols } = await db.query(`
     SELECT column_name FROM information_schema.columns
-    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct')
+    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct', 'risk_json')
   `);
   const existing = cols.map(c => c.column_name);
 
@@ -40,6 +40,7 @@ async function autoMigrate() {
     ['polls_pct', `ALTER TABLE model_predictions ADD COLUMN polls_pct DECIMAL(5,2)`],
     ['polymarket_pct', `ALTER TABLE model_predictions ADD COLUMN polymarket_pct DECIMAL(5,2)`],
     ['posterior_pct', `ALTER TABLE model_predictions ADD COLUMN posterior_pct DECIMAL(5,2)`],
+    ['risk_json', `ALTER TABLE model_predictions ADD COLUMN risk_json TEXT`],
   ];
   for (const [col, sql] of migrations) {
     if (!existing.includes(col)) {

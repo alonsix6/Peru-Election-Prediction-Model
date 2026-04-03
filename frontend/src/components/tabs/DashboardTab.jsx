@@ -444,9 +444,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
 
   return (
     <>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        {/* Left column — main dashboard */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Hero Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             {/* Card 1: Favorito */}
@@ -493,63 +491,70 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
             </div>
           </div>
 
-          {/* Candidate list + Polymarket side by side */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
-              {sorted.map(c => <CompactRow key={c.candidate} c={c} />)}
+          {/* 3-column layout: Candidatos | Polymarket+Simulación | Historial+Fuentes */}
+          <div className="dashboard-3col" style={{
+            display: 'flex', gap: 16, alignItems: 'flex-start'
+          }}>
+            {/* Col 1: Candidatos */}
+            <div style={{ flex: 1.2, minWidth: 0 }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
+                {sorted.map(c => <CompactRow key={c.candidate} c={c} />)}
+              </div>
             </div>
 
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Monitor Polymarket</h3>
-              <div style={{ color: '#78716C', fontSize: 12, marginBottom: 12 }}>
-                Volumen: ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M' : '--'}
-              </div>
-              {pmTop.map(c => {
-                const party = getPartyColor(c.candidate);
-                const modelMean = modelMap[c.candidate];
-                const delta = modelMean != null ? c.probability - modelMean : null;
-                return (
-                  <div key={c.candidate} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '8px 0', borderBottom: '1px solid #E5E0D8'
-                  }}>
-                    <span style={{ color: party.primary, fontWeight: 500, fontSize: 13 }}>{c.candidate}</span>
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                      <span style={{ color: '#1C1917', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
-                      {delta !== null && (
-                        <span style={{
-                          color: delta > 0 ? '#059669' : delta < 0 ? '#DC2626' : '#A8A29E',
-                          fontSize: 12, fontVariantNumeric: 'tabular-nums', fontWeight: 500, minWidth: 50, textAlign: 'right'
-                        }}>{delta > 0 ? '+' : ''}{delta.toFixed(1)}</span>
-                      )}
+            {/* Col 2: Polymarket + Simulación */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'flex-start' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Monitor Polymarket</h3>
+                <div style={{ color: '#78716C', fontSize: 12, marginBottom: 12 }}>
+                  Volumen: ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M' : '--'}
+                </div>
+                {pmTop.map(c => {
+                  const party = getPartyColor(c.candidate);
+                  const modelMean = modelMap[c.candidate];
+                  const delta = modelMean != null ? c.probability - modelMean : null;
+                  return (
+                    <div key={c.candidate} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '8px 0', borderBottom: '1px solid #E5E0D8'
+                    }}>
+                      <span style={{ color: party.primary, fontWeight: 500, fontSize: 13 }}>{c.candidate}</span>
+                      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                        <span style={{ color: '#1C1917', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
+                        {delta !== null && (
+                          <span style={{
+                            color: delta > 0 ? '#059669' : delta < 0 ? '#DC2626' : '#A8A29E',
+                            fontSize: 12, fontVariantNumeric: 'tabular-nums', fontWeight: 500, minWidth: 50, textAlign: 'right'
+                          }}>{delta > 0 ? '+' : ''}{delta.toFixed(1)}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 8 }}>
-                Δ = diferencia entre probabilidad de mercado y estimación del modelo
+                  );
+                })}
+                <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 8 }}>
+                  Δ = diferencia entre probabilidad de mercado y estimación del modelo
+                </div>
               </div>
+              <SimulationCard />
+            </div>
+
+            {/* Col 3: Historial + Fuentes */}
+            <div className="dashboard-sidebar" style={{
+              width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'flex-start'
+            }}>
+              <HistoryCard />
+              <SourcesCard polls={polls} polymarket={polymarket} onOpenPolymarket={() => setPmModalOpen(true)} />
             </div>
           </div>
-
-          {/* Simulation card */}
-          <SimulationCard />
-        </div>
-
-        {/* Right column — sidebar (desktop only, hidden on mobile via CSS) */}
-        <div className="dashboard-sidebar" style={{
-          width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16
-        }}>
-          <HistoryCard />
-          <SourcesCard polls={polls} polymarket={polymarket} onOpenPolymarket={() => setPmModalOpen(true)} />
-        </div>
       </div>
 
-      {/* Responsive: hide sidebar on mobile */}
+      {/* Responsive */}
       <style>{`
         @media (max-width: 1023px) {
-          .dashboard-sidebar { display: none !important; }
+          .dashboard-3col { flex-direction: column !important; }
+          .dashboard-3col > div { width: 100% !important; flex: unset !important; }
+          .dashboard-sidebar { width: 100% !important; }
         }
       `}</style>
 

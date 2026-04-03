@@ -114,6 +114,31 @@ router.get('/polymarket', async (req, res) => {
   }
 });
 
+// ─── GET /api/polymarket/history ─────────────────────────────
+// Todos los snapshots agrupados por timestamp para gráfico de tendencia
+router.get('/polymarket/history', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT captured_at_lima, candidate, probability
+      FROM polymarket_snapshots
+      ORDER BY captured_at_lima ASC
+    `);
+
+    // Agrupar por timestamp
+    const byTime = {};
+    for (const r of rows) {
+      const key = r.captured_at_lima;
+      if (!byTime[key]) byTime[key] = { time: key, candidates: {} };
+      byTime[key].candidates[r.candidate] = parseFloat(r.probability);
+    }
+
+    res.json({ snapshots: Object.values(byTime) });
+  } catch (err) {
+    await handleError('DB_CONNECTION_FAILED', { module: 'api/polymarket/history' }, err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // ─── GET /api/polls ─────────────────────────────────────────
 router.get('/polls', async (req, res) => {
   try {

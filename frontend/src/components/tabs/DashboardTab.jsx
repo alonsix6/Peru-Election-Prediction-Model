@@ -199,33 +199,52 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
 
 // ─── Polymarket Modal ───────────────────────────────────────
 function PolymarketModal({ polymarket, onClose }) {
+  const [history, setHistory] = useState(null);
   const candidates = polymarket?.candidates || [];
-  const top5 = candidates.slice(0, 5);
 
-  // Build simple chart data from available snapshots
-  const chartData = {
-    labels: ['Actual'],
-    datasets: top5.map(c => {
-      const color = getPartyColor(c.candidate);
-      return {
-        label: abbrev(c.candidate),
-        data: [c.probability],
-        borderColor: color.primary,
-        backgroundColor: 'transparent',
-        borderWidth: 2, pointRadius: 4, tension: 0.4
-      };
-    })
-  };
+  useEffect(() => {
+    fetch(`${API}/api/polymarket/history`).then(r => r.json()).then(setHistory).catch(() => {});
+  }, []);
+
+  // Build chart from history snapshots
+  const TOP_CANDIDATES = ['Rafael López Aliaga', 'Keiko Fujimori', 'Carlos Álvarez', 'Roberto Sánchez Palomino', 'López Chau'];
+
+  let chartData = { labels: [], datasets: [] };
+  if (history?.snapshots?.length > 1) {
+    const snapshots = history.snapshots;
+    const labels = snapshots.map(s => {
+      const d = new Date(s.time);
+      return d.toLocaleString('es-PE', { timeZone: 'America/Lima', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+    });
+
+    chartData = {
+      labels,
+      datasets: TOP_CANDIDATES.map(name => {
+        const color = getPartyColor(name);
+        return {
+          label: abbrev(name),
+          data: snapshots.map(s => s.candidates[name] ?? null),
+          borderColor: color.primary,
+          backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 2, tension: 0.4, spanGaps: true
+        };
+      })
+    };
+  }
 
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#1C1917', usePointStyle: true, font: { size: 11 } } },
-      tooltip: { backgroundColor: '#FFFFFF', titleColor: '#1C1917', bodyColor: '#78716C', borderColor: '#E5E0D8', borderWidth: 1 }
+      legend: { position: 'bottom', labels: { color: '#78716C', usePointStyle: true, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#FFFFFF', titleColor: '#1C1917', bodyColor: '#78716C',
+        borderColor: '#E5E0D8', borderWidth: 1,
+        callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)}%` }
+      }
     },
     scales: {
-      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', font: { size: 10 } } },
-      y: { min: 0, max: 40, grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 10 } } }
+      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', font: { size: 9 }, maxRotation: 45, maxTicksLimit: 10 } },
+      y: { min: 0, max: 50, grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 10 } } }
     }
   };
 
@@ -235,28 +254,32 @@ function PolymarketModal({ polymarket, onClose }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: 'min(600px, 90vw)', maxHeight: '80vh', overflowY: 'auto',
+        width: 'min(640px, 92vw)', maxHeight: '85vh', overflowY: 'auto',
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 16, padding: 24,
         position: 'relative'
       }}>
-        {/* Close button */}
         <button onClick={onClose} style={{
           position: 'absolute', top: 12, right: 12, background: 'transparent',
           border: 'none', color: '#A8A29E', cursor: 'pointer'
         }}><X size={20} /></button>
 
-        {/* Header */}
         <h3 style={{ color: '#1C1917', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Señales de Polymarket</h3>
         <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 16px' }}>
-          Mercado de predicciones {'\u00B7'} ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
+          Mercado de predicciones · ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
+          {history?.snapshots && <span> · {history.snapshots.length} snapshots</span>}
         </p>
 
-        {/* Chart */}
-        <div style={{ height: 180, marginBottom: 16 }}>
-          <Line data={chartData} options={chartOpts} />
+        {/* Trend chart */}
+        <div style={{ height: 200, marginBottom: 20 }}>
+          {history?.snapshots?.length > 1
+            ? <Line data={chartData} options={chartOpts} />
+            : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#A8A29E', fontSize: 13 }}>
+                {history === null ? 'Cargando historial...' : 'Se necesitan más snapshots para el gráfico (próximas horas)'}
+              </div>
+          }
         </div>
 
-        {/* Table */}
+        {/* Current prices table */}
         <div style={{ fontSize: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 4, padding: '6px 0', borderBottom: '1px solid #E5E0D8' }}>
             <span style={{ color: '#78716C', fontWeight: 500 }}>Candidato</span>
@@ -444,9 +467,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
 
   return (
     <>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        {/* Left column — main dashboard */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Hero Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             {/* Card 1: Favorito */}
@@ -493,63 +514,70 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
             </div>
           </div>
 
-          {/* Candidate list + Polymarket side by side */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
-              {sorted.map(c => <CompactRow key={c.candidate} c={c} />)}
+          {/* 3-column layout: Candidatos | Polymarket+Simulación | Historial+Fuentes */}
+          <div className="dashboard-3col" style={{
+            display: 'flex', gap: 16, alignItems: 'flex-start'
+          }}>
+            {/* Col 1: Candidatos */}
+            <div style={{ flex: 1.2, minWidth: 0 }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
+                {sorted.map(c => <CompactRow key={c.candidate} c={c} />)}
+              </div>
             </div>
 
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Monitor Polymarket</h3>
-              <div style={{ color: '#78716C', fontSize: 12, marginBottom: 12 }}>
-                Volumen: ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M' : '--'}
-              </div>
-              {pmTop.map(c => {
-                const party = getPartyColor(c.candidate);
-                const modelMean = modelMap[c.candidate];
-                const delta = modelMean != null ? c.probability - modelMean : null;
-                return (
-                  <div key={c.candidate} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '8px 0', borderBottom: '1px solid #E5E0D8'
-                  }}>
-                    <span style={{ color: party.primary, fontWeight: 500, fontSize: 13 }}>{c.candidate}</span>
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                      <span style={{ color: '#1C1917', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
-                      {delta !== null && (
-                        <span style={{
-                          color: delta > 0 ? '#059669' : delta < 0 ? '#DC2626' : '#A8A29E',
-                          fontSize: 12, fontVariantNumeric: 'tabular-nums', fontWeight: 500, minWidth: 50, textAlign: 'right'
-                        }}>{delta > 0 ? '+' : ''}{delta.toFixed(1)}</span>
-                      )}
+            {/* Col 2: Polymarket + Simulación */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'flex-start' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Monitor Polymarket</h3>
+                <div style={{ color: '#78716C', fontSize: 12, marginBottom: 12 }}>
+                  Volumen: ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M' : '--'}
+                </div>
+                {pmTop.map(c => {
+                  const party = getPartyColor(c.candidate);
+                  const modelMean = modelMap[c.candidate];
+                  const delta = modelMean != null ? c.probability - modelMean : null;
+                  return (
+                    <div key={c.candidate} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '8px 0', borderBottom: '1px solid #E5E0D8'
+                    }}>
+                      <span style={{ color: party.primary, fontWeight: 500, fontSize: 13 }}>{c.candidate}</span>
+                      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                        <span style={{ color: '#1C1917', fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{c.probability.toFixed(1)}%</span>
+                        {delta !== null && (
+                          <span style={{
+                            color: delta > 0 ? '#059669' : delta < 0 ? '#DC2626' : '#A8A29E',
+                            fontSize: 12, fontVariantNumeric: 'tabular-nums', fontWeight: 500, minWidth: 50, textAlign: 'right'
+                          }}>{delta > 0 ? '+' : ''}{delta.toFixed(1)}</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 8 }}>
-                Δ = diferencia entre probabilidad de mercado y estimación del modelo
+                  );
+                })}
+                <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 8 }}>
+                  Δ = diferencia entre probabilidad de mercado y estimación del modelo
+                </div>
               </div>
+              <SimulationCard />
+            </div>
+
+            {/* Col 3: Historial + Fuentes */}
+            <div className="dashboard-sidebar" style={{
+              width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'flex-start'
+            }}>
+              <HistoryCard />
+              <SourcesCard polls={polls} polymarket={polymarket} onOpenPolymarket={() => setPmModalOpen(true)} />
             </div>
           </div>
-
-          {/* Simulation card */}
-          <SimulationCard />
-        </div>
-
-        {/* Right column — sidebar (desktop only, hidden on mobile via CSS) */}
-        <div className="dashboard-sidebar" style={{
-          width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16
-        }}>
-          <HistoryCard />
-          <SourcesCard polls={polls} polymarket={polymarket} onOpenPolymarket={() => setPmModalOpen(true)} />
-        </div>
       </div>
 
-      {/* Responsive: hide sidebar on mobile */}
+      {/* Responsive */}
       <style>{`
         @media (max-width: 1023px) {
-          .dashboard-sidebar { display: none !important; }
+          .dashboard-3col { flex-direction: column !important; }
+          .dashboard-3col > div { width: 100% !important; flex: unset !important; }
+          .dashboard-sidebar { width: 100% !important; }
         }
       `}</style>
 

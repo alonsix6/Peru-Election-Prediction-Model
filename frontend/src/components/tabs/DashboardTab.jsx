@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPartyColor } from '../../config/partyColors';
-import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2 } from 'lucide-react';
+import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2, Play, RefreshCcw, Info } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js';
 
@@ -142,26 +142,32 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
         <span style={{ color: '#1C1917', fontSize: 14, fontWeight: 600 }}>Fuentes de datos</span>
       </div>
 
-      {/* Encuestas */}
+      {/* Encuestas — grid alineado */}
       <div style={{ color: '#78716C', fontSize: 11, fontWeight: 500, marginBottom: 6 }}>ENCUESTAS</div>
-      {pollList.map((p, i) => {
-        const pColor = POLLSTER_COLORS[p.pollster] || '#6B7280';
-        const days = daysAgo(p.field_end);
-        const isSimulacro = p.poll_type === 'simulacro';
-        return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 12 }}>
-            <span style={{ color: pColor, fontWeight: 600, width: 38, flexShrink: 0 }}>{p.pollster}</span>
-            <span style={{
-              fontSize: 10, borderRadius: 4, padding: '1px 5px', flexShrink: 0,
-              background: isSimulacro ? '#ECFDF5' : '#EFF6FF',
-              color: isSimulacro ? '#065F46' : '#1E40AF'
-            }}>{isSimulacro ? 'Simulacro' : 'Intención'}</span>
-            <span style={{ color: '#A8A29E', width: 55, flexShrink: 0 }}>hace {days}d</span>
-            <span style={{ display: 'flex', gap: 1 }}>{weightBlocks(p.effective_weight, pColor)}</span>
-          </div>
-        );
-      })}
-      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 6, fontStyle: 'italic' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '42px 62px 56px 1fr', gap: '0', alignItems: 'center', fontSize: 12 }}>
+        {pollList.map((p, i) => {
+          const pColor = POLLSTER_COLORS[p.pollster] || '#6B7280';
+          const days = daysAgo(p.field_end);
+          const isSimulacro = p.poll_type === 'simulacro';
+          return [
+            <span key={`n${i}`} style={{ color: pColor, fontWeight: 600, padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>{p.pollster}</span>,
+            <span key={`t${i}`} style={{ padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>
+              <span style={{
+                fontSize: 10, borderRadius: 4, padding: '1px 5px',
+                background: isSimulacro ? '#ECFDF5' : '#EFF6FF',
+                color: isSimulacro ? '#065F46' : '#1E40AF'
+              }}>{isSimulacro ? 'Simulacro' : 'Intención'}</span>
+            </span>,
+            <span key={`d${i}`} style={{ color: '#A8A29E', padding: '5px 0', borderBottom: '1px solid #F0EDE8', textAlign: 'right', paddingRight: 8 }}>
+              {days}d
+            </span>,
+            <span key={`w${i}`} style={{ display: 'flex', gap: 2, padding: '5px 0', borderBottom: '1px solid #F0EDE8' }}>
+              {weightBlocks(p.effective_weight, pColor)}
+            </span>
+          ];
+        })}
+      </div>
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 8, fontStyle: 'italic' }}>
         El peso disminuye con la antigüedad
       </div>
 
@@ -269,6 +275,129 @@ function PolymarketModal({ polymarket, onClose }) {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Simulation Card ────────────────────────────────────────
+function SimulationCard() {
+  const [state, setState] = useState('idle'); // idle | loading | done | error
+  const [simData, setSimData] = useState(null);
+
+  async function runSim() {
+    setState('loading');
+    try {
+      const res = await fetch(`${API}/api/run-model`);
+      if (!res.ok) throw new Error('Server error');
+      const data = await res.json();
+      setSimData(data);
+      setState('done');
+    } catch {
+      setState('error');
+    }
+  }
+
+  function reset() {
+    setState('idle');
+    setSimData(null);
+  }
+
+  const cardStyle = { background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 };
+
+  if (state === 'error') {
+    return (
+      <div style={cardStyle}>
+        <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>Tu proyección personal</h3>
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: 12 }}>
+          <p style={{ color: '#DC2626', fontSize: 13, margin: '0 0 10px' }}>
+            No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.
+          </p>
+          <button onClick={runSim} style={{
+            background: '#DC2626', color: '#fff', border: 'none', borderRadius: 6,
+            padding: '6px 14px', cursor: 'pointer', fontSize: 12, fontWeight: 500
+          }}>Reintentar</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (state === 'done' && simData) {
+    const top5 = (simData.candidates || []).sort((a, b) => b.prob_win - a.prob_win).slice(0, 5);
+    return (
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: 0 }}>Tu proyección personal</h3>
+          <button onClick={reset} style={{
+            background: 'transparent', border: 'none', color: '#1D4ED8',
+            fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
+          }}>
+            <RefreshCcw size={12} /> Nueva
+          </button>
+        </div>
+
+        {top5.map((c, i) => {
+          const party = getPartyColor(c.candidate);
+          const barW = Math.min(100, (c.mean / 30) * 100);
+          const probWin = c.prob_win ?? c.prob_win_overall ?? 0;
+          return (
+            <div key={c.candidate} style={{ padding: '10px 0', borderBottom: i < 4 ? '1px solid #E5E0D8' : 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div>
+                  <span style={{ color: '#A8A29E', fontSize: 12, marginRight: 6 }}>{i + 1}.</span>
+                  <span style={{ color: party.primary, fontSize: 14, fontWeight: 500 }}>{c.candidate}</span>
+                </div>
+                <span style={{ color: party.primary, fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                  {c.mean.toFixed(1)}%
+                </span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: '#F0EDE8', marginBottom: 3 }}>
+                <div style={{ width: `${barW}%`, height: '100%', background: party.primary, borderRadius: 3 }} />
+              </div>
+              <div style={{ color: '#78716C', fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>
+                P(Ganar) {probWin.toFixed(1)}%
+              </div>
+            </div>
+          );
+        })}
+
+        <div style={{
+          marginTop: 12, background: '#F0EDE8', borderRadius: 6, padding: '8px 10px',
+          display: 'flex', gap: 6, alignItems: 'flex-start'
+        }}>
+          <Info size={14} style={{ color: '#1D4ED8', flexShrink: 0, marginTop: 1 }} />
+          <span style={{ color: '#78716C', fontSize: 11, lineHeight: 1.5 }}>
+            Resultado de tu sesión — puede variar levemente del modelo oficial. Esto es completamente normal: el modelo usa aleatoriedad controlada en cada corrida.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={cardStyle}>
+      <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 10px' }}>Tu proyección personal</h3>
+      <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.6, margin: '0 0 16px' }}>
+        Ejecuta el modelo de predicción con tus propios 10,000 escenarios. El resultado puede variar levemente del dashboard oficial por la naturaleza estadística del modelo — eso es completamente normal y esperado.
+      </p>
+      <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.6, margin: '0 0 16px' }}>
+        El dashboard principal se actualiza automáticamente cada 30 minutos con datos frescos de Polymarket.
+      </p>
+      <button
+        onClick={runSim}
+        disabled={state === 'loading'}
+        style={{
+          width: '100%', padding: 10, border: 'none', borderRadius: 8,
+          fontSize: 14, fontWeight: 500, cursor: state === 'loading' ? 'not-allowed' : 'pointer',
+          background: state === 'loading' ? 'rgba(29, 78, 216, 0.7)' : '#1D4ED8',
+          color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          transition: 'background 0.15s'
+        }}
+      >
+        {state === 'loading'
+          ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Calculando 10,000 escenarios...</>
+          : <><Play size={16} /> Ejecutar mi simulación</>
+        }
+      </button>
     </div>
   );
 }
@@ -402,6 +531,9 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
               </div>
             </div>
           </div>
+
+          {/* Simulation card */}
+          <SimulationCard />
         </div>
 
         {/* Right column — sidebar (desktop only, hidden on mobile via CSS) */}

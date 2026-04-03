@@ -14,7 +14,7 @@ export default function PrimeraVueltaTab({ predictions, polls }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
 
   if (!predictions?.candidates?.length) {
-    return <div style={{ color: '#94A3B8', textAlign: 'center', padding: 40 }}>Sin datos de predicción.</div>;
+    return <div style={{ color: '#78716C', textAlign: 'center', padding: 40 }}>Sin datos de predicción.</div>;
   }
 
   const sorted = [...predictions.candidates].sort((a, b) => b.prob_win - a.prob_win);
@@ -23,10 +23,10 @@ export default function PrimeraVueltaTab({ predictions, polls }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Title */}
       <div>
-        <h2 style={{ color: '#F1F5F9', fontSize: 20, fontWeight: 700, margin: '0 0 6px' }}>
+        <h2 style={{ color: '#1C1917', fontSize: 20, fontWeight: 700, margin: '0 0 6px' }}>
           Primera Vuelta
         </h2>
-        <p style={{ color: '#94A3B8', fontSize: 14, margin: 0, lineHeight: 1.5 }}>
+        <p style={{ color: '#78716C', fontSize: 14, margin: 0, lineHeight: 1.5 }}>
           ¿Qué porcentaje obtendrá cada candidato el 12 de abril?
           Los dos primeros pasan a segunda vuelta el 7 de junio.
         </p>
@@ -49,35 +49,35 @@ export default function PrimeraVueltaTab({ predictions, polls }) {
       <TrendChart />
 
       {/* Pollster weight table */}
-      <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: 12, padding: 16 }}>
-        <h3 style={{ color: '#F1F5F9', fontSize: 16, fontWeight: 600, margin: '0 0 12px' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+        <h3 style={{ color: '#1C1917', fontSize: 16, fontWeight: 600, margin: '0 0 12px' }}>
           Peso de encuestadoras
         </h3>
-        <p style={{ color: '#94A3B8', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>
+        <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>
           El peso de cada encuestadora se basa en su precisión real en las elecciones de 2021 (MAE — Error Absoluto Medio).
           IEP fue la única que captó el crecimiento de Castillo antes de la elección.
         </p>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #334155' }}>
-                <th style={{ color: '#94A3B8', fontWeight: 500, padding: '8px 12px', textAlign: 'left' }}>Encuestadora</th>
-                <th style={{ color: '#94A3B8', fontWeight: 500, padding: '8px 12px', textAlign: 'center' }}>Peso</th>
-                <th style={{ color: '#94A3B8', fontWeight: 500, padding: '8px 12px', textAlign: 'left' }}>Nota</th>
+              <tr style={{ borderBottom: '1px solid #E5E0D8' }}>
+                <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 12px', textAlign: 'left' }}>Encuestadora</th>
+                <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 12px', textAlign: 'center' }}>Peso</th>
+                <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 12px', textAlign: 'left' }}>Nota</th>
               </tr>
             </thead>
             <tbody>
               {POLLSTER_INFO.map(p => (
-                <tr key={p.name} style={{ borderBottom: '1px solid #1E293B' }}>
-                  <td style={{ color: '#F1F5F9', fontWeight: 600, padding: '8px 12px' }}>{p.name}</td>
-                  <td style={{ color: '#38BDF8', fontWeight: 600, padding: '8px 12px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{p.weight}</td>
-                  <td style={{ color: '#94A3B8', padding: '8px 12px' }}>{p.note}</td>
+                <tr key={p.name} style={{ borderBottom: '1px solid #E5E0D8' }}>
+                  <td style={{ color: '#1C1917', fontWeight: 600, padding: '8px 12px' }}>{p.name}</td>
+                  <td style={{ color: '#1D4ED8', fontWeight: 600, padding: '8px 12px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{p.weight}</td>
+                  <td style={{ color: '#78716C', padding: '8px 12px' }}>{p.note}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p style={{ color: '#64748B', fontSize: 12, margin: '12px 0 0', fontStyle: 'italic' }}>
+        <p style={{ color: '#A8A29E', fontSize: 12, margin: '12px 0 0', fontStyle: 'italic' }}>
           Total encuestas en el modelo: {polls?.total_polls || 16} de {POLLSTER_INFO.length} casas encuestadoras.
         </p>
       </div>

@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react';
 import { getPartyColor } from '../config/partyColors';
 
 function getInitials(name) {
@@ -7,9 +8,9 @@ function getInitials(name) {
 }
 
 function winColor(prob) {
-  if (prob >= 50) return '#22C55E';
-  if (prob >= 10) return '#EAB308';
-  return '#94A3B8';
+  if (prob >= 50) return '#059669';
+  if (prob >= 10) return '#D97706';
+  return '#A8A29E';
 }
 
 export default function CandidateCard({ candidate: c, rank, expanded, onToggle }) {
@@ -21,10 +22,15 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
   return (
     <div
       onClick={onToggle}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9C4BB'; }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = '#E5E0D8';
+        e.currentTarget.style.borderLeftColor = party.primary;
+      }}
       style={{
-        background: '#1E293B', border: '1px solid #334155', borderRadius: '12px',
+        background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: '12px',
         padding: '16px', cursor: 'pointer', borderLeft: `3px solid ${party.primary}`,
-        transition: 'background 0.2s',
+        transition: 'border-color 0.2s',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -38,71 +44,84 @@ export default function CandidateCard({ candidate: c, rank, expanded, onToggle }
           {getInitials(c.candidate)}
         </div>
 
-        {/* Name + Party */}
+        {/* Name + Party + Progress bar */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: '#F1F5F9', fontWeight: 600, fontSize: '15px' }}>
-            {rank && <span style={{ color: '#94A3B8', fontWeight: 400, marginRight: 6 }}>#{rank}</span>}
+          <div style={{ color: '#1C1917', fontWeight: 600, fontSize: '15px' }}>
+            {rank && <span style={{ color: '#A8A29E', fontWeight: 400, marginRight: 6 }}>#{rank}</span>}
             {c.candidate}
           </div>
-          <div style={{ color: '#94A3B8', fontSize: '12px' }}>{party.party}</div>
+          <div style={{ color: '#78716C', fontSize: '12px' }}>{party.party}</div>
 
           {/* Progress bar */}
           <div style={{
-            marginTop: 8, height: 8, borderRadius: 4, background: '#334155',
+            marginTop: 8, height: 10, borderRadius: 5, background: '#F0EDE8',
             position: 'relative', overflow: 'hidden'
           }}>
             {/* IC 90% range */}
             <div style={{
               position: 'absolute', left: `${p10Width}%`, width: `${p90Width - p10Width}%`,
-              height: '100%', background: party.primary, opacity: 0.25, borderRadius: 4
+              height: '100%', background: party.primary, opacity: 0.2, borderRadius: 5
             }} />
             {/* Mean bar */}
             <div style={{
               width: `${barWidth}%`, height: '100%', background: party.primary,
-              borderRadius: 4, position: 'relative', zIndex: 1
+              borderRadius: 5, position: 'relative', zIndex: 1
             }} />
+          </div>
+          <div style={{ fontSize: '11px', color: '#A8A29E', marginTop: 2 }}>
+            IC 90%: {c.p10.toFixed(1)}% - {c.p90.toFixed(1)}%
           </div>
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'flex', gap: '16px', flexShrink: 0, textAlign: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', flexShrink: 0, textAlign: 'center' }}>
           <div>
-            <div style={{ color: '#F1F5F9', fontWeight: 700, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ color: '#1C1917', fontWeight: 600, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>
               {c.mean.toFixed(1)}%
             </div>
-            <div style={{ color: '#94A3B8', fontSize: '10px' }}>1ra vuelta</div>
+            <div style={{ color: '#A8A29E', fontSize: '10px' }}>1ra vuelta</div>
           </div>
           <div>
-            <div style={{ color: '#F1F5F9', fontWeight: 600, fontSize: '14px', fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ color: '#1C1917', fontWeight: 600, fontSize: '16px', fontVariantNumeric: 'tabular-nums' }}>
               {c.prob_runoff.toFixed(0)}%
             </div>
-            <div style={{ color: '#94A3B8', fontSize: '10px' }}>P(2da)</div>
+            <div style={{ color: '#A8A29E', fontSize: '10px' }}>P(2da)</div>
           </div>
           <div>
             <div style={{
-              color: winColor(c.prob_win), fontWeight: 700, fontSize: '16px',
+              color: winColor(c.prob_win), fontWeight: 600, fontSize: '16px',
               fontVariantNumeric: 'tabular-nums'
             }}>
               {c.prob_win.toFixed(1)}%
             </div>
-            <div style={{ color: '#94A3B8', fontSize: '10px' }}>P(Ganar)</div>
+            <div style={{ color: '#A8A29E', fontSize: '10px' }}>P(Ganar)</div>
           </div>
         </div>
+
+        {/* Chevron */}
+        <ChevronDown
+          size={18}
+          style={{
+            color: '#A8A29E', flexShrink: 0,
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
+        />
       </div>
 
       {/* Expanded detail */}
       {expanded && (
         <div style={{
-          marginTop: 12, padding: '12px', background: '#0F172A', borderRadius: 8,
-          color: '#CBD5E1', fontSize: '13px', lineHeight: '1.6'
+          marginTop: 12, padding: '12px', background: '#F7F4EF', borderRadius: 8,
+          color: '#78716C', fontSize: '13px', lineHeight: '1.6'
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: 8 }}>
-            <div>Encuestas: <strong style={{ color: '#F1F5F9' }}>{c.polls_pct ? c.polls_pct.toFixed(1) + '%' : '—'}</strong></div>
-            <div>Polymarket: <strong style={{ color: '#F1F5F9' }}>{c.polymarket_pct ? c.polymarket_pct.toFixed(1) + '%' : '—'}</strong></div>
-            <div>IC 90%: <strong style={{ color: '#F1F5F9' }}>[{c.p10.toFixed(1)}% – {c.p90.toFixed(1)}%]</strong></div>
-            <div>Posterior: <strong style={{ color: '#F1F5F9' }}>{c.posterior_pct ? c.posterior_pct.toFixed(1) + '%' : '—'}</strong></div>
+            <div><span style={{ color: '#78716C' }}>Encuestas:</span> <strong style={{ color: '#1C1917' }}>{c.polls_pct ? c.polls_pct.toFixed(1) + '%' : '—'}</strong></div>
+            <div><span style={{ color: '#78716C' }}>Polymarket:</span> <strong style={{ color: '#1C1917' }}>{c.polymarket_pct ? c.polymarket_pct.toFixed(1) + '%' : '—'}</strong></div>
+            <div><span style={{ color: '#78716C' }}>IC 90%:</span> <strong style={{ color: '#1C1917' }}>[{c.p10.toFixed(1)}% – {c.p90.toFixed(1)}%]</strong></div>
+            <div><span style={{ color: '#78716C' }}>Posterior:</span> <strong style={{ color: '#1C1917' }}>{c.posterior_pct ? c.posterior_pct.toFixed(1) + '%' : '—'}</strong></div>
           </div>
-          <p style={{ margin: 0, color: '#94A3B8' }}>
+          <p style={{ margin: 0, color: '#78716C' }}>
             {c.prob_win >= 50
               ? `${c.candidate} es el favorito para ganar la elección. En ${c.prob_runoff.toFixed(0)}% de las simulaciones pasa a segunda vuelta.`
               : c.prob_win >= 5

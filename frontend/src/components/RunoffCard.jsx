@@ -25,18 +25,21 @@ export default function RunoffCard({ scenario: s, expanded, onToggle }) {
     <div
       onClick={onToggle}
       style={{
-        background: '#1E293B', border: '1px solid #334155', borderRadius: '12px',
+        background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: '12px',
         padding: '16px', cursor: 'pointer',
+        transition: 'border-color 0.2s',
       }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = '#C9C4BB'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E0D8'}
     >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ color: '#F1F5F9', fontWeight: 600, fontSize: '15px' }}>
+        <span style={{ color: '#1C1917', fontWeight: 600, fontSize: '15px' }}>
           {candA.split(' ').pop()} vs {candB.split(' ').pop()}
         </span>
         <span style={{
-          background: '#334155', color: '#CBD5E1', padding: '2px 8px',
-          borderRadius: '9999px', fontSize: '12px'
+          background: '#F0EDE8', color: '#78716C', padding: '2px 8px',
+          borderRadius: '9999px', fontSize: '12px', border: '1px solid #E5E0D8'
         }}>
           {s.frequency}% de simulaciones
         </span>
@@ -63,27 +66,27 @@ export default function RunoffCard({ scenario: s, expanded, onToggle }) {
       {/* Labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
         <span style={{ color: colorA.primary }}>{candA}</span>
-        <span style={{ color: '#94A3B8' }}>Blanco: {s.avg_blank_pct.toFixed(1)}%</span>
+        <span style={{ color: '#A8A29E' }}>Blanco: {s.avg_blank_pct.toFixed(1)}%</span>
         <span style={{ color: colorB.primary }}>{candB}</span>
       </div>
 
       {/* Expanded */}
       {expanded && (
         <div style={{
-          marginTop: 12, padding: '12px', background: '#0F172A', borderRadius: 8,
-          color: '#CBD5E1', fontSize: '13px', lineHeight: '1.6'
+          marginTop: 12, padding: '12px', background: '#F7F4EF', borderRadius: 8,
+          color: '#78716C', fontSize: '13px', lineHeight: '1.6'
         }}>
           <p style={{ margin: '0 0 8px' }}>
-            <strong style={{ color: '#F1F5F9' }}>Voto blanco: {s.avg_blank_pct.toFixed(1)}%</strong>
+            <strong style={{ color: '#1C1917' }}>Voto blanco: {s.avg_blank_pct.toFixed(1)}%</strong>
             {s.avg_blank_pct > 35
               ? ' — Ambos candidatos generan alto rechazo. Una porción significativa del electorado preferiría no votar por ninguno.'
               : ' — Nivel moderado de voto blanco para una segunda vuelta.'}
           </p>
           {REJECTION[candA] && (
-            <p style={{ margin: '0 0 4px' }}>Rechazo definitivo {candA.split(' ').pop()}: <strong style={{ color: '#F1F5F9' }}>{REJECTION[candA]}%</strong></p>
+            <p style={{ margin: '0 0 4px', color: '#78716C' }}>Rechazo definitivo {candA.split(' ').pop()}: <strong style={{ color: '#1C1917' }}>{REJECTION[candA]}%</strong></p>
           )}
           {REJECTION[candB] && (
-            <p style={{ margin: 0 }}>Rechazo definitivo {candB.split(' ').pop()}: <strong style={{ color: '#F1F5F9' }}>{REJECTION[candB]}%</strong></p>
+            <p style={{ margin: 0, color: '#78716C' }}>Rechazo definitivo {candB.split(' ').pop()}: <strong style={{ color: '#1C1917' }}>{REJECTION[candB]}%</strong></p>
           )}
         </div>
       )}

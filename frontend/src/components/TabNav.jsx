@@ -9,7 +9,7 @@ export default function TabNav({ activeTab, onTabChange }) {
   return (
     <nav style={{
       display: 'flex', gap: '4px', padding: '0 16px',
-      background: '#0F172A', borderBottom: '1px solid #334155',
+      background: 'transparent', borderBottom: '1px solid #E5E0D8',
       overflowX: 'auto', scrollbarWidth: 'none',
       msOverflowStyle: 'none',
     }}>
@@ -19,14 +19,16 @@ export default function TabNav({ activeTab, onTabChange }) {
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
+            onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#1C1917'; }}
+            onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#78716C'; }}
             style={{
               padding: '12px 20px',
               fontSize: '14px',
               fontWeight: active ? 600 : 400,
-              color: active ? '#F1F5F9' : '#94A3B8',
+              color: active ? '#1D4ED8' : '#78716C',
               background: 'transparent',
               border: 'none',
-              borderBottom: active ? '2px solid #38BDF8' : '2px solid transparent',
+              borderBottom: active ? '2px solid #1D4ED8' : '2px solid transparent',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               minHeight: '44px',

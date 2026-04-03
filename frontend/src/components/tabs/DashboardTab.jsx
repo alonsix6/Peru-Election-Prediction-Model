@@ -199,33 +199,52 @@ function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
 
 // ─── Polymarket Modal ───────────────────────────────────────
 function PolymarketModal({ polymarket, onClose }) {
+  const [history, setHistory] = useState(null);
   const candidates = polymarket?.candidates || [];
-  const top5 = candidates.slice(0, 5);
 
-  // Build simple chart data from available snapshots
-  const chartData = {
-    labels: ['Actual'],
-    datasets: top5.map(c => {
-      const color = getPartyColor(c.candidate);
-      return {
-        label: abbrev(c.candidate),
-        data: [c.probability],
-        borderColor: color.primary,
-        backgroundColor: 'transparent',
-        borderWidth: 2, pointRadius: 4, tension: 0.4
-      };
-    })
-  };
+  useEffect(() => {
+    fetch(`${API}/api/polymarket/history`).then(r => r.json()).then(setHistory).catch(() => {});
+  }, []);
+
+  // Build chart from history snapshots
+  const TOP_CANDIDATES = ['Rafael López Aliaga', 'Keiko Fujimori', 'Carlos Álvarez', 'Roberto Sánchez Palomino', 'López Chau'];
+
+  let chartData = { labels: [], datasets: [] };
+  if (history?.snapshots?.length > 1) {
+    const snapshots = history.snapshots;
+    const labels = snapshots.map(s => {
+      const d = new Date(s.time);
+      return d.toLocaleString('es-PE', { timeZone: 'America/Lima', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+    });
+
+    chartData = {
+      labels,
+      datasets: TOP_CANDIDATES.map(name => {
+        const color = getPartyColor(name);
+        return {
+          label: abbrev(name),
+          data: snapshots.map(s => s.candidates[name] ?? null),
+          borderColor: color.primary,
+          backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 2, tension: 0.4, spanGaps: true
+        };
+      })
+    };
+  }
 
   const chartOpts = {
     responsive: true, maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#1C1917', usePointStyle: true, font: { size: 11 } } },
-      tooltip: { backgroundColor: '#FFFFFF', titleColor: '#1C1917', bodyColor: '#78716C', borderColor: '#E5E0D8', borderWidth: 1 }
+      legend: { position: 'bottom', labels: { color: '#78716C', usePointStyle: true, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#FFFFFF', titleColor: '#1C1917', bodyColor: '#78716C',
+        borderColor: '#E5E0D8', borderWidth: 1,
+        callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)}%` }
+      }
     },
     scales: {
-      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', font: { size: 10 } } },
-      y: { min: 0, max: 40, grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 10 } } }
+      x: { grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', font: { size: 9 }, maxRotation: 45, maxTicksLimit: 10 } },
+      y: { min: 0, max: 50, grid: { color: '#E5E0D8' }, ticks: { color: '#A8A29E', callback: v => v + '%', font: { size: 10 } } }
     }
   };
 
@@ -235,28 +254,32 @@ function PolymarketModal({ polymarket, onClose }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center'
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: 'min(600px, 90vw)', maxHeight: '80vh', overflowY: 'auto',
+        width: 'min(640px, 92vw)', maxHeight: '85vh', overflowY: 'auto',
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 16, padding: 24,
         position: 'relative'
       }}>
-        {/* Close button */}
         <button onClick={onClose} style={{
           position: 'absolute', top: 12, right: 12, background: 'transparent',
           border: 'none', color: '#A8A29E', cursor: 'pointer'
         }}><X size={20} /></button>
 
-        {/* Header */}
         <h3 style={{ color: '#1C1917', fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>Señales de Polymarket</h3>
         <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 16px' }}>
-          Mercado de predicciones {'\u00B7'} ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
+          Mercado de predicciones · ${polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) + 'M en apuestas reales' : ''}
+          {history?.snapshots && <span> · {history.snapshots.length} snapshots</span>}
         </p>
 
-        {/* Chart */}
-        <div style={{ height: 180, marginBottom: 16 }}>
-          <Line data={chartData} options={chartOpts} />
+        {/* Trend chart */}
+        <div style={{ height: 200, marginBottom: 20 }}>
+          {history?.snapshots?.length > 1
+            ? <Line data={chartData} options={chartOpts} />
+            : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#A8A29E', fontSize: 13 }}>
+                {history === null ? 'Cargando historial...' : 'Se necesitan más snapshots para el gráfico (próximas horas)'}
+              </div>
+          }
         </div>
 
-        {/* Table */}
+        {/* Current prices table */}
         <div style={{ fontSize: 12 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 4, padding: '6px 0', borderBottom: '1px solid #E5E0D8' }}>
             <span style={{ color: '#78716C', fontWeight: 500 }}>Candidato</span>

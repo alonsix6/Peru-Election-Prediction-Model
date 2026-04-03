@@ -1,4 +1,5 @@
 const { getPollWeight } = require('./weights');
+const { timeToElection } = require('./clock');
 
 /**
  * House effects — sesgos sistemáticos por encuestadora (sección 5.3).
@@ -111,6 +112,12 @@ function aggregatePolls(polls, pollsterWeights) {
       );
       combined_error = Math.sqrt(sumWeightedErrorSq) / data.totalWeight;
     }
+
+    // Drift temporal: más días hasta la elección = más incertidumbre
+    // 10 días × 0.15 = 1.5 pts adicionales de incertidumbre
+    const { days } = timeToElection();
+    const temporalDrift = Math.max(0, days) * 0.15;
+    combined_error = Math.sqrt(combined_error * combined_error + temporalDrift * temporalDrift);
 
     aggregated[candidate] = {
       weighted_pct: Math.max(0, weighted_pct), // Clamp negativo a 0

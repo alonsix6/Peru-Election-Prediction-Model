@@ -143,12 +143,16 @@ function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
   const totalAll = votesA + votesB + blankVotes;
   const blankPct = totalAll > 0 ? (blankVotes / totalAll) * 100 : 0;
 
-  // 4. Ganador — agregar un poco de ruido para que no sea determinista
-  const noise = randn() * 1.5; // ±1.5 pts de ruido electoral
-  const finalA = votesA + noise;
-  const finalB = votesB - noise;
+  // 4. Incertidumbre propia de segunda vuelta:
+  // 7 semanas de campaña entre vueltas — debates, escándalos, movilización.
+  // 8 pts de std es conservador pero realista para Perú.
+  const runoffUncertainty = 8.0;
+  const shockA = randn() * runoffUncertainty;
+  const shockB = -shockA * 0.7; // correlación negativa parcial
+  votesA += shockA;
+  votesB += shockB;
 
-  const winner = finalA >= finalB ? finalistA : finalistB;
+  const winner = votesA >= votesB ? finalistA : finalistB;
 
   return {
     winner,

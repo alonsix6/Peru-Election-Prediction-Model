@@ -26,7 +26,7 @@ const CANDIDATE_MAP = {
   'Carlos Espá':              'Carlos Espá',
   'César Acuña':              'César Acuña',
   'Yonhy Lescano':            'Yonhy Lescano',
-  'Martín Vizcarra':          'Martín Vizcarra',
+  'Martín Vizcarra':          'Mario Vizcarra',
   'Mesías Guevara':           'Mesías Guevara',
   'George Forsyth':           'George Forsyth',
   'Mario Vizcarra':           'Mario Vizcarra',

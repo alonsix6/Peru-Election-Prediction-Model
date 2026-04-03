@@ -259,7 +259,7 @@ INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
   (pid, 'Yonhy Lescano',            'Acción Popular',               2.20),
   (pid, 'César Acuña',              'APP',                          2.20),
   (pid, 'Wolfgang Grozo',           NULL,                           1.10),
-  (pid, 'Martín Vizcarra',          NULL,                           1.90);
+  (pid, 'Mario Vizcarra',           NULL,                           1.90);
 
 END $$;
 

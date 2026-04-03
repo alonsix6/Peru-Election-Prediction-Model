@@ -83,7 +83,7 @@ function AppContent() {
         {!loading && (
           <>
             {activeTab === 'dashboard' && (
-              <DashboardTab predictions={predictions} polymarket={polymarket} status={status} />
+              <DashboardTab predictions={predictions} polymarket={polymarket} polls={polls} status={status} />
             )}
             {activeTab === 'primera' && (
               <PrimeraVueltaTab predictions={predictions} polls={polls} />

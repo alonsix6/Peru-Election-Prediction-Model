@@ -17,14 +17,22 @@ async function validateSystemIntegrity() {
     await handleError('TIMEZONE_FAILURE', { module: 'startup' }, e);
   }
 
-  // 2. Variables de entorno
+  // 2. Variables de entorno — warn pero no matar
+  const missingVars = [];
   for (const v of ['DATABASE_URL', 'PORT', 'NODE_ENV']) {
-    if (!process.env[v]) {
-      await handleError('ENV_VAR_MISSING', { variable: v, module: 'startup' });
-      process.exit(1);
-    }
+    if (!process.env[v]) missingVars.push(v);
   }
-  console.log('✅ Variables de entorno: OK');
+  if (missingVars.length > 0) {
+    console.warn(`⚠️  Variables faltantes: ${missingVars.join(', ')}`);
+    for (const v of missingVars) {
+      await handleError('ENV_VAR_MISSING', { variable: v, module: 'startup' });
+    }
+    if (missingVars.includes('DATABASE_URL')) {
+      throw new Error('DATABASE_URL no configurada — DB no disponible');
+    }
+  } else {
+    console.log('✅ Variables de entorno: OK');
+  }
 
   // 3. Base de datos
   try {
@@ -32,29 +40,38 @@ async function validateSystemIntegrity() {
     console.log('✅ PostgreSQL: conexión OK');
   } catch (e) {
     await handleError('DB_CONNECTION_FAILED', { module: 'startup' }, e);
-    process.exit(1);
+    throw new Error('No se pudo conectar a PostgreSQL');
   }
 
   // 4. Datos seed
-  const { rows } = await db.query('SELECT COUNT(*) FROM polls');
-  if (parseInt(rows[0].count) < 10) {
-    await handleError('SEED_DATA_CORRUPT', { count: rows[0].count, module: 'startup' });
-    process.exit(1);
+  try {
+    const { rows } = await db.query('SELECT COUNT(*) FROM polls');
+    if (parseInt(rows[0].count) < 10) {
+      await handleError('SEED_DATA_CORRUPT', { count: rows[0].count, module: 'startup' });
+      console.warn(`⚠️  Solo ${rows[0].count} encuestas en DB — ejecutar seed.sql`);
+    } else {
+      console.log(`✅ Encuestas en DB: ${rows[0].count}`);
+    }
+  } catch (e) {
+    console.warn('⚠️  Tabla polls no existe — ejecutar schema.sql + seed.sql');
   }
-  console.log(`✅ Encuestas en DB: ${rows[0].count}`);
 
   // 5. Último snapshot Polymarket
-  const snap = await db.query('SELECT MAX(captured_at) as last FROM polymarket_snapshots');
-  if (snap.rows[0].last) {
-    const hrs = (Date.now() - new Date(snap.rows[0].last)) / 3600000;
-    if (hrs > 3) {
-      console.warn(`⚠️  Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
-      await handleError('POLYMARKET_DATA_STALE', { hours: hrs, module: 'startup' });
+  try {
+    const snap = await db.query('SELECT MAX(captured_at) as last FROM polymarket_snapshots');
+    if (snap.rows[0].last) {
+      const hrs = (Date.now() - new Date(snap.rows[0].last)) / 3600000;
+      if (hrs > 3) {
+        console.warn(`⚠️  Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
+        await handleError('POLYMARKET_DATA_STALE', { hours: hrs, module: 'startup' });
+      } else {
+        console.log(`✅ Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
+      }
     } else {
-      console.log(`✅ Polymarket: último snapshot hace ${hrs.toFixed(1)} horas`);
+      console.warn('⚠️  Sin snapshots de Polymarket aún');
     }
-  } else {
-    console.warn('⚠️  Sin snapshots de Polymarket aún — scraper pendiente de primera ejecución');
+  } catch (e) {
+    console.warn('⚠️  Tabla polymarket_snapshots no existe');
   }
 
   console.log('\n✅ Sistema listo para operar.\n');

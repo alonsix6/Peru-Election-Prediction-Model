@@ -76,7 +76,7 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   const { rows: pmSnapshots } = await db.query(`
     SELECT candidate, probability, volume_usd
     FROM polymarket_snapshots
-    WHERE captured_at = (SELECT MAX(captured_at) FROM polymarket_snapshots)
+    WHERE captured_at_lima = (SELECT MAX(captured_at_lima) FROM polymarket_snapshots)
   `);
 
   const polymarketData = {};

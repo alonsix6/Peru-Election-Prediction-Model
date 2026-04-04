@@ -289,7 +289,7 @@ function startPolymarketCron() {
     } catch (err) {
       console.error('Watchdog error:', err.message);
     }
-  }, 5 * 60 * 1000); // cada 5 min
+  }, 20 * 60 * 1000); // cada 20 min
 }
 
 module.exports = { scrapePolymarket, startPolymarketCron, fetchPolymarketData };

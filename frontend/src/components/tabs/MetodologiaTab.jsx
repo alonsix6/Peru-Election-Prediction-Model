@@ -281,13 +281,6 @@ export default function MetodologiaTab() {
           </div>
         </div>
       </div>
-
-      {/* SECTION 6: Footer credit */}
-      <div style={{
-        textAlign: 'center', fontSize: 12, color: '#8C877F', marginTop: 0,
-      }}>
-        Modelo v2.0 — Alonso Ternero + Claude — Abril 2026
-      </div>
     </div>
   );
 }

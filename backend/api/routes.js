@@ -6,6 +6,7 @@ const { getPolymarketWeight, getPollWeight } = require('../model/weights');
 const { HOUSE_EFFECTS } = require('../model/aggregator');
 const { runFullPipeline } = require('../model/pipeline');
 const { handleError } = require('../errors/errorHandler');
+const { scrapePolymarket } = require('../scraper/polymarket');
 const db = require('../db');
 
 // ─── GET /api/status ────────────────────────────────────────
@@ -208,6 +209,13 @@ router.get('/run-model', async (req, res) => {
 router.get('/force-run', async (req, res) => {
   try {
     const inserted = [];
+
+    // Forzar scrape fresco de Polymarket antes del pipeline
+    try {
+      await scrapePolymarket();
+    } catch (err) {
+      console.warn('Scrape de Polymarket falló en force-run:', err.message);
+    }
 
     // Fix sequences (seed used explicit IDs)
     await db.query(`SELECT setval('pollsters_id_seq', (SELECT COALESCE(MAX(id),0) FROM pollsters))`);

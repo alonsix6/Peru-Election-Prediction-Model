@@ -86,13 +86,19 @@ function AppContent() {
           </>
         )}
 
-        {lastUpdated && (
-          <div style={{
-            textAlign: 'center', padding: '24px 0 12px', color: '#8C877F', fontSize: 11
-          }}>
-            Última actualización: {lastUpdated.toLocaleString('es-PE', { timeZone: 'America/Lima' })}
+        {/* Footer */}
+        <div style={{
+          textAlign: 'center', padding: '32px 0 16px', borderTop: '1px solid #E5E0D8', marginTop: 32
+        }}>
+          {lastUpdated && (
+            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 8 }}>
+              Última actualización: {lastUpdated.toLocaleString('es-PE', { timeZone: 'America/Lima' })}
+            </div>
+          )}
+          <div style={{ color: '#8C877F', fontSize: 12 }}>
+            Modelo v2.0 — Alonso Ternero + Claude — Abril 2026
           </div>
-        )}
+        </div>
       </main>
     </div>
   );

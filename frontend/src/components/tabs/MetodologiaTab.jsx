@@ -129,7 +129,7 @@ export default function MetodologiaTab() {
         <StepRow
           number={2}
           title="Les damos peso según su historial"
-          description="No todas las encuestadoras aciertan igual. IEP fue la que mejor predijo las elecciones de 2021 (captó el crecimiento de Castillo), así que le damos más peso (1.25x). CID Latinoamérica es nueva en el modelo y tiene la muestra más grande (n=2,120) pero sin historial en Perú (0.80x). Las encuestas más recientes también pesan más que las antiguas — el decaimiento es exponencial."
+          description="No todas las encuestadoras aciertan igual. IEP tuvo el menor error absoluto medio en las elecciones de 2021, así que le damos más peso (1.25x). CID Latinoamérica es nueva en el modelo y tiene la muestra más grande (n=2,120) pero sin historial previo en elecciones peruanas (0.80x). Las encuestas más recientes también pesan más que las antiguas — el decaimiento es exponencial."
         />
         <StepRow
           number={3}
@@ -286,7 +286,7 @@ export default function MetodologiaTab() {
       <div style={{
         textAlign: 'center', fontSize: 12, color: '#8C877F', marginTop: 0,
       }}>
-        Modelo v2.0 — Alonso + Claude — Abril 2026
+        Modelo v2.0 — Alonso Ternero + Claude — Abril 2026
       </div>
     </div>
   );

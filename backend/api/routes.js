@@ -233,6 +233,8 @@ router.get('/force-run', async (req, res) => {
     let cidId;
     const { rows: exCid } = await db.query(`SELECT id FROM pollsters WHERE name = 'CID'`);
     if (exCid.length === 0) {
+      // Fix sequence if seed used explicit IDs
+      await db.query(`SELECT setval('pollsters_id_seq', (SELECT COALESCE(MAX(id),0) FROM pollsters))`);
       const { rows: [ps] } = await db.query(`
         INSERT INTO pollsters (name, historical_mae, weight_multiplier, notes)
         VALUES ('CID', NULL, 0.80, 'CID Latinoamérica. Sin data comparable 2021 en Perú. Penalización por incertidumbre histórica.')

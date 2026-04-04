@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getPartyColor } from '../../config/partyColors';
-import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2, Play, RefreshCcw, Info, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2, Play, RefreshCcw, Info, AlertTriangle, ShieldAlert, ChevronDown } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js';
 
@@ -547,6 +547,7 @@ function RiskScenarios({ risk, candidates }) {
 // ─── Main Dashboard ─────────────────────────────────────────
 export default function DashboardTab({ predictions, polymarket, polls, status }) {
   const [pmModalOpen, setPmModalOpen] = useState(false);
+  const [showAllCandidates, setShowAllCandidates] = useState(false);
 
   if (!predictions?.candidates?.length) {
     return (
@@ -641,7 +642,27 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
             <div style={{ flex: 1.2, minWidth: 0 }}>
               <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
                 <h3 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Candidatos</h3>
-                {sorted.map(c => <CompactRow key={c.candidate} c={c} />)}
+                {sorted.slice(0, 10).map(c => <CompactRow key={c.candidate} c={c} />)}
+                {sorted.length > 10 && (
+                  <>
+                    {showAllCandidates && sorted.slice(10).map(c => <CompactRow key={c.candidate} c={c} />)}
+                    <button
+                      onClick={() => setShowAllCandidates(!showAllCandidates)}
+                      style={{
+                        width: '100%', padding: '10px 0', marginTop: 4,
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        color: '#78716C', fontSize: 12, minHeight: 44
+                      }}
+                    >
+                      <ChevronDown size={14} style={{
+                        transition: 'transform 0.2s',
+                        transform: showAllCandidates ? 'rotate(180deg)' : 'rotate(0deg)'
+                      }} />
+                      {showAllCandidates ? 'Ver menos' : `Ver ${sorted.length - 10} candidatos más`}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

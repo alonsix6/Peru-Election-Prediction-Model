@@ -82,8 +82,16 @@ function getBloc(candidate) {
  * @returns {Object} { winner, votesA, votesB, blankVotes, blankPct }
  */
 function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
-  const rejA = (REJECTION_RATES[finalistA] ?? DEFAULT_REJECTION) / 100;
-  const rejB = (REJECTION_RATES[finalistB] ?? DEFAULT_REJECTION) / 100;
+  // Factor de conversión de rechazo declarado → rechazo real en urna.
+  // Basado en data histórica: muchos votantes que dicen "definitivamente no"
+  // terminan votando por el "mal menor" el día de la elección.
+  // 2016: Keiko alto rechazo pero solo 15.7% blanco real.
+  // 2021: Castillo vs Keiko, ambos rechazados, 12.8% blanco real.
+  // Factor varía por simulación para capturar incertidumbre.
+  const rejectionDiscount = 0.35 + Math.random() * 0.20; // 0.35 a 0.55
+
+  const rejA = ((REJECTION_RATES[finalistA] ?? DEFAULT_REJECTION) / 100) * rejectionDiscount;
+  const rejB = ((REJECTION_RATES[finalistB] ?? DEFAULT_REJECTION) / 100) * rejectionDiscount;
 
   const blocA = getBloc(finalistA);
   const blocB = getBloc(finalistB);

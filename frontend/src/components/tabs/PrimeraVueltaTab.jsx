@@ -3,7 +3,7 @@ import CandidateCard from '../CandidateCard';
 import TrendChart from '../TrendChart';
 
 const POLLSTER_INFO = [
-  { name: 'IEP', weight: '1.25x', note: 'Mejor track record 2021. Captó crecimiento de Castillo. Mayor cobertura rural.' },
+  { name: 'IEP', weight: '1.25x', note: 'Menor error absoluto medio en 2021. Mayor cobertura rural.' },
   { name: 'Datum', weight: '1.10x', note: 'Mayor muestra (n=2000). Ficha técnica más robusta.' },
   { name: 'Ipsos', weight: '1.00x', note: 'Referencia base. Metodología consistente. Tracking diario para Perú21.' },
   { name: 'CPI', weight: '0.95x', note: 'Ligeramente menor precisión en 2021.' },
@@ -56,7 +56,7 @@ export default function PrimeraVueltaTab({ predictions, polls }) {
         </h3>
         <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>
           El peso de cada encuestadora se basa en su precisión real en las elecciones de 2021 (MAE — Error Absoluto Medio).
-          IEP fue la única que captó el crecimiento de Castillo antes de la elección.
+          Las encuestas más recientes tienen mayor peso que las antiguas.
         </p>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>

@@ -223,12 +223,27 @@ function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
   const totalAll = votesA + votesB + blankVotes;
   const blankPct = totalAll > 0 ? (blankVotes / totalAll) * 100 : 0;
 
-  // 4. Incertidumbre propia de segunda vuelta:
-  // 7 semanas de campaña entre vueltas — debates, escándalos, movilización.
-  // 8 pts de std es conservador pero realista para Perú.
+  // 4. Compresión logística de segunda vuelta.
+  // Basado en evidencia empírica: toda segunda vuelta peruana converge
+  // hacia ~50/50 por dinámica de antivoto (Castillo 50.1%, PPK 50.1%,
+  // Humala 51.4%, García 52.6%). Ningún candidato ha ganado con >62%.
+  // Comprime resultados extremos hacia el centro sin cambiar el ganador.
+  const totalValid = votesA + votesB;
+  if (totalValid > 0) {
+    const rawPctA = votesA / totalValid; // fracción cruda (0 a 1)
+    const MAX_WIN = 0.62;               // techo histórico peruano
+    const K = 2.5;                      // factor de compresión
+    const compressedA = 0.5 + (MAX_WIN - 0.5) * Math.tanh(K * (rawPctA - 0.5));
+    const compressedB = 1 - compressedA;
+    votesA = compressedA * totalValid;
+    votesB = compressedB * totalValid;
+  }
+
+  // 5. Incertidumbre propia de segunda vuelta:
+  // 7 semanas de campaña — debates, escándalos, movilización.
   const runoffUncertainty = 8.0;
   const shockA = randn() * runoffUncertainty;
-  const shockB = -shockA * 0.7; // correlación negativa parcial
+  const shockB = -shockA * 0.7;
   votesA += shockA;
   votesB += shockB;
 

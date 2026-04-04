@@ -46,12 +46,14 @@ const DEFAULT_REJECTION = 50.0;
 /**
  * Bloques ideológicos para transferencia de votos en segunda vuelta.
  * Votos de un eliminado se transfieren 70% al finalista de su bloque, 30% al otro.
- * Si ningún finalista es de su bloque, split 50/50.
+ * Si ningún finalista es de su bloque, split proporcional al rechazo relativo.
  */
 const IDEOLOGICAL_BLOCS = {
-  derecha:          ['Rafael López Aliaga', 'Keiko Fujimori', 'Jorge Nieto', 'Ricardo Belmont'],
-  centro_derecha:   ['López Chau', 'Carlos Álvarez', 'Carlos Espá'],
-  centro_izquierda: ['Roberto Sánchez Palomino', 'Yonhy Lescano', 'Marisol Pérez Tello']
+  derecha:      ['Rafael López Aliaga'],
+  fujimorismo:  ['Keiko Fujimori'],
+  centro:       ['Carlos Álvarez', 'Ricardo Belmont', 'César Acuña', 'Carlos Espá'],
+  izquierda:    ['Roberto Sánchez Palomino', 'López Chau', 'Jorge Nieto',
+                 'Yonhy Lescano', 'Marisol Pérez Tello']
 };
 
 /**
@@ -123,9 +125,20 @@ function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
       bruteToA = pct * 0.50;
       bruteToB = pct * 0.50;
     } else {
-      // Sin bloque definido o bloque distinto a ambos: split 50/50
-      bruteToA = pct * 0.50;
-      bruteToB = pct * 0.50;
+      // Ningún finalista es del bloque del eliminado:
+      // Split proporcional al rechazo relativo — el eliminado
+      // prefiere al finalista con menor rechazo ("mal menor").
+      // rejA y rejB ya tienen el discount factor aplicado.
+      const acceptA = 1 - rejA;  // % que aceptaría a A
+      const acceptB = 1 - rejB;  // % que aceptaría a B
+      const totalAccept = acceptA + acceptB;
+      if (totalAccept > 0) {
+        bruteToA = pct * (acceptA / totalAccept);
+        bruteToB = pct * (acceptB / totalAccept);
+      } else {
+        bruteToA = pct * 0.50;
+        bruteToB = pct * 0.50;
+      }
     }
 
     // 2b. Aplicar techo duro de rechazo

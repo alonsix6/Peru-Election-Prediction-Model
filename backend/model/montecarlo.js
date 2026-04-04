@@ -79,27 +79,27 @@ const TRANSFER_AFFINITY = {
     'López Chau': 0.38,
     'Jorge Nieto': 0.38,
   },
-  // Sánchez eliminado: izquierda rural — antifujimorismo,
-  // pero forzados entre derecha y derecha SÍ votan por el "mal menor"
+  // Sánchez eliminado: izquierda rural — fuerte antifujimorismo,
+  // forzados entre Aliaga y Keiko votan Aliaga como "mal menor"
   'Roberto Sánchez Palomino': {
-    'Rafael López Aliaga': 0.28,      // mal menor vs Keiko
-    'Keiko Fujimori': 0.20,           // antifujimorismo pero algunos sí
-    'Carlos Álvarez': 0.50,           // centro aceptable
+    'Rafael López Aliaga': 0.38,      // antifujimorismo empuja hacia Aliaga
+    'Keiko Fujimori': 0.18,           // antifujimorismo duro
+    'Carlos Álvarez': 0.50,
     'López Chau': 0.60,
     'Jorge Nieto': 0.48,
   },
-  // Chau eliminado: izquierda — similar a Sánchez
+  // Chau eliminado: izquierda — misma lógica antifujimorista
   'López Chau': {
-    'Rafael López Aliaga': 0.25,
-    'Keiko Fujimori': 0.20,
+    'Rafael López Aliaga': 0.35,      // antifujimorismo
+    'Keiko Fujimori': 0.18,
     'Carlos Álvarez': 0.45,
     'Roberto Sánchez Palomino': 0.58,
     'Jorge Nieto': 0.42,
   },
-  // Nieto eliminado: centro-izquierda progresista
+  // Nieto eliminado: centro-izquierda — antifujimorista
   'Jorge Nieto': {
-    'Rafael López Aliaga': 0.25,
-    'Keiko Fujimori': 0.22,
+    'Rafael López Aliaga': 0.35,      // antifujimorismo
+    'Keiko Fujimori': 0.20,
     'Carlos Álvarez': 0.42,
     'Roberto Sánchez Palomino': 0.45,
     'López Chau': 0.40,
@@ -120,9 +120,9 @@ const TRANSFER_AFFINITY = {
     'Roberto Sánchez Palomino': 0.25,
     'López Chau': 0.25,
   },
-  // Lescano eliminado: izquierda — forzado a elegir SÍ vota
+  // Lescano eliminado: izquierda — antifujimorista, vota "mal menor"
   'Yonhy Lescano': {
-    'Rafael López Aliaga': 0.22,
+    'Rafael López Aliaga': 0.35,      // antifujimorismo
     'Keiko Fujimori': 0.18,
     'Carlos Álvarez': 0.42,
     'Roberto Sánchez Palomino': 0.55,

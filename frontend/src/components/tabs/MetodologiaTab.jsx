@@ -194,6 +194,29 @@ export default function MetodologiaTab() {
         <LimitationItem text="Garantizar que Polymarket refleje la realidad peruana. Los traders son mayoritariamente internacionales y pueden no entender los matices locales." />
       </div>
 
+      {/* Nota analítica: sesgo muestral D/E */}
+      <div style={{
+        background: '#FFFFFF', border: '1px solid #E5E0D8', borderLeft: '4px solid #1D4ED8',
+        borderRadius: '0 12px 12px 0', padding: '20px 24px',
+      }}>
+        <h4 style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: '0 0 8px' }}>
+          Nota de sesgo muestral D/E
+        </h4>
+        <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '0 0 8px' }}>
+          Al excluir los niveles socioeconómicos A/B del análisis de la encuesta IEP (campo 28-31 marzo),
+          Roberto Sánchez Palomino sube al segundo lugar superando a López Aliaga. El 12.6% de indecisos
+          en los sectores D/E (vs 0.65% en A/B) representa la mayor bolsa de volatilidad electoral.
+        </p>
+        <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '0 0 8px' }}>
+          Los shocks estocásticos del modelo (+5 a +12 puntos a candidatos menores en el 10% de las
+          simulaciones) están diseñados para capturar precisamente este riesgo: un candidato con base
+          rural y popular que las encuestas nacionales subestiman, como ocurrió con Castillo en 2021.
+        </p>
+        <p style={{ color: '#8C877F', fontSize: 12, margin: 0 }}>
+          Fuente: IEP / @bernal_gallegos, campo 28-31 marzo 2026.
+        </p>
+      </div>
+
       {/* SECTION 5: Fuentes */}
       <div style={{
         background: '#FFFFFF', border: '1px solid #E5E0D8',
@@ -221,6 +244,7 @@ export default function MetodologiaTab() {
               { name: 'Ipsos', via: 'Perú21' },
               { name: 'CPI', via: 'RPP Noticias' },
               { name: 'CIT', via: 'Centro de Investigaciones Tecnológicas' },
+              { name: 'CID', via: 'CID Latinoamérica' },
             ].map((s, i) => (
               <div key={i} style={{ fontSize: 13, lineHeight: 2 }}>
                 <span style={{ fontWeight: 600, color: '#1C1917' }}>{s.name}</span>

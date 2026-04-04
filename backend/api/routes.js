@@ -296,6 +296,46 @@ router.get('/force-run', async (req, res) => {
       inserted.push('CIT Abril 2026');
     }
 
+    // --- Ipsos última antes de veda (intención, campo 1-2 abr) ---
+    const { rows: ex4 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 3 AND field_start = '2026-04-01' AND field_end = '2026-04-02' AND poll_type = 'intencion_voto'`
+    );
+    if (ex4.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, pct_no_answer, notes)
+        VALUES (3, '2026-04-01', '2026-04-02', '2026-04-04', 1217, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 16.0, 13.0,
+          'Ipsos para Perú21. Último estudio antes de veda electoral. Campo 1-2 abril 2026. Álvarez supera a Aliaga por primera vez.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',13),($1,'Carlos Álvarez','País para Todos',9),
+        ($1,'Rafael López Aliaga','Renovación Popular',8),($1,'Roberto Sánchez Palomino','Juntos por el Perú',6),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',5),($1,'López Chau','Ahora Nación',4),
+        ($1,'Ricardo Belmont','Partido Cívico Obras',3),($1,'César Acuña','APP',3),
+        ($1,'Marisol Pérez Tello','Primero la Gente',2),($1,'Yonhy Lescano','Cooperación Popular',2),
+        ($1,'George Forsyth','Somos Perú',2),($1,'José Luna','Podemos Perú',2)`, [p.id]);
+      inserted.push('Ipsos última pre-veda intención 1-2 abr');
+    }
+
+    // --- Ipsos simulacro (campo 1-2 abr) ---
+    const { rows: ex5 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 3 AND field_start = '2026-04-01' AND field_end = '2026-04-02' AND poll_type = 'simulacro'`
+    );
+    if (ex5.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, notes)
+        VALUES (3, '2026-04-01', '2026-04-02', '2026-04-04', 1192, 2.80, 95.0, 'nacional', 'presencial', 'simulacro', 26.0,
+          'Tercer simulacro nacional Ipsos/Perú21. Campo 1-2 abril 2026. Votos emitidos.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',13.7),($1,'Carlos Álvarez','País para Todos',9),
+        ($1,'Rafael López Aliaga','Renovación Popular',8.1),($1,'Roberto Sánchez Palomino','Juntos por el Perú',6.7),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',4.1),($1,'César Acuña','APP',3.8),
+        ($1,'López Chau','Ahora Nación',3.3),($1,'Ricardo Belmont','Partido Cívico Obras',3.2),
+        ($1,'Marisol Pérez Tello','Primero la Gente',2.8),($1,'Yonhy Lescano','Cooperación Popular',2.4),
+        ($1,'Carlos Espá','SíCreo',2.1),($1,'Ronald Atencio','Alianza Venceremos',1.9)`, [p.id]);
+      inserted.push('Ipsos simulacro 1-2 abr');
+    }
+
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
     // Forzar pipeline

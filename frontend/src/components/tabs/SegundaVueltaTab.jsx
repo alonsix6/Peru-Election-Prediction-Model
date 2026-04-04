@@ -85,25 +85,40 @@ export default function SegundaVueltaTab({ predictions }) {
       {/* Calibration note */}
       <div style={{
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12,
-        borderLeft: '4px solid #D97706', padding: 16
+        borderLeft: '4px solid #1D4ED8', padding: 20
       }}>
-        <h3 style={{ color: '#D97706', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>
-          Nota de calibración
+        <h3 style={{ color: '#1D4ED8', fontSize: 15, fontWeight: 600, margin: '0 0 12px' }}>
+          ¿Por qué nuestros números difieren de Polymarket?
         </h3>
-        <p style={{ color: '#1C1917', fontSize: 14, margin: '0 0 8px', fontWeight: 500 }}>
-          Nuestro modelo: Aliaga ~70% de ganar. Polymarket: 30%.
+
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+          <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
+            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Nuestro modelo</div>
+            <div style={{ color: '#1C1917', fontSize: 13, lineHeight: 1.6 }}>
+              Combina <strong>19 encuestas</strong> con Polymarket usando pesos dinámicos.
+              Hoy las encuestas pesan ~72% y el mercado ~28%. Refleja el estado actual
+              del electorado según los datos concretos disponibles.
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
+            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Polymarket</div>
+            <div style={{ color: '#1C1917', fontSize: 13, lineHeight: 1.6 }}>
+              Mercado con <strong>$5.6M en apuestas</strong> reales. Los precios incorporan
+              todo: encuestas, rumores, operadores políticos, encuestas internas de campaña,
+              y la probabilidad de eventos imprevistos.
+            </div>
+          </div>
+        </div>
+
+        <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '0 0 8px' }}>
+          Ejemplo: Álvarez tiene ~11% en nuestro modelo pero ~24% en Polymarket.
+          Esa diferencia existe porque las encuestas todavía lo ven bajo (6-8%),
+          pero el mercado está apostando a que va a seguir subiendo. A medida que
+          entre la veda electoral y el peso de Polymarket suba, nuestro modelo se
+          acercará a lo que dice el mercado.
         </p>
-        <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 8px', lineHeight: 1.6 }}>
-          ¿Por qué la diferencia de ~40 puntos? Son preguntas distintas:
-        </p>
-        <ul style={{ color: '#78716C', fontSize: 13, margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>
-          <li><strong style={{ color: '#1C1917' }}>Nuestro modelo:</strong> Dado el estado actual del electorado, ¿quién gana?</li>
-          <li><strong style={{ color: '#1C1917' }}>Polymarket:</strong> Considerando todos los escenarios posibles (escándalos, retiradas, shocks), ¿quién gana?</li>
-        </ul>
-        <p style={{ color: '#78716C', fontSize: 13, margin: '12px 0 0', lineHeight: 1.6 }}>
-          Polymarket incluye la posibilidad de eventos imprevistos en los próximos 9 días.
-          Nuestro modelo refleja los datos concretos que tenemos hoy.
-          Ambas perspectivas son válidas y complementarias.
+        <p style={{ color: '#8C877F', fontSize: 12, margin: 0 }}>
+          Ambas perspectivas son válidas. Mostramos las dos para que tú decidas.
         </p>
       </div>
     </div>

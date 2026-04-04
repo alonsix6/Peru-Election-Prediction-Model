@@ -264,12 +264,32 @@ function startPolymarketCron() {
   console.log('⏰ Polymarket cron job programado: cada 30 minutos');
 
   // Ejecutar inmediatamente al arrancar
-  scrapePolymarket();
+  scrapePolymarket().catch(err => console.error('Scrape inicial falló:', err.message));
 
-  // Programar cada hora
-  cron.schedule('*/30 * * * *', () => {
-    scrapePolymarket();
+  // Programar cada 30 min con protección contra crashes
+  cron.schedule('*/30 * * * *', async () => {
+    try {
+      await scrapePolymarket();
+    } catch (err) {
+      console.error('Cron scrape falló (no-fatal):', err.message);
+    }
   });
+
+  // Watchdog: cada 5 min verifica que el último snapshot no tenga más de 40 min
+  setInterval(async () => {
+    try {
+      const { rows } = await db.query('SELECT MAX(captured_at) as last FROM polymarket_snapshots');
+      if (rows[0].last) {
+        const minsAgo = (Date.now() - new Date(rows[0].last)) / 60000;
+        if (minsAgo > 40) {
+          console.warn(`⚠️ Watchdog: último snapshot hace ${minsAgo.toFixed(0)} min — forzando scrape`);
+          await scrapePolymarket();
+        }
+      }
+    } catch (err) {
+      console.error('Watchdog error:', err.message);
+    }
+  }, 20 * 60 * 1000); // cada 20 min
 }
 
 module.exports = { scrapePolymarket, startPolymarketCron, fetchPolymarketData };

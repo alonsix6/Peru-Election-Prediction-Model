@@ -44,59 +44,134 @@ const REJECTION_RATES = {
 const DEFAULT_REJECTION = 50.0;
 
 /**
- * Bloques ideológicos para transferencia de votos en segunda vuelta.
- * Votos de un eliminado se transfieren 70% al finalista de su bloque, 30% al otro.
- * Si ningún finalista es de su bloque, split proporcional al rechazo relativo.
+ * Matriz de transferencia de votos en segunda vuelta.
+ * Para cada candidato eliminado, define qué fracción de sus votos
+ * se transfiere a cada posible finalista. Lo que no se transfiere = blanco.
+ * Basado en afinidad ideológica real de la política peruana 2026.
+ *
+ * Clave: 'eliminado'. Valor: { finalista: fracción }
+ * Si un finalista no aparece en la lista del eliminado, recibe 0.20 por defecto.
  */
-const IDEOLOGICAL_BLOCS = {
-  derecha:      ['Rafael López Aliaga'],
-  fujimorismo:  ['Keiko Fujimori'],
-  centro:       ['Carlos Álvarez', 'Ricardo Belmont', 'César Acuña', 'Carlos Espá'],
-  izquierda:    ['Roberto Sánchez Palomino', 'López Chau', 'Jorge Nieto',
-                 'Yonhy Lescano', 'Marisol Pérez Tello']
+const TRANSFER_AFFINITY = {
+  // Aliaga eliminado: derecha conservador — su base va a Keiko,
+  // pero forzados entre centro/izquierda sí votan por "mal menor"
+  'Rafael López Aliaga': {
+    'Keiko Fujimori': 0.62,
+    'Carlos Álvarez': 0.38,
+    'Roberto Sánchez Palomino': 0.22,
+    'López Chau': 0.20,
+    'Jorge Nieto': 0.28,
+  },
+  // Keiko eliminada: fujimorismo va a derecha, pero también al centro
+  'Keiko Fujimori': {
+    'Rafael López Aliaga': 0.58,
+    'Carlos Álvarez': 0.40,
+    'Roberto Sánchez Palomino': 0.20,
+    'López Chau': 0.18,
+    'Jorge Nieto': 0.28,
+  },
+  // Álvarez eliminado: centro anti-establishment — su base es diversa,
+  // parte va a derecha, parte a izquierda, pero prefiere no-establishment
+  'Carlos Álvarez': {
+    'Rafael López Aliaga': 0.30,
+    'Keiko Fujimori': 0.25,
+    'Roberto Sánchez Palomino': 0.42, // anti-establishment va a anti-establishment
+    'López Chau': 0.38,
+    'Jorge Nieto': 0.38,
+  },
+  // Sánchez eliminado: izquierda rural — antifujimorismo,
+  // pero forzados entre derecha y derecha SÍ votan por el "mal menor"
+  'Roberto Sánchez Palomino': {
+    'Rafael López Aliaga': 0.28,      // mal menor vs Keiko
+    'Keiko Fujimori': 0.20,           // antifujimorismo pero algunos sí
+    'Carlos Álvarez': 0.50,           // centro aceptable
+    'López Chau': 0.60,
+    'Jorge Nieto': 0.48,
+  },
+  // Chau eliminado: izquierda — similar a Sánchez
+  'López Chau': {
+    'Rafael López Aliaga': 0.25,
+    'Keiko Fujimori': 0.20,
+    'Carlos Álvarez': 0.45,
+    'Roberto Sánchez Palomino': 0.58,
+    'Jorge Nieto': 0.42,
+  },
+  // Nieto eliminado: centro-izquierda progresista
+  'Jorge Nieto': {
+    'Rafael López Aliaga': 0.25,
+    'Keiko Fujimori': 0.22,
+    'Carlos Álvarez': 0.42,
+    'Roberto Sánchez Palomino': 0.45,
+    'López Chau': 0.40,
+  },
+  // Belmont eliminado: populista independiente
+  'Ricardo Belmont': {
+    'Rafael López Aliaga': 0.35,
+    'Keiko Fujimori': 0.30,
+    'Carlos Álvarez': 0.42,
+    'Roberto Sánchez Palomino': 0.28,
+    'López Chau': 0.25,
+  },
+  // Acuña eliminado: pragmático, maquinaria norte
+  'César Acuña': {
+    'Rafael López Aliaga': 0.33,
+    'Keiko Fujimori': 0.35,
+    'Carlos Álvarez': 0.38,
+    'Roberto Sánchez Palomino': 0.25,
+    'López Chau': 0.25,
+  },
+  // Lescano eliminado: izquierda — forzado a elegir SÍ vota
+  'Yonhy Lescano': {
+    'Rafael López Aliaga': 0.22,
+    'Keiko Fujimori': 0.18,
+    'Carlos Álvarez': 0.42,
+    'Roberto Sánchez Palomino': 0.55,
+    'López Chau': 0.50,
+  },
+  // Pérez Tello eliminada: centro-izquierda — vota con pragmatismo
+  'Marisol Pérez Tello': {
+    'Rafael López Aliaga': 0.28,
+    'Keiko Fujimori': 0.22,
+    'Carlos Álvarez': 0.48,
+    'Roberto Sánchez Palomino': 0.42,
+    'López Chau': 0.40,
+  },
+  // Grozo eliminado: voto protesta — disperso pero sí vota
+  'Wolfgang Grozo': {
+    'Rafael López Aliaga': 0.28,
+    'Keiko Fujimori': 0.25,
+    'Carlos Álvarez': 0.40,
+    'Roberto Sánchez Palomino': 0.38,
+    'López Chau': 0.35,
+  },
 };
 
+// Default transfer cuando el eliminado o finalista no está en la matriz
+const DEFAULT_TRANSFER = 0.25;
+
 /**
- * Retorna el bloque ideológico de un candidato.
+ * Obtiene la fracción de transferencia de un eliminado a un finalista.
  */
-function getBloc(candidate) {
-  for (const [bloc, members] of Object.entries(IDEOLOGICAL_BLOCS)) {
-    if (members.includes(candidate)) return bloc;
-  }
-  return null; // Sin bloque definido
+function getTransfer(eliminated, finalist) {
+  return TRANSFER_AFFINITY[eliminated]?.[finalist] ?? DEFAULT_TRANSFER;
 }
 
 /**
- * Simula segunda vuelta con transferencia de votos y voto blanco.
+ * Simula segunda vuelta con transferencia de votos basada en
+ * matriz de afinidad por pares y voto blanco calibrado.
  *
  * Mecánica:
- * 1. Base: votos propios de cada finalista de primera vuelta
- * 2. Para cada candidato eliminado:
- *    a. Transferencia bruta según afinidad ideológica (70/30 o 50/50)
- *    b. Techo duro de rechazo: bruta × (1 - rejection / 100)
- *    c. Resto no transferido = voto blanco
- * 3. Voto blanco extra si rechazo[A] + rechazo[B] > 100
- * 4. Ganador = quien tenga más votos netos
- *
- * @param {string} finalistA - Nombre del candidato A (1ro en primera vuelta)
- * @param {string} finalistB - Nombre del candidato B (2do en primera vuelta)
- * @param {Object} allFirstRoundResults - { candidate: pct } de primera vuelta
- * @returns {Object} { winner, votesA, votesB, blankVotes, blankPct }
+ * 1. Base: votos propios de cada finalista
+ * 2. Para cada eliminado: transferir según TRANSFER_AFFINITY
+ *    Lo que no se transfiere a ninguno = voto blanco
+ * 3. Voto blanco extra si ambos finalistas tienen alto rechazo
+ * 4. Incertidumbre de campaña (7 semanas entre vueltas)
  */
 function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
-  // Factor de conversión de rechazo declarado → rechazo real en urna.
-  // Basado en data histórica: muchos votantes que dicen "definitivamente no"
-  // terminan votando por el "mal menor" el día de la elección.
-  // 2016: Keiko alto rechazo pero solo 15.7% blanco real.
-  // 2021: Castillo vs Keiko, ambos rechazados, 12.8% blanco real.
-  // Factor varía por simulación para capturar incertidumbre.
-  const rejectionDiscount = 0.35 + Math.random() * 0.20; // 0.35 a 0.55
-
+  // Factor de conversión para el blanco extra por doble rechazo
+  const rejectionDiscount = 0.35 + Math.random() * 0.20;
   const rejA = ((REJECTION_RATES[finalistA] ?? DEFAULT_REJECTION) / 100) * rejectionDiscount;
   const rejB = ((REJECTION_RATES[finalistB] ?? DEFAULT_REJECTION) / 100) * rejectionDiscount;
-
-  const blocA = getBloc(finalistA);
-  const blocB = getBloc(finalistB);
 
   // 1. Base: votos propios
   let votesA = allFirstRoundResults[finalistA] || 0;
@@ -108,56 +183,31 @@ function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
     if (candidate === finalistA || candidate === finalistB) continue;
     if (pct <= 0) continue;
 
-    const blocElim = getBloc(candidate);
+    // Obtener fracción de transferencia a cada finalista
+    const transferToA = getTransfer(candidate, finalistA);
+    const transferToB = getTransfer(candidate, finalistB);
 
-    // 2a. Transferencia bruta según afinidad ideológica
-    let bruteToA, bruteToB;
-    if (blocElim !== null && blocElim === blocA && blocElim !== blocB) {
-      // Eliminado afín a A
-      bruteToA = pct * 0.70;
-      bruteToB = pct * 0.30;
-    } else if (blocElim !== null && blocElim === blocB && blocElim !== blocA) {
-      // Eliminado afín a B
-      bruteToA = pct * 0.30;
-      bruteToB = pct * 0.70;
-    } else if (blocElim !== null && blocElim === blocA && blocElim === blocB) {
-      // Ambos finalistas son del mismo bloque que el eliminado
-      bruteToA = pct * 0.50;
-      bruteToB = pct * 0.50;
-    } else {
-      // Ningún finalista es del bloque del eliminado:
-      // Split proporcional al rechazo relativo — el eliminado
-      // prefiere al finalista con menor rechazo ("mal menor").
-      // rejA y rejB ya tienen el discount factor aplicado.
-      const acceptA = 1 - rejA;  // % que aceptaría a A
-      const acceptB = 1 - rejB;  // % que aceptaría a B
-      const totalAccept = acceptA + acceptB;
-      if (totalAccept > 0) {
-        bruteToA = pct * (acceptA / totalAccept);
-        bruteToB = pct * (acceptB / totalAccept);
-      } else {
-        bruteToA = pct * 0.50;
-        bruteToB = pct * 0.50;
-      }
+    // Normalizar si la suma > 1 (no debería pero por seguridad)
+    const totalTransfer = transferToA + transferToB;
+    let effectiveToA = transferToA;
+    let effectiveToB = transferToB;
+    if (totalTransfer > 1.0) {
+      effectiveToA = transferToA / totalTransfer;
+      effectiveToB = transferToB / totalTransfer;
     }
 
-    // 2b. Aplicar techo duro de rechazo
-    const netToA = bruteToA * (1 - rejA);
-    const netToB = bruteToB * (1 - rejB);
+    votesA += pct * effectiveToA;
+    votesB += pct * effectiveToB;
 
-    // 2c. Lo que no se transfiere = voto blanco
-    const lostToBlank = (bruteToA - netToA) + (bruteToB - netToB);
-
-    votesA += netToA;
-    votesB += netToB;
-    blankVotes += lostToBlank;
+    // Lo que no se transfiere = voto blanco
+    const toBlank = 1.0 - effectiveToA - effectiveToB;
+    if (toBlank > 0) blankVotes += pct * toBlank;
   }
 
-  // 3. Voto blanco base adicional por doble rechazo alto
-  const rejSum = rejA * 100 + rejB * 100; // Volver a porcentaje
+  // 3. Voto blanco extra por doble rechazo alto
+  const rejSum = rejA * 100 + rejB * 100;
   if (rejSum > 100) {
     const extraBlank = (rejSum - 100) * 0.3;
-    // Restar proporcionalmente de ambos finalistas
     const totalVotes = votesA + votesB;
     if (totalVotes > 0) {
       votesA -= extraBlank * (votesA / totalVotes);
@@ -170,7 +220,6 @@ function simulateRunoff(finalistA, finalistB, allFirstRoundResults) {
   votesA = Math.max(0, votesA);
   votesB = Math.max(0, votesB);
 
-  const totalValid = votesA + votesB;
   const totalAll = votesA + votesB + blankVotes;
   const blankPct = totalAll > 0 ? (blankVotes / totalAll) * 100 : 0;
 
@@ -518,4 +567,4 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
   return { results, runoffSummary, riskScenarios };
 }
 
-module.exports = { runMonteCarlo, simulateRunoff, ERROR_CORRELATION, POLLSTER_ORDER, IDEOLOGICAL_BLOCS };
+module.exports = { runMonteCarlo, simulateRunoff, ERROR_CORRELATION, POLLSTER_ORDER, TRANSFER_AFFINITY };

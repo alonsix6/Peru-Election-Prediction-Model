@@ -209,6 +209,11 @@ router.get('/force-run', async (req, res) => {
   try {
     const inserted = [];
 
+    // Fix sequences (seed used explicit IDs)
+    await db.query(`SELECT setval('pollsters_id_seq', (SELECT COALESCE(MAX(id),0) FROM pollsters))`);
+    await db.query(`SELECT setval('polls_id_seq', (SELECT COALESCE(MAX(id),0) FROM polls))`);
+    await db.query(`SELECT setval('poll_results_id_seq', (SELECT COALESCE(MAX(id),0) FROM poll_results))`);
+
     // --- Ipsos tracking 29 mar - 1 abr ---
     const { rows: ex1 } = await db.query(
       `SELECT id FROM polls WHERE pollster_id = 3 AND field_end = '2026-04-01' AND published_date = '2026-04-03'`
@@ -233,8 +238,6 @@ router.get('/force-run', async (req, res) => {
     let cidId;
     const { rows: exCid } = await db.query(`SELECT id FROM pollsters WHERE name = 'CID'`);
     if (exCid.length === 0) {
-      // Fix sequence if seed used explicit IDs
-      await db.query(`SELECT setval('pollsters_id_seq', (SELECT COALESCE(MAX(id),0) FROM pollsters))`);
       const { rows: [ps] } = await db.query(`
         INSERT INTO pollsters (name, historical_mae, weight_multiplier, notes)
         VALUES ('CID', NULL, 0.80, 'CID Latinoamérica. Sin data comparable 2021 en Perú. Penalización por incertidumbre histórica.')

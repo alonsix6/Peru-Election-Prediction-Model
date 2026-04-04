@@ -5,9 +5,10 @@ import TrendChart from '../TrendChart';
 const POLLSTER_INFO = [
   { name: 'IEP', weight: '1.25x', note: 'Mejor track record 2021. Captó crecimiento de Castillo. Mayor cobertura rural.' },
   { name: 'Datum', weight: '1.10x', note: 'Mayor muestra (n=2000). Ficha técnica más robusta.' },
-  { name: 'Ipsos', weight: '1.00x', note: 'Referencia base. Metodología consistente.' },
+  { name: 'Ipsos', weight: '1.00x', note: 'Referencia base. Metodología consistente. Tracking diario para Perú21.' },
   { name: 'CPI', weight: '0.95x', note: 'Ligeramente menor precisión en 2021.' },
   { name: 'CIT', weight: '0.85x', note: 'Sin data comparable 2021. Penalización por incertidumbre.' },
+  { name: 'CID', weight: '0.80x', note: 'CID Latinoamérica. Primera aparición en el modelo. Muestra grande (n=2120) pero sin historial en Perú.' },
 ];
 
 export default function PrimeraVueltaTab({ predictions, polls }) {

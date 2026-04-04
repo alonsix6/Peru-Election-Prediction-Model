@@ -83,6 +83,30 @@ export const PARTY_COLORS = {
     bg: '#FFF1F2',
     text: '#9F1239'
   },
+  'Fernando Olivera': {
+    party: 'Frente Esperanza',
+    primary: '#854D0E',
+    bg: '#FEFCE8',
+    text: '#713F12'
+  },
+  'Charlie Carrasco': {
+    party: 'Demócrata Unido',
+    primary: '#475569',
+    bg: '#F1F5F9',
+    text: '#334155'
+  },
+  'José Luna': {
+    party: 'Podemos Perú',
+    primary: '#0369A1',
+    bg: '#E0F2FE',
+    text: '#075985'
+  },
+  'Herbert Caller': {
+    party: 'PPP',
+    primary: '#9333EA',
+    bg: '#FAF5FF',
+    text: '#7E22CE'
+  },
 };
 
 const DEFAULT_COLOR = { party: 'Independiente', primary: '#6B7280', bg: '#F3F4F6', text: '#374151' };

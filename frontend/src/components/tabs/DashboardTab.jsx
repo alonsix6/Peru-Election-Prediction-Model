@@ -15,6 +15,7 @@ const ABBREV = {
   'Wolfgang Grozo': 'WG', 'César Acuña': 'CAc',
   'Ricardo Belmont': 'RB', 'Marisol Pérez Tello': 'MPT',
   'Carlos Espá': 'CE', 'Yonhy Lescano': 'YL', 'Mario Vizcarra': 'MV', 'George Forsyth': 'GF',
+  'Fernando Olivera': 'FO', 'Charlie Carrasco': 'CC', 'José Luna': 'JL', 'Herbert Caller': 'HC',
 };
 function abbrev(name) { return ABBREV[name] || name.split(' ').map(w => w[0]).join(''); }
 

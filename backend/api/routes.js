@@ -207,50 +207,88 @@ router.get('/run-model', async (req, res) => {
 // Inserta encuestas pendientes y fuerza corrida del pipeline
 router.get('/force-run', async (req, res) => {
   try {
-    // Verificar si la encuesta Ipsos tracking ya existe
-    const { rows: existing } = await db.query(
+    const inserted = [];
+
+    // --- Ipsos tracking 29 mar - 1 abr ---
+    const { rows: ex1 } = await db.query(
       `SELECT id FROM polls WHERE pollster_id = 3 AND field_end = '2026-04-01' AND published_date = '2026-04-03'`
     );
-
-    let pollInserted = false;
-    if (existing.length === 0) {
-      // Insertar encuesta Ipsos tracking 29 mar - 1 abr
-      const { rows: [poll] } = await db.query(`
+    if (ex1.length === 0) {
+      const { rows: [p] } = await db.query(`
         INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_undecided, pct_blank_null, notes)
         VALUES (3, '2026-03-29', '2026-04-01', '2026-04-03', 1203, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 14.00, 16.00,
           'Tracking diario Ipsos para Perú21. Campo 29 mar - 1 abr 2026. Post-debates ronda 1 y 2 JNE.')
-        RETURNING id
-      `);
-
-      const pid = poll.id;
-      await db.query(`
-        INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
-          ($1, 'Keiko Fujimori', 'Fuerza Popular', 12.00),
-          ($1, 'Rafael López Aliaga', 'Renovación Popular', 8.00),
-          ($1, 'Carlos Álvarez', 'País para Todos', 8.00),
-          ($1, 'Roberto Sánchez Palomino', 'Juntos por el Perú', 6.00),
-          ($1, 'Jorge Nieto', 'Partido del Buen Gobierno', 5.00),
-          ($1, 'López Chau', 'Ahora Nación', 4.00),
-          ($1, 'César Acuña', 'APP', 4.00),
-          ($1, 'Ricardo Belmont', 'Partido Cívico Obras', 3.00),
-          ($1, 'Marisol Pérez Tello', 'Primero la Gente', 2.00),
-          ($1, 'George Forsyth', 'Somos Perú', 2.00),
-          ($1, 'Yonhy Lescano', 'Cooperación Popular', 2.00),
-          ($1, 'Carlos Espá', 'SíCreo', 2.00)
-      `, [pid]);
-
-      pollInserted = true;
-      console.log(`✅ Encuesta Ipsos tracking insertada (poll_id: ${pid})`);
+        RETURNING id`);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',12),($1,'Rafael López Aliaga','Renovación Popular',8),
+        ($1,'Carlos Álvarez','País para Todos',8),($1,'Roberto Sánchez Palomino','Juntos por el Perú',6),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',5),($1,'López Chau','Ahora Nación',4),
+        ($1,'César Acuña','APP',4),($1,'Ricardo Belmont','Partido Cívico Obras',3),
+        ($1,'Marisol Pérez Tello','Primero la Gente',2),($1,'George Forsyth','Somos Perú',2),
+        ($1,'Yonhy Lescano','Cooperación Popular',2),($1,'Carlos Espá','SíCreo',2)`, [p.id]);
+      inserted.push('Ipsos tracking 29mar-1abr');
     }
+
+    // --- CID Latinoamérica (nueva encuestadora + encuesta) ---
+    let cidId;
+    const { rows: exCid } = await db.query(`SELECT id FROM pollsters WHERE name = 'CID'`);
+    if (exCid.length === 0) {
+      const { rows: [ps] } = await db.query(`
+        INSERT INTO pollsters (name, historical_mae, weight_multiplier, notes)
+        VALUES ('CID', NULL, 0.80, 'CID Latinoamérica. Sin data comparable 2021 en Perú. Penalización por incertidumbre histórica.')
+        RETURNING id`);
+      cidId = ps.id;
+      inserted.push('Encuestadora CID creada');
+    } else {
+      cidId = exCid[0].id;
+    }
+
+    const { rows: ex2 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = $1 AND field_end = '2026-04-03' AND published_date = '2026-04-04'`, [cidId]
+    );
+    if (ex2.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, pct_no_answer, notes)
+        VALUES ($1, '2026-04-01', '2026-04-03', '2026-04-04', 2120, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 11.2, 13.8,
+          'CID Latinoamérica Abril I 2026. Primera encuesta de esta casa en el modelo.')
+        RETURNING id`, [cidId]);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',9.7),($1,'Rafael López Aliaga','Renovación Popular',9.1),
+        ($1,'Carlos Álvarez','País para Todos',6.8),($1,'Fernando Olivera','Frente Esperanza',5.6),
+        ($1,'López Chau','Ahora Nación',5.3),($1,'Ricardo Belmont','Partido Cívico Obras',4.9),
+        ($1,'Carlos Espá','SíCreo',4.4),($1,'Roberto Sánchez Palomino','Juntos por el Perú',4.3),
+        ($1,'Charlie Carrasco','Demócrata Unido',3.6),($1,'José Luna','Podemos Perú',3.6),
+        ($1,'Herbert Caller','PPP',3.5),($1,'Marisol Pérez Tello','Primero la Gente',2.9),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',2.6),($1,'César Acuña','APP',2.2)`, [p.id]);
+      inserted.push('CID Abril I 2026');
+    }
+
+    // --- CIT Abril 2026 ---
+    const { rows: ex3 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 5 AND field_end = '2026-04-03' AND published_date = '2026-04-04'`
+    );
+    if (ex3.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, pct_no_answer, notes)
+        VALUES (5, '2026-04-01', '2026-04-03', '2026-04-04', 1500, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 7.8, 8.5,
+          'CIT Abril 2026. Más reciente que la CIT de marzo 20-23.')
+        RETURNING id`);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Rafael López Aliaga','Renovación Popular',13),($1,'Keiko Fujimori','Fuerza Popular',11),
+        ($1,'López Chau','Ahora Nación',8),($1,'César Acuña','APP',6.5),
+        ($1,'Carlos Álvarez','País para Todos',6.1),($1,'Jorge Nieto','Partido del Buen Gobierno',5.1),
+        ($1,'Marisol Pérez Tello','Primero la Gente',4.5),($1,'Yonhy Lescano','Cooperación Popular',4),
+        ($1,'Ricardo Belmont','Partido Cívico Obras',3.5),($1,'Roberto Sánchez Palomino','Juntos por el Perú',3.3),
+        ($1,'Wolfgang Grozo','Integridad Democrática',3.1),($1,'Fernando Olivera','Frente Esperanza',2.2)`, [p.id]);
+      inserted.push('CIT Abril 2026');
+    }
+
+    console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
     // Forzar pipeline
     const result = await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update' });
 
-    res.json({
-      poll_inserted: pollInserted,
-      poll_already_existed: existing.length > 0,
-      ...result
-    });
+    res.json({ polls_inserted: inserted, ...result });
   } catch (err) {
     console.error('Error en force-run:', err);
     res.status(500).json({ error: err.message });

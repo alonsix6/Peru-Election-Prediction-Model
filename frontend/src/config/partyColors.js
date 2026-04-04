@@ -77,6 +77,12 @@ export const PARTY_COLORS = {
     bg: '#F5F3FF',
     text: '#4C1D95'
   },
+  'George Forsyth': {
+    party: 'Somos Perú',
+    primary: '#E11D48',
+    bg: '#FFF1F2',
+    text: '#9F1239'
+  },
 };
 
 const DEFAULT_COLOR = { party: 'Independiente', primary: '#6B7280', bg: '#F3F4F6', text: '#374151' };

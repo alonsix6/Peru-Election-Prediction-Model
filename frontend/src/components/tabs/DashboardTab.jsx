@@ -14,7 +14,7 @@ const ABBREV = {
   'Roberto Sánchez Palomino': 'RSP', 'Jorge Nieto': 'JN',
   'Wolfgang Grozo': 'WG', 'César Acuña': 'CAc',
   'Ricardo Belmont': 'RB', 'Marisol Pérez Tello': 'MPT',
-  'Carlos Espá': 'CE', 'Yonhy Lescano': 'YL', 'Mario Vizcarra': 'MV',
+  'Carlos Espá': 'CE', 'Yonhy Lescano': 'YL', 'Mario Vizcarra': 'MV', 'George Forsyth': 'GF',
 };
 function abbrev(name) { return ABBREV[name] || name.split(' ').map(w => w[0]).join(''); }
 

@@ -261,6 +261,29 @@ INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
   (pid, 'Wolfgang Grozo',           NULL,                           1.10),
   (pid, 'Mario Vizcarra',           NULL,                           1.90);
 
+-- ------------------------------------------------------------
+-- IPSOS TRACKING DIARIO (campo 29 mar - 1 abr 2026)
+-- Post-debates ronda 1 y 2 JNE. Dato más reciente antes de veda.
+-- ------------------------------------------------------------
+
+INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_undecided, pct_blank_null, notes)
+VALUES (3, '2026-03-29', '2026-04-01', '2026-04-03', 1203, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 14.00, 16.00, 'Tracking diario Ipsos para Perú21. Campo 29 mar - 1 abr 2026. Post-debates ronda 1 y 2 JNE. Dato más reciente antes de la veda electoral.')
+RETURNING id INTO pid;
+
+INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+  (pid, 'Keiko Fujimori',           'Fuerza Popular',               12.00),
+  (pid, 'Rafael López Aliaga',      'Renovación Popular',            8.00),
+  (pid, 'Carlos Álvarez',           'País para Todos',               8.00),
+  (pid, 'Roberto Sánchez Palomino', 'Juntos por el Perú',            6.00),
+  (pid, 'Jorge Nieto',              'Partido del Buen Gobierno',     5.00),
+  (pid, 'López Chau',               'Ahora Nación',                  4.00),
+  (pid, 'César Acuña',              'APP',                           4.00),
+  (pid, 'Ricardo Belmont',          'Partido Cívico Obras',          3.00),
+  (pid, 'Marisol Pérez Tello',      'Primero la Gente',              2.00),
+  (pid, 'George Forsyth',           'Somos Perú',                    2.00),
+  (pid, 'Yonhy Lescano',            'Cooperación Popular',           2.00),
+  (pid, 'Carlos Espá',              'SíCreo',                        2.00);
+
 END $$;
 
 -- ============================================================

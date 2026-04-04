@@ -203,6 +203,60 @@ router.get('/run-model', async (req, res) => {
   }
 });
 
+// ─── GET /api/force-run ──────────────────────────────────────
+// Inserta encuestas pendientes y fuerza corrida del pipeline
+router.get('/force-run', async (req, res) => {
+  try {
+    // Verificar si la encuesta Ipsos tracking ya existe
+    const { rows: existing } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 3 AND field_end = '2026-04-01' AND published_date = '2026-04-03'`
+    );
+
+    let pollInserted = false;
+    if (existing.length === 0) {
+      // Insertar encuesta Ipsos tracking 29 mar - 1 abr
+      const { rows: [poll] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_undecided, pct_blank_null, notes)
+        VALUES (3, '2026-03-29', '2026-04-01', '2026-04-03', 1203, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 14.00, 16.00,
+          'Tracking diario Ipsos para Perú21. Campo 29 mar - 1 abr 2026. Post-debates ronda 1 y 2 JNE.')
+        RETURNING id
+      `);
+
+      const pid = poll.id;
+      await db.query(`
+        INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+          ($1, 'Keiko Fujimori', 'Fuerza Popular', 12.00),
+          ($1, 'Rafael López Aliaga', 'Renovación Popular', 8.00),
+          ($1, 'Carlos Álvarez', 'País para Todos', 8.00),
+          ($1, 'Roberto Sánchez Palomino', 'Juntos por el Perú', 6.00),
+          ($1, 'Jorge Nieto', 'Partido del Buen Gobierno', 5.00),
+          ($1, 'López Chau', 'Ahora Nación', 4.00),
+          ($1, 'César Acuña', 'APP', 4.00),
+          ($1, 'Ricardo Belmont', 'Partido Cívico Obras', 3.00),
+          ($1, 'Marisol Pérez Tello', 'Primero la Gente', 2.00),
+          ($1, 'George Forsyth', 'Somos Perú', 2.00),
+          ($1, 'Yonhy Lescano', 'Cooperación Popular', 2.00),
+          ($1, 'Carlos Espá', 'SíCreo', 2.00)
+      `, [pid]);
+
+      pollInserted = true;
+      console.log(`✅ Encuesta Ipsos tracking insertada (poll_id: ${pid})`);
+    }
+
+    // Forzar pipeline
+    const result = await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update' });
+
+    res.json({
+      poll_inserted: pollInserted,
+      poll_already_existed: existing.length > 0,
+      ...result
+    });
+  } catch (err) {
+    console.error('Error en force-run:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── GET /api/model-history ─────────────────────────────────
 // Últimas 20 corridas automáticas
 router.get('/model-history', async (req, res) => {

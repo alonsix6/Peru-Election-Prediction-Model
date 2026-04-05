@@ -95,15 +95,15 @@ export default function SegundaVueltaTab({ predictions }) {
           <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
             <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Nuestro modelo</div>
             <div style={{ color: '#1C1917', fontSize: 13, lineHeight: 1.6 }}>
-              Combina <strong>19 encuestas</strong> con Polymarket usando pesos dinámicos.
-              Hoy las encuestas pesan ~72% y el mercado ~28%. Refleja el estado actual
-              del electorado según los datos concretos disponibles.
+              Combina <strong>23 encuestas</strong> con Polymarket usando pesos dinámicos.
+              Durante la veda, el peso del mercado sube exponencialmente. Refleja el
+              estado actual del electorado según los datos concretos disponibles.
             </div>
           </div>
           <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
             <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Polymarket</div>
             <div style={{ color: '#1C1917', fontSize: 13, lineHeight: 1.6 }}>
-              Mercado con <strong>$5.6M en apuestas</strong> reales. Los precios incorporan
+              Mercado con <strong>$6.3M en apuestas</strong> reales. Los precios incorporan
               todo: encuestas, rumores, operadores políticos, encuestas internas de campaña,
               y la probabilidad de eventos imprevistos.
             </div>

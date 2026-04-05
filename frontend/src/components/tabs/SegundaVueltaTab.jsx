@@ -51,7 +51,7 @@ export default function SegundaVueltaTab({ predictions }) {
           Rechazo definitivo
         </h3>
         <p style={{ color: '#A8A29E', fontSize: 12, margin: '0 0 16px' }}>
-          Porcentaje del electorado que dice "Definitivamente NO votaría" por este candidato (CIT, marzo 2026).
+          Porcentaje del electorado que dice "Definitivamente NO votaría" por este candidato (Ipsos, abril 2026).
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {REJECTION_DATA.map(d => {

@@ -98,7 +98,7 @@ Comparar quién acertó más:
 
 ### Sobre Polymarket
 - ¿Polymarket fue más preciso que las encuestas para el top-3?
-- ¿El α dinámico (28% → 87%) mejoró la predicción conforme avanzó la veda?
+- ¿El α dinámico (28% → 77%) mejoró la predicción conforme avanzó la veda?
 - ¿El scraper capturó los movimientos importantes del mercado?
 - Comparar predicción pre-veda vs predicción día de elección: ¿cuánto mejoró?
 
@@ -170,7 +170,7 @@ ORDER BY predicted_pct_mean DESC;
 
 2. **Las encuestas tienen sesgo sistémico**: si TODAS las encuestadoras subestiman al mismo candidato (como pasó con Castillo), el modelo hereda ese sesgo. IEP tiene más peso (1.25x) pero si IEP también falla, no hay corrección.
 
-3. **Polymarket tiene información incorrecta**: si los traders apostaron por información falsa o manipularon el mercado, el modelo lo absorbe con 28-87% de peso.
+3. **Polymarket tiene información incorrecta**: si los traders apostaron por información falsa o manipularon el mercado, el modelo lo absorbe con 28-77% de peso.
 
 4. **Evento de último minuto**: un evento que ocurre el mismo día de la elección (arresto, escándalo, desastre natural) que ninguna fuente captura a tiempo.
 
@@ -230,7 +230,7 @@ Si hay segunda vuelta (7 junio 2026), documentar:
 | Sigma base | 3.0 |
 | Temporal drift | 0.30 pts/día |
 | α Polymarket pre-veda | ~28.5% |
-| α Polymarket día elección | 87% |
+| α Polymarket día elección | 77% |
 | Shock negativo al líder | 15% de sims, -5 a -15 pts |
 | Shock negativo al #2 | 10% de sims, -5 a -12 pts |
 | Shock positivo ("Castillo") | 10% de sims, +5 a +12 pts |

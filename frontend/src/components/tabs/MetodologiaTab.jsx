@@ -134,7 +134,7 @@ export default function MetodologiaTab() {
         <StepRow
           number={3}
           title="Incluimos lo que dice el mercado"
-          description="Polymarket es un mercado donde la gente apuesta dinero real sobre quién va a ganar. Hoy tiene más de $6.3 millones apostados. Le damos un peso de ~28% al mercado y ~72% a las encuestas. Cuando empiece la veda electoral (5 de abril), el peso del mercado sube exponencialmente hasta 87% el día de la elección, porque las encuestas se congelan pero Polymarket sigue captando señales frescas."
+          description="Polymarket es un mercado donde la gente apuesta dinero real sobre quién va a ganar. Hoy tiene más de $6.3 millones apostados. Le damos un peso de ~28% al mercado y ~72% a las encuestas. Cuando empiece la veda electoral (5 de abril), el peso del mercado sube exponencialmente hasta 77% el día de la elección, porque las encuestas se congelan pero Polymarket sigue captando señales frescas."
         />
         <StepRow
           number={4}

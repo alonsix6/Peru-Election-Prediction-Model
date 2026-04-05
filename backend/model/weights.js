@@ -22,13 +22,13 @@ function getPolymarketWeight(volumeUSD = 5_100_000) {
       const hoursInVeda = vedaHours - Math.max(0, totalHours);
       const vedaProgress = Math.min(1, hoursInVeda / vedaHours);
       // Curva exponencial (^0.6): sube rápido al inicio de veda
-      // cuando la info fresca de PM es más valiosa
-      // Víspera: 80%, convergiendo con el lineal al final
-      return 0.30 + (Math.pow(vedaProgress, 0.6) * 0.50);
+      // Víspera: ~74%, día elección: 77%
+      // Encuestas mantienen al menos 23% de peso siempre
+      return 0.30 + (Math.pow(vedaProgress, 0.6) * 0.47);
     }
 
     case 'election_day':
-      return 0.87;
+      return 0.77;
 
     case 'post_election':
       return null;

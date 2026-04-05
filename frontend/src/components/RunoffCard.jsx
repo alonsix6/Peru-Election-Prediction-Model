@@ -1,12 +1,12 @@
 import { getPartyColor } from '../config/partyColors';
 
-// Ipsos campo 1-2 abril 2026
+// Promedio ponderado CIT marzo (40%) + Ipsos abril (60%)
 const REJECTION = {
-  'Rafael López Aliaga': 51.0,
-  'Keiko Fujimori': 59.0,
-  'Carlos Álvarez': 38.0,
-  'López Chau': 42.0,
-  'Roberto Sánchez Palomino': 41.0,
+  'Rafael López Aliaga': 50.9,
+  'Keiko Fujimori': 60.5,
+  'Carlos Álvarez': 42.9,
+  'López Chau': 45.9,
+  'Roberto Sánchez Palomino': 44.2,
   'Wolfgang Grozo': 45.6,
 };
 

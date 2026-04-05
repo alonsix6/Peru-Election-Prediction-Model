@@ -1,15 +1,14 @@
 /**
- * Voto potencial — actualizado con datos Ipsos (campo 1-2 abril 2026).
- * Piso = "Definitivamente sí", Techo = Potencial (definitivo + podría), Rechazo = "Definitivamente no".
- * Reemplaza datos CIT marzo 2026.
+ * Voto potencial — promedio ponderado CIT marzo (40%) + Ipsos abril (60%).
+ * Piso = "Definitivamente sí", Techo = Potencial, Rechazo = "Definitivamente no".
  */
 const VOTE_POTENTIAL_CIT = {
-  'Rafael López Aliaga': { ceiling: 24.0, floor:  6.0, rejection: 51.0 },
-  'Keiko Fujimori':      { ceiling: 26.0, floor: 10.0, rejection: 59.0 },
-  'Carlos Álvarez':      { ceiling: 34.0, floor:  7.0, rejection: 38.0 },
-  'López Chau':          { ceiling: 20.0, floor:  3.0, rejection: 42.0 },
-  'Wolfgang Grozo':      { ceiling: 14.0, floor:  5.5, rejection: 45.6 },  // sin dato Ipsos, mantiene CIT marzo
-  'Roberto Sánchez Palomino': { ceiling: 17.0, floor: 5.0, rejection: 41.0 }
+  'Rafael López Aliaga': { ceiling: 25.5, floor:  9.2, rejection: 50.9 },  // CIT 27.7/14.6/50.8 + Ipsos 24/6/51
+  'Keiko Fujimori':      { ceiling: 23.0, floor: 10.3, rejection: 60.5 },  // CIT 18.5/10.8/62.7 + Ipsos 26/10/59
+  'Carlos Álvarez':      { ceiling: 27.8, floor:  5.9, rejection: 42.9 },  // CIT 18.4/4.2/50.2 + Ipsos 34/7/38
+  'López Chau':          { ceiling: 18.9, floor:  4.0, rejection: 45.9 },  // CIT 17.2/5.4/51.7 + Ipsos 20/3/42
+  'Wolfgang Grozo':      { ceiling: 14.0, floor:  5.5, rejection: 45.6 },  // solo CIT marzo (sin dato Ipsos)
+  'Roberto Sánchez Palomino': { ceiling: 19.0, floor: 5.4, rejection: 44.2 }  // CIT est 22/6/48 + Ipsos 17/5/41
 };
 
 /**

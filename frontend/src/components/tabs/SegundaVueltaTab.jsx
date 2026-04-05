@@ -2,14 +2,14 @@ import { useState } from 'react';
 import RunoffCard from '../RunoffCard';
 import { getPartyColor } from '../../config/partyColors';
 
-// Actualizado con Ipsos campo 1-2 abril 2026
+// Promedio ponderado CIT marzo (40%) + Ipsos abril (60%)
 const REJECTION_DATA = [
-  { candidate: 'Keiko Fujimori', rejection: 59.0 },
-  { candidate: 'Rafael López Aliaga', rejection: 51.0 },
+  { candidate: 'Keiko Fujimori', rejection: 60.5 },
+  { candidate: 'Rafael López Aliaga', rejection: 50.9 },
+  { candidate: 'López Chau', rejection: 45.9 },
   { candidate: 'Wolfgang Grozo', rejection: 45.6 },
-  { candidate: 'López Chau', rejection: 42.0 },
-  { candidate: 'Roberto Sánchez Palomino', rejection: 41.0 },
-  { candidate: 'Carlos Álvarez', rejection: 38.0 },
+  { candidate: 'Roberto Sánchez Palomino', rejection: 44.2 },
+  { candidate: 'Carlos Álvarez', rejection: 42.9 },
 ];
 
 export default function SegundaVueltaTab({ predictions }) {
@@ -51,7 +51,7 @@ export default function SegundaVueltaTab({ predictions }) {
           Rechazo definitivo
         </h3>
         <p style={{ color: '#A8A29E', fontSize: 12, margin: '0 0 16px' }}>
-          Porcentaje del electorado que dice "Definitivamente NO votaría" por este candidato (Ipsos, abril 2026).
+          Porcentaje del electorado que dice "Definitivamente NO votaría" por este candidato (CIT marzo 40% + Ipsos abril 60%).
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {REJECTION_DATA.map(d => {

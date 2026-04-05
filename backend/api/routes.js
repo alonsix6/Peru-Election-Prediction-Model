@@ -336,6 +336,47 @@ router.get('/force-run', async (req, res) => {
       inserted.push('Ipsos simulacro 1-2 abr');
     }
 
+    // --- Datum última pre-veda (intención, campo 1-4 abr) ---
+    const { rows: ex6 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 2 AND field_end = '2026-04-04' AND poll_type = 'intencion_voto'`
+    );
+    if (ex6.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, pct_no_answer, notes)
+        VALUES (2, '2026-04-01', '2026-04-04', '2026-04-05', 3000, 1.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 8.1, 8.7,
+          'Datum para El Comercio. Último estudio pre-veda. Campo 1-4 abril 2026. n=3000, ME ±1.8%. Keiko primera. Álvarez supera a Aliaga. Sánchez 15.2% en rural. Indecisos mínimo histórico 16.8%.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',14.5),($1,'Carlos Álvarez','País para Todos',10.9),
+        ($1,'Rafael López Aliaga','Renovación Popular',9.9),($1,'Jorge Nieto','Partido del Buen Gobierno',6),
+        ($1,'Ricardo Belmont','Partido Cívico Obras',5.5),($1,'Roberto Sánchez Palomino','Juntos por el Perú',4.9),
+        ($1,'López Chau','Ahora Nación',4.7),($1,'Marisol Pérez Tello','Primero la Gente',4.5),
+        ($1,'César Acuña','APP',3.2),($1,'Carlos Espá','SíCreo',2.6),
+        ($1,'Yonhy Lescano','Cooperación Popular',2.4),($1,'Fernando Olivera','Frente de la Esperanza',1.8)`, [p.id]);
+      inserted.push('Datum intención 1-4 abr');
+    }
+
+    // --- Datum simulacro (campo 1-4 abr) ---
+    const { rows: ex7 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 2 AND field_end = '2026-04-04' AND poll_type = 'simulacro'`
+    );
+    if (ex7.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, notes)
+        VALUES (2, '2026-04-01', '2026-04-04', '2026-04-05', 3000, 1.80, 95.0, 'nacional', 'presencial', 'simulacro', 21.8,
+          'Simulacro Datum/El Comercio. Campo 1-4 abril 2026. Votos válidos. Sánchez rural 15.2%.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',18.1),($1,'Carlos Álvarez','País para Todos',10.8),
+        ($1,'Rafael López Aliaga','Renovación Popular',10.3),($1,'Jorge Nieto','Partido del Buen Gobierno',7.2),
+        ($1,'Roberto Sánchez Palomino','Juntos por el Perú',7),($1,'Ricardo Belmont','Partido Cívico Obras',6.5),
+        ($1,'Marisol Pérez Tello','Primero la Gente',4.7),($1,'López Chau','Ahora Nación',4.6),
+        ($1,'Carlos Espá','SíCreo',3),($1,'César Acuña','APP',3),
+        ($1,'Fernando Olivera','Frente de la Esperanza',2.8),($1,'Yonhy Lescano','Cooperación Popular',2.7),
+        ($1,'George Forsyth','Somos Perú',2.5)`, [p.id]);
+      inserted.push('Datum simulacro 1-4 abr');
+    }
+
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
     // Forzar pipeline

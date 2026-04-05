@@ -65,7 +65,7 @@ function LimitationItem({ text }) {
 
 export default function MetodologiaTab() {
   const pipelineSteps = [
-    { icon: Database, label: 'Datos', sublabel: '23 encuestas + Polymarket' },
+    { icon: Database, label: 'Datos', sublabel: '24 encuestas + Polymarket' },
     { icon: Scale, label: 'Ponderación', sublabel: 'Peso por precisión' },
     { icon: Shuffle, label: '10,000 simulaciones', sublabel: 'Monte Carlo' },
     { icon: Target, label: 'Resultado', sublabel: 'Probabilidades' },
@@ -124,7 +124,7 @@ export default function MetodologiaTab() {
         <StepRow
           number={1}
           title="Recopilamos las encuestas"
-          description="Tomamos 23 encuestas de 6 casas encuestadoras: IEP, Datum, Ipsos, CPI, CIT y CID Latinoamérica. Cada una preguntó a más de 1,200 personas en todo el Perú — urbano y rural — por quién votarían. La última encuesta incorporada es el estudio Datum del 1-4 de abril (n=3,000, la muestra más grande del ciclo), publicada el día de inicio de la veda electoral."
+          description="Tomamos 24 encuestas de 6 casas encuestadoras: IEP, Datum, Ipsos, CPI, CIT y CID Latinoamérica. Cada una preguntó a más de 1,200 personas en todo el Perú — urbano y rural — por quién votarían. La última encuesta incorporada es el estudio Datum del 1-4 de abril (n=3,000, la muestra más grande del ciclo), publicada el día de inicio de la veda electoral."
         />
         <StepRow
           number={2}
@@ -240,7 +240,7 @@ export default function MetodologiaTab() {
               fontSize: 13, fontWeight: 700, color: '#1C1917',
               textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12,
             }}>
-              Encuestas (6 casas, 23 encuestas)
+              Encuestas (6 casas, 24 encuestas)
             </div>
             {[
               { name: 'IEP', via: 'La República', weight: '1.25x' },

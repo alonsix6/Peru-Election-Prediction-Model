@@ -25,12 +25,15 @@ export default function Header({ status, predictions }) {
   const phase = status?.electoral_phase || 'pre_veda';
   const ps = PHASE_STYLES[phase] || PHASE_STYLES.pre_veda;
   const alpha = status?.polymarket_weight;
-  const totalHours = status?.total_hours || 0;
 
-  const days = Math.floor(totalHours / 24);
-  const hours = Math.floor(totalHours % 24);
-  const mins = Math.floor((totalHours * 60) % 60);
-  const secs = now.getSeconds();
+  // Countdown real calculado cada segundo desde la hora actual
+  const electionDate = new Date('2026-04-12T17:00:00-05:00'); // 5pm Lima — cierre de mesas y boca de urna
+  const diffMs = electionDate - now;
+  const totalSecsLeft = Math.max(0, Math.floor(diffMs / 1000));
+  const days = Math.floor(totalSecsLeft / 86400);
+  const hours = Math.floor((totalSecsLeft % 86400) / 3600);
+  const mins = Math.floor((totalSecsLeft % 3600) / 60);
+  const secs = totalSecsLeft % 60;
 
   // Last updated indicator
   let updatedText = null;

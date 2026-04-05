@@ -33,11 +33,13 @@ const POLLSTER_ORDER = ['Ipsos', 'CPI', 'Datum', 'IEP', 'CIT'];
  * Rechazo definitivo por candidato — "Def. No" de CIT (sección 5.5).
  * Techo duro: si 62.7% dice "definitivamente NO Keiko", ese % no le transferirá votos.
  */
+// Actualizado con Ipsos campo 1-2 abril 2026
 const REJECTION_RATES = {
-  'Rafael López Aliaga': 50.8,
-  'Keiko Fujimori':      62.7,
-  'Carlos Álvarez':      50.2,
-  'López Chau':          51.7,
+  'Rafael López Aliaga': 51.0,
+  'Keiko Fujimori':      59.0,
+  'Carlos Álvarez':      38.0,
+  'López Chau':          42.0,
+  'Roberto Sánchez Palomino': 41.0,
   'Wolfgang Grozo':      45.6
 };
 

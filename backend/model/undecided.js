@@ -1,15 +1,15 @@
 /**
- * Voto potencial CIT (20–23 mar) — sección 5.5 del plan.
- * Piso = "Definitivamente sí", Techo = Potencial (A+B), Rechazo = "Definitivamente no".
+ * Voto potencial — actualizado con datos Ipsos (campo 1-2 abril 2026).
+ * Piso = "Definitivamente sí", Techo = Potencial (definitivo + podría), Rechazo = "Definitivamente no".
+ * Reemplaza datos CIT marzo 2026.
  */
 const VOTE_POTENTIAL_CIT = {
-  'Rafael López Aliaga': { ceiling: 27.7, floor: 14.6, rejection: 50.8 },
-  'Keiko Fujimori':      { ceiling: 18.5, floor: 10.8, rejection: 62.7 },
-  'Carlos Álvarez':      { ceiling: 18.4, floor:  4.2, rejection: 50.2 },
-  'López Chau':          { ceiling: 17.2, floor:  5.4, rejection: 51.7 },
-  'Wolfgang Grozo':      { ceiling: 14.0, floor:  5.5, rejection: 45.6 },
-  // Estimado — sin dato CIT, basado en precedente Castillo 2021 (base rural/anti-sistema)
-  'Roberto Sánchez Palomino': { ceiling: 22.0, floor: 6.0, rejection: 48.0 }
+  'Rafael López Aliaga': { ceiling: 24.0, floor:  6.0, rejection: 51.0 },
+  'Keiko Fujimori':      { ceiling: 26.0, floor: 10.0, rejection: 59.0 },
+  'Carlos Álvarez':      { ceiling: 34.0, floor:  7.0, rejection: 38.0 },
+  'López Chau':          { ceiling: 20.0, floor:  3.0, rejection: 42.0 },
+  'Wolfgang Grozo':      { ceiling: 14.0, floor:  5.5, rejection: 45.6 },  // sin dato Ipsos, mantiene CIT marzo
+  'Roberto Sánchez Palomino': { ceiling: 17.0, floor: 5.0, rejection: 41.0 }
 };
 
 /**

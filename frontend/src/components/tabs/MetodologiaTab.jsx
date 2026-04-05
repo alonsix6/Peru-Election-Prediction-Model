@@ -65,7 +65,7 @@ function LimitationItem({ text }) {
 
 export default function MetodologiaTab() {
   const pipelineSteps = [
-    { icon: Database, label: 'Datos', sublabel: '21 encuestas + Polymarket' },
+    { icon: Database, label: 'Datos', sublabel: '23 encuestas + Polymarket' },
     { icon: Scale, label: 'Ponderación', sublabel: 'Peso por precisión' },
     { icon: Shuffle, label: '10,000 simulaciones', sublabel: 'Monte Carlo' },
     { icon: Target, label: 'Resultado', sublabel: 'Probabilidades' },
@@ -124,7 +124,7 @@ export default function MetodologiaTab() {
         <StepRow
           number={1}
           title="Recopilamos las encuestas"
-          description="Tomamos 21 encuestas de 6 casas encuestadoras: IEP, Datum, Ipsos, CPI, CIT y CID Latinoamérica. Cada una preguntó a más de 1,200 personas en todo el Perú — urbano y rural — por quién votarían. La última encuesta incorporada es el tracking de Ipsos del 1-2 de abril, la más reciente antes de la veda electoral."
+          description="Tomamos 23 encuestas de 6 casas encuestadoras: IEP, Datum, Ipsos, CPI, CIT y CID Latinoamérica. Cada una preguntó a más de 1,200 personas en todo el Perú — urbano y rural — por quién votarían. La última encuesta incorporada es el estudio Datum del 1-4 de abril (n=3,000, la muestra más grande del ciclo), publicada el día de inicio de la veda electoral."
         />
         <StepRow
           number={2}
@@ -134,7 +134,7 @@ export default function MetodologiaTab() {
         <StepRow
           number={3}
           title="Incluimos lo que dice el mercado"
-          description="Polymarket es un mercado donde la gente apuesta dinero real sobre quién va a ganar. Hoy tiene más de $5.6 millones apostados. Le damos un peso de ~28% al mercado y ~72% a las encuestas. Cuando empiece la veda electoral (5 de abril), el peso del mercado sube exponencialmente hasta 87% el día de la elección, porque las encuestas se congelan pero Polymarket sigue captando señales frescas."
+          description="Polymarket es un mercado donde la gente apuesta dinero real sobre quién va a ganar. Hoy tiene más de $6.3 millones apostados. Le damos un peso de ~28% al mercado y ~72% a las encuestas. Cuando empiece la veda electoral (5 de abril), el peso del mercado sube exponencialmente hasta 87% el día de la elección, porque las encuestas se congelan pero Polymarket sigue captando señales frescas."
         />
         <StepRow
           number={4}
@@ -171,7 +171,7 @@ export default function MetodologiaTab() {
             icon={Shield}
             iconColor="#059669"
             title="Datos reales, no opiniones"
-            description="Todo número que ves viene de encuestas publicadas o de apuestas reales con $5.6M en volumen. No inventamos datos, no ajustamos a mano, no tenemos favoritos. El modelo corre solo cada 30 minutos con un watchdog que garantiza la continuidad."
+            description="Todo número que ves viene de encuestas publicadas o de apuestas reales con $6.3M en volumen. No inventamos datos, no ajustamos a mano, no tenemos favoritos. El modelo corre solo cada 30 minutos con un watchdog que garantiza la continuidad."
           />
         </div>
       </div>
@@ -240,7 +240,7 @@ export default function MetodologiaTab() {
               fontSize: 13, fontWeight: 700, color: '#1C1917',
               textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12,
             }}>
-              Encuestas (6 casas, 21 encuestas)
+              Encuestas (6 casas, 23 encuestas)
             </div>
             {[
               { name: 'IEP', via: 'La República', weight: '1.25x' },
@@ -269,7 +269,7 @@ export default function MetodologiaTab() {
               Otras fuentes
             </div>
             {[
-              { name: 'Polymarket', detail: 'polymarket.com ($5.6M en volumen)' },
+              { name: 'Polymarket', detail: 'polymarket.com ($6.3M en volumen)' },
               { name: 'ONPE', detail: 'Resultados oficiales 2021' },
               { name: 'Wikipedia', detail: 'Tracker de encuestas 2026' },
             ].map((s, i) => (

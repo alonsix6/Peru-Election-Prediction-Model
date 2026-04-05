@@ -182,7 +182,7 @@ ORDER BY predicted_pct_mean DESC;
 
 1. **Combinación de fuentes**: ninguna fuente sola es suficiente. Encuestas + Polymarket + redistribución de indecisos + corrección por encuestadora = más info que cualquier encuesta individual.
 
-2. **21 encuestas de 6 casas**: la diversidad de fuentes reduce el sesgo de cualquier encuestadora individual.
+2. **23 encuestas de 6 casas**: la diversidad de fuentes reduce el sesgo de cualquier encuestadora individual. La última (Datum n=3000) tiene el menor margen de error del ciclo (±1.8%).
 
 3. **Peso dinámico de Polymarket durante veda**: cuando las encuestas se congelaron, Polymarket siguió captando señales. Si algo se movió durante la veda, el modelo lo captó.
 
@@ -223,7 +223,7 @@ Si hay segunda vuelta (7 junio 2026), documentar:
 
 | Parámetro | Valor |
 |-----------|-------|
-| Encuestas en el modelo | 21 |
+| Encuestas en el modelo | 23 |
 | Casas encuestadoras | 6 (IEP, Datum, Ipsos, CPI, CIT, CID) |
 | Simulaciones Monte Carlo | 10,000 |
 | Distribución de errores | t-Student df=4 |
@@ -260,6 +260,38 @@ Si hay segunda vuelta (7 junio 2026), documentar:
 | López Chau | 17.2% | 5.4% | 51.7% |
 | Wolfgang Grozo | 14.0% | 5.5% | 45.6% |
 | Sánchez Palomino | 22.0% (est.) | 6.0% | 48.0% |
+
+### Transferencia de votos (matriz por pares)
+El modelo usa una matriz de afinidad por pares en vez de bloques ideológicos rígidos.
+Valores clave (fracción que se transfiere al finalista):
+
+| Eliminado → Finalista | Aliaga | Keiko | Álvarez | Sánchez |
+|---|---|---|---|---|
+| Aliaga | — | 0.62 | 0.38 | 0.22 |
+| Keiko | 0.58 | — | 0.40 | 0.20 |
+| Álvarez | 0.30 | 0.25 | — | 0.42 |
+| Sánchez | 0.38 | 0.18 | 0.50 | — |
+| Chau | 0.35 | 0.18 | 0.45 | 0.58 |
+| Nieto | 0.35 | 0.20 | 0.42 | 0.45 |
+| Belmont | 0.35 | 0.30 | 0.42 | 0.28 |
+| Acuña | 0.33 | 0.35 | 0.38 | 0.25 |
+
+Nota: efecto antifujimorismo modelado — la izquierda transfiere ~35-38% a Aliaga cuando enfrenta a Keiko (vs solo 18-20% a Keiko).
+
+### Compresión logística de segunda vuelta
+Basado en evidencia empírica (toda segunda vuelta peruana converge a ~50/50):
+- Función: `compressed = 0.5 + 0.12 × tanh(2.5 × (raw - 0.5))`
+- Max win: 62% (ningún candidato ha ganado con más en Perú)
+- Rejection discount: 0.35-0.55 (variable por simulación)
+
+### Última encuesta incorporada
+Datum 1-4 abril (publicada 5 abril, día de veda):
+- n=3,000 — la muestra más grande del ciclo electoral
+- ME ±1.8% — el menor margen de error
+- Keiko lidera con 14.5% (intención) y 18.1% (simulacro)
+- Álvarez supera a Aliaga por primera vez en Datum
+- Sánchez 15.2% en zonas rurales (dato por macrozona)
+- Volumen Polymarket al cierre: >$6.3M
 
 ---
 

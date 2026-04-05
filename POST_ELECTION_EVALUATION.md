@@ -182,7 +182,7 @@ ORDER BY predicted_pct_mean DESC;
 
 1. **Combinación de fuentes**: ninguna fuente sola es suficiente. Encuestas + Polymarket + redistribución de indecisos + corrección por encuestadora = más info que cualquier encuesta individual.
 
-2. **23 encuestas de 6 casas**: la diversidad de fuentes reduce el sesgo de cualquier encuestadora individual. La última (Datum n=3000) tiene el menor margen de error del ciclo (±1.8%).
+2. **24 encuestas de 6 casas**: la diversidad de fuentes reduce el sesgo de cualquier encuestadora individual. La última (Datum n=3000) tiene el menor margen de error del ciclo (±1.8%).
 
 3. **Peso dinámico de Polymarket durante veda**: cuando las encuestas se congelaron, Polymarket siguió captando señales. Si algo se movió durante la veda, el modelo lo captó.
 
@@ -223,7 +223,7 @@ Si hay segunda vuelta (7 junio 2026), documentar:
 
 | Parámetro | Valor |
 |-----------|-------|
-| Encuestas en el modelo | 23 |
+| Encuestas en el modelo | 24 |
 | Casas encuestadoras | 6 (IEP, Datum, Ipsos, CPI, CIT, CID) |
 | Simulaciones Monte Carlo | 10,000 |
 | Distribución de errores | t-Student df=4 |

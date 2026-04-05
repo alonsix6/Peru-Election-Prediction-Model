@@ -377,6 +377,29 @@ router.get('/force-run', async (req, res) => {
       inserted.push('Datum simulacro 1-4 abr');
     }
 
+    // --- CPI final pre-veda (campo 1-4 abr) ---
+    const { rows: ex8 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 4 AND field_end = '2026-04-04' AND published_date = '2026-04-05'`
+    );
+    if (ex8.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, pct_no_answer, notes)
+        VALUES (4, '2026-04-01', '2026-04-04', '2026-04-05', 2000, 2.70, 95.5, 'nacional', 'presencial', 'intencion_voto', 14.7, 13.9,
+          'CPI para RPP. Última encuesta pre-veda. Campo 1-4 abril 2026. n=2000. Keiko primera 16.5% válidos. Aliaga segundo 12.8%. House effect CPI consistente con serie histórica.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',16.5),($1,'Rafael López Aliaga','Renovación Popular',12.8),
+        ($1,'Carlos Álvarez','País para Todos',11.9),($1,'López Chau','Ahora Nación',8.4),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',6.7),($1,'Ricardo Belmont','Partido Cívico Obras',6),
+        ($1,'Roberto Sánchez Palomino','Juntos por el Perú',5.4),($1,'Marisol Pérez Tello','Primero la Gente',5.2),
+        ($1,'César Acuña','APP',4.4),($1,'Fernando Olivera','Frente de la Esperanza',3.3),
+        ($1,'José Luna','Podemos Perú',2.4),($1,'George Forsyth','Somos Perú',2.2),
+        ($1,'Carlos Espá','SíCreo',2.1),($1,'Yonhy Lescano','Cooperación Popular',2),
+        ($1,'Mesías Guevara','Partido Morado',1.3),($1,'Wolfgang Grozo','Integridad Democrática',1.2),
+        ($1,'Enrique Valderrama','Partido Aprista Peruano',1.1)`, [p.id]);
+      inserted.push('CPI final pre-veda 1-4 abr');
+    }
+
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
     // Forzar pipeline

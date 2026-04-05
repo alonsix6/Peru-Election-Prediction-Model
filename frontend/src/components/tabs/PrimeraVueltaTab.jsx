@@ -47,7 +47,7 @@ export default function PrimeraVueltaTab({ predictions, polls }) {
       </div>
 
       {/* Trend Chart */}
-      <TrendChart />
+      <TrendChart polls={polls} />
 
       {/* Pollster weight table */}
       <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>

@@ -400,6 +400,29 @@ router.get('/force-run', async (req, res) => {
       inserted.push('CPI final pre-veda 1-4 abr');
     }
 
+    // --- CPI simulacro (campo 1-4 abr) ---
+    const { rows: ex9 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 4 AND field_end = '2026-04-04' AND poll_type = 'simulacro'`
+    );
+    if (ex9.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, notes)
+        VALUES (4, '2026-04-01', '2026-04-04', '2026-04-05', 1733, 2.70, 95.5, 'nacional', 'presencial', 'simulacro', 17.8,
+          'Simulacro CPI réplica cédula ONPE. Campo 1-4 abril 2026. Perú urbano y rural. Votos válidos.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',16.2),($1,'Rafael López Aliaga','Renovación Popular',13),
+        ($1,'Carlos Álvarez','País para Todos',11.8),($1,'López Chau','Ahora Nación',8.3),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',6.4),($1,'Ricardo Belmont','Partido Cívico Obras',5.9),
+        ($1,'Marisol Pérez Tello','Primero la Gente',5.4),($1,'Roberto Sánchez Palomino','Juntos por el Perú',5.2),
+        ($1,'César Acuña','APP',4.5),($1,'Fernando Olivera','Frente de la Esperanza',3.4),
+        ($1,'José Luna','Podemos Perú',2.6),($1,'George Forsyth','Somos Perú',2.4),
+        ($1,'Carlos Espá','SíCreo',2),($1,'Yonhy Lescano','Cooperación Popular',2),
+        ($1,'Wolfgang Grozo','Integridad Democrática',1.3),($1,'Mesías Guevara','Partido Morado',1.2),
+        ($1,'Enrique Valderrama','Partido Aprista Peruano',1.3)`, [p.id]);
+      inserted.push('CPI simulacro 1-4 abr');
+    }
+
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
     // Forzar pipeline

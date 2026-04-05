@@ -2,12 +2,14 @@ import { useState } from 'react';
 import RunoffCard from '../RunoffCard';
 import { getPartyColor } from '../../config/partyColors';
 
+// Actualizado con Ipsos campo 1-2 abril 2026
 const REJECTION_DATA = [
-  { candidate: 'Keiko Fujimori', rejection: 62.7 },
-  { candidate: 'López Chau', rejection: 51.7 },
-  { candidate: 'Rafael López Aliaga', rejection: 50.8 },
-  { candidate: 'Carlos Álvarez', rejection: 50.2 },
+  { candidate: 'Keiko Fujimori', rejection: 59.0 },
+  { candidate: 'Rafael López Aliaga', rejection: 51.0 },
   { candidate: 'Wolfgang Grozo', rejection: 45.6 },
+  { candidate: 'López Chau', rejection: 42.0 },
+  { candidate: 'Roberto Sánchez Palomino', rejection: 41.0 },
+  { candidate: 'Carlos Álvarez', rejection: 38.0 },
 ];
 
 export default function SegundaVueltaTab({ predictions }) {
@@ -95,7 +97,7 @@ export default function SegundaVueltaTab({ predictions }) {
           <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
             <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Nuestro modelo</div>
             <div style={{ color: '#1C1917', fontSize: 13, lineHeight: 1.6 }}>
-              Combina <strong>24 encuestas</strong> con Polymarket usando pesos dinámicos.
+              Combina <strong>25 encuestas</strong> con Polymarket usando pesos dinámicos.
               Durante la veda, el peso del mercado sube exponencialmente. Refleja el
               estado actual del electorado según los datos concretos disponibles.
             </div>

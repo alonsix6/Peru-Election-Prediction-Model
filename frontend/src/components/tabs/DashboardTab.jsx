@@ -222,7 +222,11 @@ function PolymarketModal({ polymarket, onClose }) {
   }, []);
 
   // Build chart from history snapshots
-  const TOP_CANDIDATES = ['Rafael López Aliaga', 'Keiko Fujimori', 'Carlos Álvarez', 'Roberto Sánchez Palomino', 'López Chau'];
+  // Top 5 dinámico del último snapshot de Polymarket
+  const TOP_CANDIDATES = (polymarket?.candidates || [])
+    .sort((a, b) => b.probability - a.probability)
+    .slice(0, 5)
+    .map(c => c.candidate);
 
   let chartData = { labels: [], datasets: [] };
   if (history?.snapshots?.length > 1) {

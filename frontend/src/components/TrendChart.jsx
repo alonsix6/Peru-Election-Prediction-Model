@@ -5,24 +5,43 @@ import { getPartyColor } from '../config/partyColors';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Top candidatos a graficar (sólidos)
-const TOP_CANDIDATES = [
-  'Keiko Fujimori', 'Carlos Álvarez', 'Rafael López Aliaga',
-  'Roberto Sánchez Palomino', 'López Chau', 'Jorge Nieto'
-];
+// Los candidatos a mostrar se calculan dinámicamente
+// Top 5 del modelo (sólidos) + siguiente (punteado)
 
-// Candidatos secundarios (línea punteada)
-const SECONDARY_CANDIDATES = [
-  'Ricardo Belmont'
-];
+/**
+ * Calcula los top candidatos de las encuestas más recientes.
+ */
+function getTopCandidates(polls) {
+  if (!polls?.polls?.length) return { top: [], secondary: [] };
+
+  // Tomar las 5 encuestas más recientes
+  const recentPolls = polls.polls.slice(0, 5);
+  const avgByCandidate = {};
+
+  for (const poll of recentPolls) {
+    for (const r of (poll.results || [])) {
+      if (!avgByCandidate[r.candidate]) avgByCandidate[r.candidate] = { sum: 0, count: 0 };
+      avgByCandidate[r.candidate].sum += r.pct_raw;
+      avgByCandidate[r.candidate].count++;
+    }
+  }
+
+  const sorted = Object.entries(avgByCandidate)
+    .map(([name, d]) => ({ name, avg: d.sum / d.count }))
+    .sort((a, b) => b.avg - a.avg);
+
+  return {
+    top: sorted.slice(0, 5).map(c => c.name),
+    secondary: sorted.slice(5, 7).map(c => c.name),
+  };
+}
 
 /**
  * Agrupa encuestas por período quincenal y calcula promedios por candidato.
  */
-function buildTrendData(polls) {
+function buildTrendData(polls, topCandidates, secondaryCandidates) {
   if (!polls?.polls?.length) return null;
 
-  // Definir períodos quincenales
   const periods = [
     { label: 'Nov 25', start: '2025-11-01', end: '2025-12-01' },
     { label: 'Ene 26', start: '2026-01-01', end: '2026-02-01' },
@@ -34,8 +53,7 @@ function buildTrendData(polls) {
     { label: 'Abr I', start: '2026-04-01', end: '2026-04-06' },
   ];
 
-  // Para cada período y candidato, promediar los resultados
-  const allCandidates = [...TOP_CANDIDATES, ...SECONDARY_CANDIDATES];
+  const allCandidates = [...topCandidates, ...secondaryCandidates];
   const data = {};
   for (const cand of allCandidates) data[cand] = [];
 
@@ -64,9 +82,10 @@ function buildTrendData(polls) {
 }
 
 export default function TrendChart({ polls }) {
-  const trend = useMemo(() => buildTrendData(polls), [polls]);
+  const { top, secondary } = useMemo(() => getTopCandidates(polls), [polls]);
+  const trend = useMemo(() => buildTrendData(polls, top, secondary), [polls, top, secondary]);
 
-  if (!trend) {
+  if (!trend || top.length === 0) {
     return (
       <div style={{
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12,
@@ -80,7 +99,7 @@ export default function TrendChart({ polls }) {
   const chartData = {
     labels: trend.labels,
     datasets: [
-      ...TOP_CANDIDATES.map(name => {
+      ...top.map(name => {
         const color = getPartyColor(name);
         return {
           label: name,
@@ -94,7 +113,7 @@ export default function TrendChart({ polls }) {
           spanGaps: true,
         };
       }),
-      ...SECONDARY_CANDIDATES.map(name => {
+      ...secondary.map(name => {
         const color = getPartyColor(name);
         return {
           label: name,
@@ -113,7 +132,7 @@ export default function TrendChart({ polls }) {
   };
 
   // Encontrar max para escala Y
-  const allCands = [...TOP_CANDIDATES, ...SECONDARY_CANDIDATES];
+  const allCands = [...top, ...secondary];
   const allValues = allCands.flatMap(c => trend.data[c]).filter(v => v !== null);
   const maxVal = Math.max(...allValues, 15);
 

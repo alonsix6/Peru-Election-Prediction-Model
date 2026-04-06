@@ -42,10 +42,12 @@ function redistributeUndecided(aggregated, undecidedPct, votePotential = VOTE_PO
       floor = potential.floor;
       rejection = potential.rejection;
     } else {
-      // Candidatos sin datos CIT: techo = weighted_pct × 2, piso = 0
+      // Candidatos sin datos CIT/Ipsos: techo = weighted_pct × 2, piso = 0
+      // Rechazo 40%: más realista que 50% para candidatos poco conocidos
+      // (bajo rechazo por falta de exposición, no por popularidad)
       ceiling = current * 2;
       floor = 0;
-      rejection = 50; // Rechazo neutro por defecto
+      rejection = 40;
     }
 
     // espacio = (techo − estimado_actual) × (1 − rechazo/100)

@@ -43,7 +43,7 @@ const REJECTION_RATES = {
   'Wolfgang Grozo':      45.6
 };
 
-const DEFAULT_REJECTION = 50.0;
+const DEFAULT_REJECTION = 40.0;
 
 /**
  * Matriz de transferencia de votos en segunda vuelta.

@@ -1,4 +1,4 @@
-# Backtesting del Modelo Electoral — Perú 2011, 2016 y 2021
+# Backtesting del Modelo Electoral — Perú 2006, 2011, 2016 y 2021
 
 ## Documento de validación histórica del modelo
 *Generado: 5 de abril de 2026, durante veda electoral*
@@ -203,33 +203,81 @@ Ejemplo: si el modelo predijo a un candidato en 12% y sacó 15%, el error absolu
 
 ---
 
-## 6. Comparación cruzada 2011, 2016 y 2021
+## 6. Backtesting 2006
 
-| Métrica | 2011 | 2016 | 2021 |
+### Contexto
+- **Elección:** 9 de abril 2006, primera vuelta
+- **El evento:** Humala ganó cómodamente. García remontó a Flores por 0.51 pts para clasificar a segunda vuelta — la definición más cerrada del período.
+- **El desafío:** ¿El modelo capturaría la remontada de García sobre Flores?
+
+### Datos utilizados
+- 5 snapshots: Enero I, Enero II, Febrero, Marzo I, Marzo II (pre-veda)
+- Encuestadora: Ipsos Apoyo (única con serie completa, n=2000)
+- 5 candidatos principales
+
+### Resultado final vs ONPE
+
+| Candidato | Modelo | ONPE | Error | IC 90% | ¿En IC? |
+|---|---|---|---|---|---|
+| Ollanta Humala | 31.7% | 30.61% | +1.1 | [25.9-35.2] | SÍ |
+| Lourdes Flores | 27.4% | 23.81% | +3.5 | [23.8-30.4] | SÍ |
+| Alan García | 23.2% | 24.32% | -1.1 | [20.6-26.1] | SÍ |
+| Valentín Paniagua | 9.1% | 5.75% | +3.3 | [6.1-12.5] | NO |
+| Martha Chávez | 8.7% | 5.54% | +3.2 | [5.8-12.1] | NO |
+
+### **MAE 2006: 2.4 puntos**
+### **Calibración IC 90%: 3/5 (60%)**
+
+### La disputa García vs Flores
+
+| Snapshot | García | Flores | ¿Modelo predice? |
 |---|---|---|---|
-| **MAE** | 3.6 pts | **2.2 pts** | 3.0 pts |
+| Enero I | 26.9% | 31.6% | Flores 2da |
+| Enero II | 26.5% | 29.4% | Flores 2da |
+| Febrero | 29.5% | 32.7% | Flores 2da |
+| Marzo I | 31.1% | 33.2% | Flores 2da |
+| **Pre-veda** | **23.2%** | **27.4%** | **Flores 2da** ✗ |
+| **Real ONPE** | **24.32%** | **23.81%** | **García 2do** |
+
+**El modelo NO captó la remontada de García.** En TODOS los snapshots, Flores estaba segunda. La diferencia de 0.51 pts en la realidad (García 24.32% vs Flores 23.81%) fue demasiado cerrada para que el modelo la previera con las encuestas disponibles.
+
+El director de Ipsos Alfredo Torres ya había anticipado esta posibilidad en su reporte: "La diferencia entre García y Flores es de cinco puntos — la misma que existía en 2001 — y en esa elección García logró superar a Flores en la última semana." El modelo, sin esa intuición cualitativa, se quedó con los números crudos.
+
+### Hallazgos 2006
+
+1. **Humala perfecto**: modelo 31.7% vs real 30.61% = error de solo 1.1 pts. El IC lo contenía. Candidato fácil — lideraba consistentemente.
+
+2. **Paniagua (+3.3) y Chávez (+3.2) sobreestimados**: voto estratégico hacia García/Flores. El mismo patrón de candidatos menores que colapsan.
+
+3. **García vs Flores es el caso perfecto de voto estratégico**: García remontó 5 pts en 2 semanas absorbiendo voto de indecisos y candidatos menores. El modelo no puede capturar movimientos post-última-encuesta.
+
+4. **MAE 2.4 es bueno** pero Ipsos tuvo 1.9 — porque su última encuesta (2 semanas antes) ya capturaba la tendencia de Humala con alta precisión.
+
+---
+
+## 7. Comparación cruzada 2006, 2011, 2016 y 2021
+
+| Métrica | 2006 | 2011 | 2016 | 2021 |
+|---|---|---|---|---|
+| **MAE** | 2.4 pts | 3.6 pts | **2.2 pts** | 3.0 pts |
 | **Calibración IC 90%** | 83% (5/6) | <90% (Castillo fuera) |
 | **Acertó 1er lugar** | SÍ (Keiko) | NO (tenía a Lescano) |
 | **Acertó 2do lugar** | SÍ (PPK) | NO (tenía a De Soto) |
 | **Candidato rural invisible** | Santos: 4.9% vs 4.1% real | Castillo: 12.7% vs 18.9% real |
 | **Mayor error individual** | Barnechea +5.1 pts | Forsyth +6.6 pts |
-| **Causa del mayor error** | Voto estratégico | Voto estratégico |
+| **Calibración IC 90%** | 60% (3/5) | 20% (1/5) | 83% (5/6) | <90% |
+| **Acertó 1er lugar** | SÍ (Humala) | SÍ (Humala) | SÍ (Keiko) | NO |
+| **Acertó 2do lugar** | NO (Flores) | SÍ (Keiko) | SÍ (PPK) | NO |
+| **Mayor error** | Flores +3.5 | Castañeda +4.7 | Barnechea +5.1 | Forsyth +6.6 |
+| **Causa mayor error** | Voto estratégico | Voto estratégico | Voto estratégico | Voto estratégico |
+| **Modelo vs Ipsos** | PEOR (2.4 vs 1.9) | PEOR (3.6 vs 2.8) | MEJOR | MEJOR |
+
+### MAE promedio del modelo: 2.8 pts (4 elecciones)
 
 ### Patrón consistente: el voto estratégico
 
-| **Calibración IC 90%** | 20% (1/5) | 83% (5/6) | <90% |
-| **Acertó 1er lugar** | SÍ (Humala) | SÍ (Keiko) | NO (tenía a Lescano) |
-| **Acertó 2do lugar** | SÍ (Keiko) | SÍ (PPK) | NO (tenía a De Soto) |
-| **Candidato rural** | Humala: 26.2% vs 31.7% | Santos: 4.9% vs 4.1% | Castillo: 12.7% vs 18.9% |
-| **Mayor error** | Castañeda +4.7 | Barnechea +5.1 | Forsyth +6.6 |
-| **Causa mayor error** | Voto estratégico | Voto estratégico | Voto estratégico |
-| **Modelo vs mejor encuestadora** | Modelo PEOR (3.6 vs 2.8 Ipsos) | Modelo MEJOR | Modelo MEJOR |
-
-### MAE promedio del modelo: 2.9 pts (3 elecciones)
-
-### Patrón consistente: el voto estratégico
-
-En las tres elecciones, el mayor error del modelo es un candidato que **colapsa el día de la elección** porque su votante migra a otro para evitar un resultado peor:
+En las cuatro elecciones, el mayor error del modelo es un candidato que **colapsa el día de la elección** porque su votante migra a otro para evitar un resultado peor:
+- 2006: Paniagua/Chávez → García (remontada de 5 pts sobre Flores)
 - 2011: Toledo/Castañeda → Humala/PPK
 - 2016: Barnechea → PPK (para evitar Mendoza en 2da vuelta)
 - 2021: Forsyth → Keiko/De Soto (para evitar Castillo)

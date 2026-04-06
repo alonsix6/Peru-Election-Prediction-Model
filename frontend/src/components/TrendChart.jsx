@@ -5,10 +5,15 @@ import { getPartyColor } from '../config/partyColors';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Top candidatos a graficar
+// Top candidatos a graficar (sólidos)
 const TOP_CANDIDATES = [
   'Keiko Fujimori', 'Carlos Álvarez', 'Rafael López Aliaga',
   'Roberto Sánchez Palomino', 'López Chau', 'Jorge Nieto'
+];
+
+// Candidatos secundarios (línea punteada)
+const SECONDARY_CANDIDATES = [
+  'Ricardo Belmont'
 ];
 
 /**
@@ -30,8 +35,9 @@ function buildTrendData(polls) {
   ];
 
   // Para cada período y candidato, promediar los resultados
+  const allCandidates = [...TOP_CANDIDATES, ...SECONDARY_CANDIDATES];
   const data = {};
-  for (const cand of TOP_CANDIDATES) data[cand] = [];
+  for (const cand of allCandidates) data[cand] = [];
 
   for (const period of periods) {
     const pStart = new Date(period.start);
@@ -44,7 +50,7 @@ function buildTrendData(polls) {
     });
 
     // Promediar por candidato
-    for (const cand of TOP_CANDIDATES) {
+    for (const cand of allCandidates) {
       const values = [];
       for (const poll of periodPolls) {
         const result = poll.results?.find(r => r.candidate === cand);
@@ -73,24 +79,42 @@ export default function TrendChart({ polls }) {
 
   const chartData = {
     labels: trend.labels,
-    datasets: TOP_CANDIDATES.map(name => {
-      const color = getPartyColor(name);
-      return {
-        label: name,
-        data: trend.data[name],
-        borderColor: color.primary,
-        backgroundColor: color.primary + '33',
-        borderWidth: 2.5,
-        pointRadius: 4,
-        pointBackgroundColor: color.primary,
-        tension: 0.3,
-        spanGaps: true,
-      };
-    }),
+    datasets: [
+      ...TOP_CANDIDATES.map(name => {
+        const color = getPartyColor(name);
+        return {
+          label: name,
+          data: trend.data[name],
+          borderColor: color.primary,
+          backgroundColor: color.primary + '33',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: color.primary,
+          tension: 0.3,
+          spanGaps: true,
+        };
+      }),
+      ...SECONDARY_CANDIDATES.map(name => {
+        const color = getPartyColor(name);
+        return {
+          label: name,
+          data: trend.data[name],
+          borderColor: color.primary,
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [6, 3],
+          pointRadius: 3,
+          pointBackgroundColor: color.primary,
+          tension: 0.3,
+          spanGaps: true,
+        };
+      }),
+    ],
   };
 
   // Encontrar max para escala Y
-  const allValues = TOP_CANDIDATES.flatMap(c => trend.data[c]).filter(v => v !== null);
+  const allCands = [...TOP_CANDIDATES, ...SECONDARY_CANDIDATES];
+  const allValues = allCands.flatMap(c => trend.data[c]).filter(v => v !== null);
   const maxVal = Math.max(...allValues, 15);
 
   const options = {

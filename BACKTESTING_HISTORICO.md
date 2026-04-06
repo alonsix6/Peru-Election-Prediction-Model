@@ -1,4 +1,4 @@
-# Backtesting del Modelo Electoral — Perú 2021 y 2016
+# Backtesting del Modelo Electoral — Perú 2011, 2016 y 2021
 
 ## Documento de validación histórica del modelo
 *Generado: 5 de abril de 2026, durante veda electoral*
@@ -145,11 +145,69 @@ Ejemplo: si el modelo predijo a un candidato en 12% y sacó 15%, el error absolu
 
 ---
 
-## 5. Comparación cruzada 2016 vs 2021
+## 5. Backtesting 2011
 
-| Métrica | 2016 | 2021 |
-|---|---|---|
-| **MAE** | **2.2 pts** | 3.0 pts |
+### Contexto
+- **Elección:** 10 de abril 2011, primera vuelta
+- **El evento:** Ollanta Humala pasó de 10% en enero a 31.72% el día de la elección — el caso más extremo de subida en la historia electoral peruana moderna
+- **Diferencia con Castillo 2021:** la tendencia de Humala era VISIBLE en las encuestas (10% → 14% → 21% → 27%). Castillo era invisible.
+
+### Datos utilizados
+- 4 snapshots: Enero, Febrero, Marzo I, Abril pre-veda
+- Encuestadoras: Ipsos (1.00x), Datum (1.10x), CPI (0.95x), IMA (0.85x), IDICE (0.80x)
+- 5 candidatos principales con datos de antivoto estimados
+- Última pre-veda: simulacro Ipsos n=2000
+
+### Evolución de Humala en el modelo
+
+| Período | Posición | % modelo | P(2da vuelta) |
+|---|---|---|---|
+| Enero 2011 | #4 | 17.3% | 7.4% |
+| Febrero 2011 | #3 | 19.5% | 16.3% |
+| **Marzo 2011** | **#1** | **24.4%** | **86.4%** |
+| **Abril pre-veda** | **#1** | **26.2%** | **90.8%** |
+
+**El modelo capturó la subida de Humala correctamente**: de #4 en enero a #1 desde marzo. Con 90.8% de P(2v) en la última corrida, el modelo lo daba como favorito claro.
+
+### Resultado final vs ONPE
+
+| Candidato | Modelo | ONPE | Error | IC 90% | ¿En IC? |
+|---|---|---|---|---|---|
+| Ollanta Humala | 26.2% | 31.72% | -5.5 | [21.2-29.4] | NO |
+| Keiko Fujimori | 20.4% | 23.56% | -3.1 | [17.7-23.0] | NO |
+| Pedro Pablo Kuczynski | 19.8% | 18.52% | +1.2 | [17.3-22.4] | SÍ |
+| Alejandro Toledo | 19.1% | 15.64% | +3.4 | [16.5-21.9] | NO |
+| Luis Castañeda | 14.5% | 9.84% | +4.7 | [11.7-17.9] | NO |
+
+### **MAE 2011: 3.6 puntos**
+### **Calibración IC 90%: 1/5 (20%)**
+
+### MAE Modelo vs Ipsos
+
+| Fuente | MAE |
+|---|---|
+| Ipsos (simulacro n=2000) | **2.8 pts** |
+| Nuestro modelo | 3.6 pts |
+
+**En 2011, Ipsos fue mejor que el modelo.** Esto se explica porque la última encuesta era un simulacro de alta calidad (n=2000, cédula réplica) que capturaba el momentum de Humala casi en tiempo real. El modelo, al tener solo esa encuesta como input de abril, esencialmente la replica pero agrega ruido por la redistribución de indecisos que sobreestimó a Toledo (+3.4) y Castañeda (+4.7) — ambos colapsaron por voto estratégico hacia Humala/PPK.
+
+### Hallazgos 2011
+
+1. **Humala correctamente identificado como #1 desde marzo**: a diferencia de Castillo 2021 (que quedó en #3), Humala fue visible en las encuestas y el modelo lo capturó.
+
+2. **Calibración IC: 20% — la peor de los tres backtestings**. Solo PPK cayó dentro de su IC. Los movimientos de última hora (voto estratégico de Toledo/Castañeda hacia Humala/PPK) no fueron capturados.
+
+3. **Toledo (+3.4) y Castañeda (+4.7) sobreestimados**: mismo patrón de colapso por voto estratégico que Barnechea 2016 y Forsyth/Lescano 2021. El votante que los prefiere migra al candidato con más chances de su espectro ideológico.
+
+4. **Humala subestimado en 5.5 pts**: el modelo lo tenía en 26.2% cuando sacó 31.72%. Parte de la diferencia es el voto de Toledo y Castañeda que migró a Humala el día D. Si se suman los "excesos" de Toledo (+3.4) y Castañeda (+4.7), hay ~8 pts redistribuibles — más que suficiente para explicar los -5.5 pts de Humala.
+
+---
+
+## 6. Comparación cruzada 2011, 2016 y 2021
+
+| Métrica | 2011 | 2016 | 2021 |
+|---|---|---|---|
+| **MAE** | 3.6 pts | **2.2 pts** | 3.0 pts |
 | **Calibración IC 90%** | 83% (5/6) | <90% (Castillo fuera) |
 | **Acertó 1er lugar** | SÍ (Keiko) | NO (tenía a Lescano) |
 | **Acertó 2do lugar** | SÍ (PPK) | NO (tenía a De Soto) |
@@ -159,26 +217,49 @@ Ejemplo: si el modelo predijo a un candidato en 12% y sacó 15%, el error absolu
 
 ### Patrón consistente: el voto estratégico
 
-En ambas elecciones, el mayor error del modelo es un candidato que **colapsa el día de la elección** porque su votante migra a otro para evitar un resultado peor:
+| **Calibración IC 90%** | 20% (1/5) | 83% (5/6) | <90% |
+| **Acertó 1er lugar** | SÍ (Humala) | SÍ (Keiko) | NO (tenía a Lescano) |
+| **Acertó 2do lugar** | SÍ (Keiko) | SÍ (PPK) | NO (tenía a De Soto) |
+| **Candidato rural** | Humala: 26.2% vs 31.7% | Santos: 4.9% vs 4.1% | Castillo: 12.7% vs 18.9% |
+| **Mayor error** | Castañeda +4.7 | Barnechea +5.1 | Forsyth +6.6 |
+| **Causa mayor error** | Voto estratégico | Voto estratégico | Voto estratégico |
+| **Modelo vs mejor encuestadora** | Modelo PEOR (3.6 vs 2.8 Ipsos) | Modelo MEJOR | Modelo MEJOR |
+
+### MAE promedio del modelo: 2.9 pts (3 elecciones)
+
+### Patrón consistente: el voto estratégico
+
+En las tres elecciones, el mayor error del modelo es un candidato que **colapsa el día de la elección** porque su votante migra a otro para evitar un resultado peor:
+- 2011: Toledo/Castañeda → Humala/PPK
 - 2016: Barnechea → PPK (para evitar Mendoza en 2da vuelta)
 - 2021: Forsyth → Keiko/De Soto (para evitar Castillo)
 - 2021: Lescano → Mendoza/Castillo (para evitar Keiko)
 
-**En 2026, el candidato más vulnerable a este fenómeno es Aliaga.** Votantes que lo prefieren pero migran a Keiko o Álvarez el día D para "asegurar" su opción contra Sánchez o el candidato que más temen.
+**En 2026, los candidatos más vulnerables a este fenómeno son Aliaga y Chau.** Votantes que los prefieren pero migran a Keiko o Álvarez el día D para "asegurar" su opción contra el candidato que más temen.
+
+### Patrón de candidato rural/anti-sistema
+
+| Elección | Candidato | Encuestas pre-veda | Modelo | Resultado real | Error modelo |
+|---|---|---|---|---|---|
+| 2011 | Humala | 27.2% (Ipsos) | 26.2% | 31.72% | -5.5 |
+| 2016 | Santos | ~2% | 4.9% | 4.12% | +0.8 |
+| 2021 | Castillo | ~6% | 12.7% | 18.92% | -6.3 |
+
+El modelo consistentemente subestima al candidato rural (Humala -5.5, Castillo -6.3) excepto cuando es de nicho bajo (Santos +0.8). La redistribución de indecisos con techo de voto potencial ayuda pero no es suficiente cuando la subida es explosiva durante la veda.
 
 ---
 
-## 6. ¿Qué aprendimos para 2026?
+## 7. ¿Qué aprendimos para 2026?
 
 ### Lo que el modelo hace bien
-1. **Reducción de error por agregación**: MAE consistentemente mejor que cualquier encuestadora individual (2.2 en 2016, 3.0 en 2021 vs 3.5-5.1 de encuestadoras)
-2. **Captura de candidatos de nicho**: Santos 2016 capturado, Castillo 2021 identificado como #3
-3. **Calibración de IC razonable**: 83% de candidatos dentro del IC en 2016
-4. **Pesos por precisión funcionan**: IEP con peso 1.25x captó mejor a Castillo
+1. **Reducción de error por agregación**: MAE promedio 2.9 pts en 3 elecciones — consistentemente competitivo con las mejores encuestadoras individuales
+2. **Captura de candidatos rurales emergentes**: Humala #1 desde marzo 2011, Castillo #3 en 2021, Santos capturado en 2016
+3. **Calibración de IC razonable en 2016**: 83% de candidatos dentro del IC
+4. **Pesos por precisión funcionan**: IEP con peso 1.25x captó mejor a Castillo en 2021
 
 ### Lo que el modelo no captura
-1. **Voto estratégico de último minuto**: candidatos que colapsan porque su votante migra. No hay forma de modelar esto sin datos intraday
-2. **Subida durante la veda**: Castillo subió de ~7% a 18.9% en los últimos 7 días. Sin Polymarket en 2021, el modelo no tenía forma de captar esto. **En 2026 sí tenemos Polymarket** — esta es la ventaja clave
+1. **Voto estratégico de último minuto**: candidatos que colapsan porque su votante migra. Error promedio del candidato que colapsa: +5.5 pts en 3 elecciones. No hay forma de modelar esto sin datos intraday
+2. **Subida explosiva durante la veda**: Castillo subió de ~7% a 18.9%, Humala de ~27% a ~32%. Sin Polymarket en 2011/2021, el modelo no tenía forma de captar esto. **En 2026 sí tenemos Polymarket** — esta es la ventaja clave
 3. **IC demasiado estrecho para candidatos rurales**: el 18.92% de Castillo no cayó en el IC [9.4-16.1]. Los fat tails (df=4) ayudan pero no son suficientes para eventos de tipo "cisne negro electoral"
 
 ### Mejoras implementadas en 2026 vs los backtestings

@@ -423,6 +423,45 @@ router.get('/force-run', async (req, res) => {
       inserted.push('CPI simulacro 1-4 abr');
     }
 
+    // --- CIT simulacro abril I (campo 30 mar - 1 abr) ---
+    const { rows: ex10 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 5 AND field_start = '2026-03-30' AND field_end = '2026-04-01' AND poll_type = 'simulacro'`
+    );
+    if (ex10.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, notes)
+        VALUES (5, '2026-03-30', '2026-04-01', '2026-04-05', 1500, 2.50, 95.0, 'nacional', 'presencial', 'simulacro', 23.4,
+          'CIT simulacro abril I 2026. Campo 30 mar - 1 abr. n=1500. Aliaga primero 17.8% — house effect CIT consistente. Sánchez 3.9% el más bajo del ciclo.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Rafael López Aliaga','Renovación Popular',17.8),($1,'Keiko Fujimori','Fuerza Popular',17.1),
+        ($1,'Carlos Álvarez','País para Todos',10.5),($1,'César Acuña','APP',7.8),
+        ($1,'López Chau','Ahora Nación',7.8),($1,'Jorge Nieto','Partido del Buen Gobierno',5.5),
+        ($1,'Marisol Pérez Tello','Primero la Gente',4.5),($1,'Roberto Sánchez Palomino','Juntos por el Perú',3.9),
+        ($1,'Ricardo Belmont','Partido Cívico Obras',3.4)`, [p.id]);
+      inserted.push('CIT simulacro abril I');
+    }
+
+    // --- Ipsos intención 3-4 abr ---
+    const { rows: ex11 } = await db.query(
+      `SELECT id FROM polls WHERE pollster_id = 3 AND field_start = '2026-04-03' AND field_end = '2026-04-04' AND poll_type = 'intencion_voto'`
+    );
+    if (ex11.length === 0) {
+      const { rows: [p] } = await db.query(`
+        INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error, confidence_lvl, scope, technique, poll_type, pct_blank_null, pct_no_answer, notes)
+        VALUES (3, '2026-04-03', '2026-04-04', '2026-04-05', 1205, 2.80, 95.0, 'nacional', 'presencial', 'intencion_voto', 11, 16,
+          'Ipsos para Perú21. Campo 3-4 abril 2026. 24 departamentos + Callao. Keiko 15%, Aliaga cae a 7% (interior 4%). Sánchez rural 15% NSE E 11% — patrón Castillo confirmado.')
+        RETURNING id`, []);
+      await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+        ($1,'Keiko Fujimori','Fuerza Popular',15),($1,'Carlos Álvarez','País para Todos',8),
+        ($1,'Rafael López Aliaga','Renovación Popular',7),($1,'Ricardo Belmont','Partido Cívico Obras',6),
+        ($1,'Roberto Sánchez Palomino','Juntos por el Perú',5),($1,'López Chau','Ahora Nación',5),
+        ($1,'Jorge Nieto','Partido del Buen Gobierno',4),($1,'Marisol Pérez Tello','Primero la Gente',3),
+        ($1,'César Acuña','APP',3),($1,'Fernando Olivera','Frente de la Esperanza',3),
+        ($1,'José Luna','Podemos Perú',2)`, [p.id]);
+      inserted.push('Ipsos intención 3-4 abr');
+    }
+
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
     // Forzar pipeline

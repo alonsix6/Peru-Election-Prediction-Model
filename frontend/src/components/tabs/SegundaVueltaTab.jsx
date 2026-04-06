@@ -97,7 +97,7 @@ export default function SegundaVueltaTab({ predictions }) {
           <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
             <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Nuestro modelo</div>
             <div style={{ color: '#1C1917', fontSize: 13, lineHeight: 1.6 }}>
-              Combina <strong>25 encuestas</strong> con Polymarket usando pesos dinámicos.
+              Combina <strong>27 encuestas</strong> con Polymarket usando pesos dinámicos.
               Durante la veda, el peso del mercado sube exponencialmente. Refleja el
               estado actual del electorado según los datos concretos disponibles.
             </div>

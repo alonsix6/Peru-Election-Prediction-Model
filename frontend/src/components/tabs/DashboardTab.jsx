@@ -144,7 +144,7 @@ function HistoryCard() {
 
 // ─── Sources Card ───────────────────────────────────────────
 function SourcesCard({ polls, polymarket, onOpenPolymarket }) {
-  const pollList = polls?.polls?.slice(0, 10) || [];
+  const pollList = (polls?.polls || []).filter(p => p.effective_weight >= 0.1).slice(0, 15);
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>

@@ -6,6 +6,7 @@ import DashboardTab from './components/tabs/DashboardTab';
 import PrimeraVueltaTab from './components/tabs/PrimeraVueltaTab';
 import SegundaVueltaTab from './components/tabs/SegundaVueltaTab';
 import MetodologiaTab from './components/tabs/MetodologiaTab';
+import BacktestingTab from './components/tabs/BacktestingTab';
 import { Loader2 } from 'lucide-react';
 
 class ErrorBoundary extends Component {
@@ -82,6 +83,9 @@ function AppContent() {
             )}
             {activeTab === 'metodologia' && (
               <MetodologiaTab />
+            )}
+            {activeTab === 'backtesting' && (
+              <BacktestingTab />
             )}
           </>
         )}

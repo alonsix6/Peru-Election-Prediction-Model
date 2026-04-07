@@ -3,6 +3,7 @@ const TABS = [
   { id: 'primera', label: 'Primera Vuelta' },
   { id: 'segunda', label: 'Segunda Vuelta' },
   { id: 'metodologia', label: 'Metodología' },
+  { id: 'backtesting', label: 'Validación' },
 ];
 
 export default function TabNav({ activeTab, onTabChange }) {

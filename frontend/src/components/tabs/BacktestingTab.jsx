@@ -20,7 +20,7 @@ const DATA = {
       { name: 'CPI', mae: 4.0 },
       { name: 'Datum', mae: 4.1 },
     ],
-    highlight: 'Acertó el orden del top-3: Keiko 1ra, PPK 2do, Mendoza 3ra. Ningún analista mainstream predijo que PPK superaría a Mendoza.',
+    highlight: 'Acertó el orden del top-3: Keiko 1ra, PPK 2do, Mendoza 3ra. La disputa entre PPK y Mendoza por el segundo lugar fue la más cerrada del ciclo — el modelo los ubicó correctamente.',
     note: 'El error en Barnechea (+5.1) responde a voto estratégico de última hora hacia PPK — fenómeno estructural no capturable por ninguna encuestadora.',
   },
   2021: {

@@ -20,8 +20,8 @@ const DATA = {
       { name: 'CPI', mae: 4.0 },
       { name: 'Datum', mae: 4.1 },
     ],
-    highlight: 'Acertó el orden del top-3: Keiko 1ra, PPK 2do, Mendoza 3ra. La disputa entre PPK y Mendoza por el segundo lugar fue la más cerrada del ciclo — el modelo los ubicó correctamente.',
-    note: 'El error en Barnechea (+5.1) responde a voto estratégico de última hora hacia PPK — fenómeno estructural no capturable por ninguna encuestadora.',
+    highlight: 'El modelo ubicó correctamente el orden del top-3: Keiko 1ra, PPK 2do, Mendoza 3ra. La disputa entre PPK y Mendoza por el segundo lugar fue la más cerrada del ciclo.',
+    note: 'El error más grande fue Barnechea (+5.1 pts), probablemente por voto estratégico de última hora hacia PPK. Este tipo de movimiento ocurre después de la última encuesta y es difícil de anticipar con cualquier modelo basado en encuestas.',
   },
   2021: {
     context: 'Primera vuelta con 4 encuestadoras activas (Ipsos, IEP, CPI, Datum). Agregador sin Polymarket — solo encuestas hasta antes de la veda electoral del 4 de abril.',
@@ -43,8 +43,8 @@ const DATA = {
       { name: 'Ipsos', mae: 4.8 },
       { name: 'CPI', mae: 5.1 },
     ],
-    highlight: 'Tenía a Castillo en #3 con P(2da vuelta) = 23.6% cuando el consenso no lo consideraba. López Aliaga: predicción perfecta con error de 0.0 puntos.',
-    note: 'Lescano y Forsyth fueron sobreestimados por colapso de voto estratégico en las últimas horas — el mismo fenómeno de Barnechea en 2016.',
+    highlight: 'El modelo ubicó a Castillo en el #3 con 23.6% de probabilidad de pasar a segunda vuelta — una señal más clara que la de las encuestas individuales. El error de -6.2 pts refleja la misma subestimación del voto rural que afectó a todas las encuestadoras.',
+    note: 'Lescano (+6.2) y Forsyth (+6.6) fueron los mayores errores, probablemente por migración de voto estratégico en las últimas horas — un patrón similar al de Barnechea en 2016.',
   },
 };
 
@@ -78,7 +78,7 @@ export default function BacktestingTab() {
           ¿Qué tan bien predijo el modelo en elecciones pasadas?
         </h2>
         <p style={{ color: '#78716C', fontSize: 14, lineHeight: 1.6, maxWidth: 640 }}>
-          Corrimos el agregador hacia atrás usando solo los datos disponibles antes de cada veda electoral — sin información futura, sin ajustes posteriores.
+          Corrimos el agregador hacia atrás usando solo los datos que estaban disponibles antes de cada veda electoral — sin información futura, sin ajustes posteriores. Los números muestran tanto los aciertos como los errores.
         </p>
       </div>
 
@@ -205,7 +205,7 @@ export default function BacktestingTab() {
           <span style={{
             fontSize: 10, padding: '2px 6px', background: '#EFF6FF', color: '#1D4ED8',
             border: '1px solid #BFDBFE', borderRadius: 4, flexShrink: 0
-          }}>MEJOR</span>
+          }}>menor MAE</span>
         </div>
 
         {/* Pollster rows */}
@@ -234,9 +234,9 @@ export default function BacktestingTab() {
           señal complementaria, con peso dinámico que crece a medida que avanza la veda electoral.
         </p>
         <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-          Polymarket captura información que las encuestas no tienen — inteligencia de campaña, organización territorial,
-          flujos de dinero — pero no es independiente: ya internaliza parte de las encuestas. Por eso entra con peso calibrado.
-          Su peso final el día de la elección es del 77%.
+          Polymarket puede reflejar información adicional — percepción de campaña, movimientos de último momento —
+          pero no es una fuente independiente: los traders también leen las encuestas. Por eso entra con peso calibrado, no como verdad absoluta.
+          Su peso máximo el día de la elección es del 77%, manteniendo siempre al menos 23% de peso para las encuestas.
         </p>
       </div>
     </div>

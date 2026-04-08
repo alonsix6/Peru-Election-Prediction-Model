@@ -63,6 +63,7 @@ const TRANSFER_AFFINITY = {
     'Roberto Sánchez Palomino': 0.22,
     'López Chau': 0.20,
     'Jorge Nieto': 0.28,
+    'Ricardo Belmont': 0.15,             // base vieja conservadora no va a populista joven
   },
   // Keiko eliminada: fujimorismo va a derecha, pero también al centro
   'Keiko Fujimori': {
@@ -71,6 +72,7 @@ const TRANSFER_AFFINITY = {
     'Roberto Sánchez Palomino': 0.20,
     'López Chau': 0.18,
     'Jorge Nieto': 0.28,
+    'Ricardo Belmont': 0.15,             // fujimorismo no va a izquierda populista
   },
   // Álvarez eliminado: centro anti-establishment — su base es diversa,
   // parte va a derecha, parte a izquierda, pero prefiere no-establishment
@@ -80,6 +82,7 @@ const TRANSFER_AFFINITY = {
     'Roberto Sánchez Palomino': 0.42, // anti-establishment va a anti-establishment
     'López Chau': 0.38,
     'Jorge Nieto': 0.38,
+    'Ricardo Belmont': 0.35,             // centro joven comparte algo de base
   },
   // Sánchez eliminado: izquierda rural — fuerte antifujimorismo,
   // forzados entre Aliaga y Keiko votan Aliaga como "mal menor"
@@ -89,6 +92,7 @@ const TRANSFER_AFFINITY = {
     'Carlos Álvarez': 0.50,
     'López Chau': 0.60,
     'Jorge Nieto': 0.48,
+    'Ricardo Belmont': 0.50,          // izquierda a izquierda populista
   },
   // Chau eliminado: izquierda — misma lógica antifujimorista
   'López Chau': {
@@ -97,6 +101,7 @@ const TRANSFER_AFFINITY = {
     'Carlos Álvarez': 0.45,
     'Roberto Sánchez Palomino': 0.58,
     'Jorge Nieto': 0.42,
+    'Ricardo Belmont': 0.40,          // izquierda urbana comparte base
   },
   // Nieto eliminado: centro-izquierda — antifujimorista
   'Jorge Nieto': {
@@ -105,14 +110,17 @@ const TRANSFER_AFFINITY = {
     'Carlos Álvarez': 0.42,
     'Roberto Sánchez Palomino': 0.45,
     'López Chau': 0.40,
+    'Ricardo Belmont': 0.40,          // jóvenes moderados migran
   },
-  // Belmont eliminado: populista independiente
+  // Belmont eliminado: izquierda populista, voto joven TikTok, NSE C/D
+  // Apoyó a Castillo/Cerrón/AMLO. Su base joven NO va a derecha conservadora.
   'Ricardo Belmont': {
-    'Rafael López Aliaga': 0.35,
-    'Keiko Fujimori': 0.30,
-    'Carlos Álvarez': 0.42,
-    'Roberto Sánchez Palomino': 0.28,
-    'López Chau': 0.25,
+    'Carlos Álvarez': 0.30,              // centro joven, anti-establishment
+    'Jorge Nieto': 0.30,                 // joven moderado, overlap generacional
+    'Roberto Sánchez Palomino': 0.25,    // izquierda, tercer destino natural
+    'Rafael López Aliaga': 0.20,         // algo de base limeña popular comparte
+    'López Chau': 0.20,                  // izquierda pero menor overlap
+    'Keiko Fujimori': 0.10,              // muy poco — antifujimorismo joven
   },
   // Acuña eliminado: pragmático, maquinaria norte
   'César Acuña': {

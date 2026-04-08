@@ -77,8 +77,8 @@ const TRANSFER_AFFINITY = {
   // Álvarez eliminado: centro anti-establishment — su base es diversa,
   // parte va a derecha, parte a izquierda, pero prefiere no-establishment
   'Carlos Álvarez': {
-    'Rafael López Aliaga': 0.30,
-    'Keiko Fujimori': 0.25,
+    'Rafael López Aliaga': 0.35,         // centro va algo a derecha
+    'Keiko Fujimori': 0.30,              // opción "conocida" para parte del centro
     'Roberto Sánchez Palomino': 0.42, // anti-establishment va a anti-establishment
     'López Chau': 0.38,
     'Jorge Nieto': 0.38,

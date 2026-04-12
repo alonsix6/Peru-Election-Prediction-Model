@@ -35,19 +35,27 @@ router.get('/status', (req, res) => {
 // No corre ningún cálculo — solo lee y sirve.
 router.get('/predictions', async (req, res) => {
   try {
+    // Primero verificar si existe foto final (modelo congelado)
+    const { rows: finalCheck } = await db.query(
+      "SELECT COUNT(*) FROM model_predictions WHERE trigger = 'final_election_day'"
+    );
+    const isFrozen = parseInt(finalCheck[0].count) > 0;
+    const triggerFilter = isFrozen ? 'final_election_day' : 'auto_polymarket_update';
+
     const { rows } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, electoral_phase,
              polymarket_weight, polls_weight, generated_at_lima, model_version,
-             runoff_json, polls_pct, polymarket_pct, posterior_pct, risk_json
+             runoff_json, polls_pct, polymarket_pct, posterior_pct, risk_json,
+             frozen_at
       FROM model_predictions
-      WHERE trigger = 'auto_polymarket_update'
+      WHERE trigger = $1
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
-          WHERE trigger = 'auto_polymarket_update'
+          WHERE trigger = $1
         )
       ORDER BY predicted_pct_mean DESC
-    `);
+    `, [triggerFilter]);
 
     if (rows.length === 0) {
       return res.json({ message: 'No predictions yet.', candidates: [], runoff_scenarios: [] });
@@ -67,6 +75,8 @@ router.get('/predictions', async (req, res) => {
       polymarket_weight: parseFloat(rows[0].polymarket_weight),
       polls_weight: parseFloat(rows[0].polls_weight),
       model_version: rows[0].model_version,
+      is_frozen: isFrozen,
+      frozen_at: rows[0].frozen_at || null,
       candidates: rows.map(r => ({
         candidate: r.candidate,
         predicted_pct_mean: parseFloat(r.predicted_pct_mean),
@@ -511,6 +521,33 @@ router.get('/model-history', async (req, res) => {
   } catch (err) {
     await handleError('DB_CONNECTION_FAILED', { module: 'api/model-history' }, err);
     res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ─── POST /api/results/onpe ─────────────────────────────────
+// Insertar resultados oficiales ONPE para post-mortem
+router.post('/results/onpe', async (req, res) => {
+  try {
+    const { election_year, round, results } = req.body;
+    if (!election_year || !round || !results || !Array.isArray(results)) {
+      return res.status(400).json({ error: 'Faltan campos: election_year, round, results[]' });
+    }
+
+    let inserted = 0;
+    for (const r of results) {
+      await db.query(
+        `INSERT INTO historical_results (election_year, round, candidate, party, pct_actual, pct_valid_actual)
+         VALUES ($1, $2, $3, $4, $5, $5)`,
+        [election_year, round, r.candidate, r.party || null, r.valid_vote_pct]
+      );
+      inserted++;
+    }
+
+    console.log(`✅ Resultados ONPE insertados: ${inserted} candidatos (${election_year} ronda ${round})`);
+    res.json({ success: true, inserted });
+  } catch (err) {
+    console.error('Error insertando resultados ONPE:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -30,7 +30,7 @@ async function autoMigrate() {
   // Migrar columnas nuevas si faltan
   const { rows: cols } = await db.query(`
     SELECT column_name FROM information_schema.columns
-    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct', 'risk_json')
+    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct', 'risk_json', 'is_final_snapshot', 'frozen_at')
   `);
   const existing = cols.map(c => c.column_name);
 
@@ -41,6 +41,8 @@ async function autoMigrate() {
     ['polymarket_pct', `ALTER TABLE model_predictions ADD COLUMN polymarket_pct DECIMAL(5,2)`],
     ['posterior_pct', `ALTER TABLE model_predictions ADD COLUMN posterior_pct DECIMAL(5,2)`],
     ['risk_json', `ALTER TABLE model_predictions ADD COLUMN risk_json TEXT`],
+    ['is_final_snapshot', `ALTER TABLE model_predictions ADD COLUMN is_final_snapshot BOOLEAN DEFAULT FALSE`],
+    ['frozen_at', `ALTER TABLE model_predictions ADD COLUMN frozen_at TIMESTAMPTZ`],
   ];
   for (const [col, sql] of migrations) {
     if (!existing.includes(col)) {

@@ -33,6 +33,8 @@ function normalizePredictions(data) {
     })),
     runoff_scenarios: data.runoff_scenarios || [],
     risk_scenarios: data.risk_scenarios || null,
+    is_frozen: data.is_frozen || false,
+    frozen_at: data.frozen_at || null,
   };
 }
 

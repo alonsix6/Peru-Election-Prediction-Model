@@ -268,7 +268,7 @@ async function scrapePolymarket() {
 async function checkElectionFreeze() {
   const now = nowPeru();
   const isElectionDay = now.toISODate() === '2026-04-12';
-  const pastCutoff = now.hour >= 17;
+  const pastCutoff = now.hour >= 18; // Ampliado: mesas extendidas hasta 6pm por JNE/ONPE
 
   if (!isElectionDay || !pastCutoff) return false;
 

@@ -55,7 +55,7 @@ function AppContent() {
           padding: '16px 20px', textAlign: 'center',
         }}>
           <div style={{ color: '#92400E', fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
-            FOTO FINAL DEL MODELO — 12 de abril de 2026, 5:00pm Lima
+            FOTO FINAL DEL MODELO — 12 de abril de 2026, 6:00pm Lima
           </div>
           <div style={{ color: '#A16207', fontSize: 13, lineHeight: 1.5 }}>
             El modelo se ha detenido. Esta predicción será evaluada contra los resultados oficiales de la ONPE.

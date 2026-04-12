@@ -80,7 +80,9 @@ CREATE TABLE model_predictions (
   polls_pct            DECIMAL(5,2),
   polymarket_pct       DECIMAL(5,2),
   posterior_pct        DECIMAL(5,2),
-  risk_json            TEXT
+  risk_json            TEXT,
+  is_final_snapshot    BOOLEAN DEFAULT FALSE,
+  frozen_at            TIMESTAMPTZ
 );
 
 -- Tabla de errores del sistema

@@ -260,24 +260,73 @@ async function scrapePolymarket() {
  * Inicia el cron job — cada 30 minutos.
  * También ejecuta inmediatamente al arrancar.
  */
+/**
+ * Verifica si el modelo debe congelarse (post 5pm día de elección).
+ * Si ya pasó el corte y no hay foto final, ejecuta una última corrida.
+ * Retorna true si el modelo está congelado y no debe correr más.
+ */
+async function checkElectionFreeze() {
+  const now = nowPeru();
+  const isElectionDay = now.toISODate() === '2026-04-12';
+  const pastCutoff = now.hour >= 18; // Ampliado: mesas extendidas hasta 6pm por JNE/ONPE
+
+  if (!isElectionDay || !pastCutoff) return false;
+
+  // Verificar si la foto final ya existe
+  const { rows } = await db.query(
+    "SELECT COUNT(*) FROM model_predictions WHERE trigger = 'final_election_day'"
+  );
+  const finalExists = parseInt(rows[0].count) > 0;
+
+  if (!finalExists) {
+    // Ejecutar una última corrida como foto final
+    console.log('🗳️ 5pm Lima — ejecutando FOTO FINAL del modelo...');
+    try {
+      await scrapePolymarket();
+    } catch (err) {
+      console.error('Scrape final falló:', err.message);
+    }
+    try {
+      const { runFullPipeline } = require('../model/pipeline');
+      await runFullPipeline({ saveToDB: true, trigger: 'final_election_day' });
+      console.log('🗳️ FOTO FINAL guardada. Modelo congelado.');
+    } catch (err) {
+      console.error('Pipeline final falló:', err.message);
+    }
+  } else {
+    console.log('🗳️ Modelo ya congelado — foto final ya existe.');
+  }
+
+  return true; // Modelo congelado, no correr más
+}
+
 function startPolymarketCron() {
   console.log('⏰ Polymarket cron job programado: cada 30 minutos');
 
-  // Ejecutar inmediatamente al arrancar
-  scrapePolymarket().catch(err => console.error('Scrape inicial falló:', err.message));
+  // Ejecutar inmediatamente al arrancar (respetando freeze)
+  (async () => {
+    const frozen = await checkElectionFreeze().catch(() => false);
+    if (!frozen) {
+      scrapePolymarket().catch(err => console.error('Scrape inicial falló:', err.message));
+    }
+  })();
 
-  // Programar cada 30 min con protección contra crashes
+  // Programar cada 30 min con protección contra crashes y freeze
   cron.schedule('*/30 * * * *', async () => {
     try {
+      const frozen = await checkElectionFreeze();
+      if (frozen) return;
       await scrapePolymarket();
     } catch (err) {
       console.error('Cron scrape falló (no-fatal):', err.message);
     }
   });
 
-  // Watchdog: cada 5 min verifica que el último snapshot no tenga más de 40 min
+  // Watchdog: cada 20 min, respetando freeze
   setInterval(async () => {
     try {
+      const frozen = await checkElectionFreeze();
+      if (frozen) return;
       const { rows } = await db.query('SELECT MAX(captured_at) as last FROM polymarket_snapshots');
       if (rows[0].last) {
         const minsAgo = (Date.now() - new Date(rows[0].last)) / 60000;
@@ -289,7 +338,7 @@ function startPolymarketCron() {
     } catch (err) {
       console.error('Watchdog error:', err.message);
     }
-  }, 20 * 60 * 1000); // cada 20 min
+  }, 20 * 60 * 1000);
 }
 
 module.exports = { scrapePolymarket, startPolymarketCron, fetchPolymarketData };

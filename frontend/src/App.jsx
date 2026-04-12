@@ -48,6 +48,29 @@ function AppContent() {
       <Header status={status} predictions={predictions} />
       <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
+      {/* Banner FOTO FINAL — visible solo cuando el modelo está congelado */}
+      {predictions?.is_frozen && (
+        <div style={{
+          background: '#FFFBEB', borderBottom: '2px solid #F59E0B',
+          padding: '16px 20px', textAlign: 'center',
+        }}>
+          <div style={{ color: '#92400E', fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
+            FOTO FINAL DEL MODELO — 12 de abril de 2026, 5:00pm Lima
+          </div>
+          <div style={{ color: '#A16207', fontSize: 13, lineHeight: 1.5 }}>
+            El modelo se ha detenido. Esta predicción será evaluada contra los resultados oficiales de la ONPE.
+          </div>
+          <div style={{ color: '#A16207', fontSize: 13, lineHeight: 1.5 }}>
+            Los datos son solo de referencia hasta que se publiquen los resultados reales. NO son resultados oficiales.
+          </div>
+          {predictions.frozen_at && (
+            <div style={{ color: '#B45309', fontSize: 11, marginTop: 6 }}>
+              Congelado: {new Date(predictions.frozen_at).toLocaleString('es-PE', { timeZone: 'America/Lima' })}
+            </div>
+          )}
+        </div>
+      )}
+
       <main aria-label="Contenido principal" style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 16px' }}>
         {loading && (
           <div role="status" aria-live="polite" style={{ textAlign: 'center', padding: '60px 20px' }}>

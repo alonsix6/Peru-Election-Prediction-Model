@@ -27,7 +27,7 @@ export default function Header({ status, predictions }) {
   const alpha = status?.polymarket_weight;
 
   // Countdown real calculado cada segundo desde la hora actual
-  const electionDate = new Date('2026-04-12T17:00:00-05:00'); // 5pm Lima — cierre de mesas y boca de urna
+  const electionDate = new Date('2026-04-12T18:00:00-05:00'); // 6pm Lima — cierre de mesas extendido por JNE/ONPE
   const diffMs = electionDate - now;
   const totalSecsLeft = Math.max(0, Math.floor(diffMs / 1000));
   const days = Math.floor(totalSecsLeft / 86400);

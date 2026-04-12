@@ -474,8 +474,12 @@ router.get('/force-run', async (req, res) => {
 
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
-    // Forzar pipeline
-    const result = await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update' });
+    // Forzar pipeline — si es post-cierre, guardar como foto final
+    const { nowPeru } = require('../model/clock');
+    const now = nowPeru();
+    const isPostClose = now.toISODate() === '2026-04-12' && now.hour >= 18;
+    const trigger = isPostClose ? 'final_election_day' : 'auto_polymarket_update';
+    const result = await runFullPipeline({ saveToDB: true, trigger });
 
     res.json({ polls_inserted: inserted, ...result });
   } catch (err) {

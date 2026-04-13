@@ -532,7 +532,8 @@ router.get('/model-history', async (req, res) => {
 // Devuelve ambas corridas clave (6pm freeze + foto final) para análisis
 router.get('/post-mortem', async (req, res) => {
   try {
-    // Corrida 1: última auto run CON datos de Polymarket (alpha > 0)
+    // Corrida 1: auto run de las 6pm Lima (18:00 = 23:00 UTC) CON PM
+    // Buscar la corrida automática más cercana a 23:00 UTC del 12 de abril
     const { rows: run6pm } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
@@ -542,7 +543,9 @@ router.get('/post-mortem', async (req, res) => {
         AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
-          WHERE trigger = 'auto_polymarket_update' AND polymarket_weight > 0
+          WHERE trigger = 'auto_polymarket_update'
+            AND polymarket_weight > 0
+            AND generated_at_lima < '2026-04-12T23:30:00Z'
         )
       ORDER BY predicted_pct_mean DESC
     `);

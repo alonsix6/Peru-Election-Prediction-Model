@@ -144,8 +144,13 @@ async function validateSystemIntegrity() {
     console.warn('⚠️  Tabla polymarket_snapshots no accesible');
   }
 
-  // 7. Asegurar primera predicción
-  await ensureFirstPrediction();
+  // 7. Asegurar primera predicción (solo si no estamos post-elección)
+  const phase = electoralPhase();
+  if (phase === 'post_election') {
+    console.log('🗳️  Post-elección — no se corren predicciones nuevas.');
+  } else {
+    await ensureFirstPrediction();
+  }
 
   console.log('\n✅ Sistema listo para operar.\n');
 }

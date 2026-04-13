@@ -532,21 +532,22 @@ router.get('/model-history', async (req, res) => {
 // Devuelve ambas corridas clave (6pm freeze + foto final) para análisis
 router.get('/post-mortem', async (req, res) => {
   try {
-    // Corrida 1: la de las 6pm Lima (auto run más cercana a las 18:00)
+    // Corrida 1: última auto run CON datos de Polymarket (alpha > 0)
     const { rows: run6pm } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
              posterior_pct, generated_at_lima, trigger, polymarket_weight, polls_weight
       FROM model_predictions
       WHERE trigger = 'auto_polymarket_update'
+        AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
-          WHERE trigger = 'auto_polymarket_update'
+          WHERE trigger = 'auto_polymarket_update' AND polymarket_weight > 0
         )
       ORDER BY predicted_pct_mean DESC
     `);
 
-    // Corrida 2: foto final
+    // Corrida 2: foto final CON datos de Polymarket (alpha > 0)
     const { rows: runFinal } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
@@ -554,9 +555,10 @@ router.get('/post-mortem', async (req, res) => {
              frozen_at
       FROM model_predictions
       WHERE trigger = 'final_election_day'
+        AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
-          WHERE trigger = 'final_election_day'
+          WHERE trigger = 'final_election_day' AND polymarket_weight > 0
         )
       ORDER BY predicted_pct_mean DESC
     `);

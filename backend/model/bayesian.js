@@ -15,8 +15,8 @@ const { getPolymarketWeight } = require('./weights');
  * @returns {Object} - { candidates: { candidate: { posterior_pct, polls_pct, polymarket_pct } },
  *                       polymarket_weight, polls_weight }
  */
-function bayesianIntegration(pollsEstimate, polymarketData, volumeUSD) {
-  const α = getPolymarketWeight(volumeUSD);
+function bayesianIntegration(pollsEstimate, polymarketData, volumeUSD, overrideAlpha = null) {
+  const α = overrideAlpha !== null ? overrideAlpha : getPolymarketWeight(volumeUSD);
 
   // Post-elección: no hay integración
   if (α === null) {

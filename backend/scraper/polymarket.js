@@ -270,6 +270,13 @@ async function checkElectionFreeze() {
   const isElectionDay = now.toISODate() === '2026-04-12';
   const pastCutoff = now.hour >= 18; // Ampliado: mesas extendidas hasta 6pm por JNE/ONPE
 
+  // Post-elección: siempre congelado
+  const phase = electoralPhase();
+  if (phase === 'post_election') {
+    console.log('🗳️ Post-elección — modelo congelado permanentemente.');
+    return true;
+  }
+
   if (!isElectionDay || !pastCutoff) return false;
 
   // Verificar si la foto final ya existe

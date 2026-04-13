@@ -322,17 +322,82 @@ Si se confirma segunda vuelta, el modelo tiene ventajas naturales:
 | Infraestructura | **A** | 20 corridas automáticas, cero downtime |
 | **Global** | **B+** | Sólido, con un error dominante identificado y corregible |
 
-### 7.4. Pendiente: Conteo Rápido ONPE
+### 7.4. Conteo Rápido: Ipsos y Datum (13 de abril)
 
-> Esta sección será actualizada cuando la ONPE publique el conteo rápido.
+Dos encuestadoras publicaron conteo rápido basado en actas oficiales, con resultados que difieren entre sí — particularmente en el segundo lugar.
 
-| # | Candidato | % Conteo Rápido | Error vs Modelo | Error vs BdU |
-|---|---|---|---|---|
-| 1 | _pendiente_ | — | — | — |
-| 2 | _pendiente_ | — | — | — |
-| 3 | _pendiente_ | — | — | — |
-| 4 | _pendiente_ | — | — | — |
-| 5 | _pendiente_ | — | — | — |
+#### Resultados comparados
+
+| # | Candidato | Ipsos (95.7%) | Margen | Datum (100%) | FOTO FINAL |
+|---|---|---|---|---|---|
+| 1 | Keiko Fujimori | **17.1%** | ±1.0 | **16.8%** | 30.0% |
+| 2 | Roberto Sánchez | **12.4%** | ±1.3 | 9.4% | 8.9% |
+| 3 | Rafael López Aliaga | 11.3% | ±1.2 | **12.9%** | 13.0% |
+| 4 | Jorge Nieto | 10.7% | ±0.9 | 11.6% | 9.1% |
+| 5 | Ricardo Belmont | 10.2% | ±0.5 | 10.1% | 11.3% |
+
+#### La discrepancia clave: ¿quién va segundo?
+
+La diferencia más notable entre ambas encuestadoras es **Roberto Sánchez**: Ipsos lo coloca 2do con 12.4%, Datum lo ubica 5to con 9.4% — una brecha de 3 puntos. Para Datum, el segundo lugar es López Aliaga (12.9%); para Ipsos, Aliaga baja al tercero (11.3%). Nieto también varía: 3ro en Datum (11.6%) vs 4to en Ipsos (10.7%).
+
+Con márgenes de error de ±1.0 a ±1.3, los rangos reales de Sánchez (11.1-13.7% Ipsos), Aliaga (10.1-12.5% Ipsos) y Nieto (9.8-11.6% Ipsos) se solapan — un empate técnico a tres bandas por el segundo lugar. Habrá que esperar los resultados oficiales de la ONPE.
+
+#### Ficha técnica
+
+| Aspecto | Ipsos/Transparencia/NDI | Datum |
+|---|---|---|
+| Muestra | 1,037 mesas, 124 provincias, 25 regiones + 8 ciudades extranjero | 1,500 actas, 317,768 votos |
+| Cobertura de muestra | 95.7% | 100% |
+| Nivel de confianza | 95% | No publicado |
+| Margen de error | ±1% a ±2% (varía por candidato) | ±1% |
+| Track record | <1 pp vs ONPE en elecciones 2001-2021 | — |
+
+#### ¿Cómo le fue al modelo? Depende contra quién midas
+
+| Métrica | vs BdU | vs Ipsos CR | vs Datum CR |
+|---|---|---|---|
+| **MAE top-5** | 3.70 | 4.16 | **3.50** |
+| **MAE sin Keiko** | 1.43 | 1.98 | **1.08** |
+| Ranking top-1 | Keiko (si) | Keiko (si) | Keiko (si) |
+| Ranking top-2 | Aliaga (si) | Sánchez (no) | Aliaga (**si**) |
+
+**Contra Datum, el modelo mejoró** respecto a las boca de urna: MAE sin Keiko bajó de 1.43 a **1.08 puntos**, y López Aliaga fue prácticamente clavado (13.0% modelo vs 12.9% Datum — **0.1 pp de error**).
+
+**Contra Ipsos, el modelo empeoró** ligeramente (MAE 4.16 vs 3.70 BdU), principalmente porque Sánchez sube a 2do lugar en Ipsos (12.4%) mientras nuestro modelo lo tenía en 5to (8.9%).
+
+#### Error por candidato: FOTO FINAL vs conteo rápido
+
+| Candidato | FOTO FINAL | Ipsos CR | Error Ipsos | Datum CR | Error Datum |
+|---|---|---|---|---|---|
+| Keiko Fujimori | 30.0% | 17.1% | +12.9 | 16.8% | +13.2 |
+| Rafael López Aliaga | 13.0% | 11.3% | +1.7 | 12.9% | **+0.1** |
+| Ricardo Belmont | 11.3% | 10.2% | +1.1 | 10.1% | +1.2 |
+| Jorge Nieto | 9.1% | 10.7% | −1.6 | 11.6% | −2.5 |
+| Carlos Sánchez | 8.9% | 12.4% | −3.5 | 9.4% | −0.5 |
+
+**Hallazgos:**
+- **Keiko:** El error se confirma y es consistente (~+13 pp) contra ambos CR. La causa es la misma documentada en la Sección 5 — P(ganar) ≠ % de voto.
+- **López Aliaga contra Datum: 0.1 pp.** Es el mejor acierto individual del modelo. Las encuestas lo daban en 12.9%, PM en 18.0%, el blend produjo 13.0% — prácticamente perfecto.
+- **Belmont estable:** 1.1-1.2 pp de error contra ambos CR. Sigue siendo un buen resultado, aunque ligeramente peor que vs BdU (0.3 pp).
+- **Sánchez: la incógnita.** Si Ipsos tiene razón (12.4%), el modelo lo subestimó por 3.5 pp. Si Datum tiene razón (9.4%), el error fue de solo 0.5 pp. Este candidato es la mayor fuente de incertidumbre hasta que ONPE cierre.
+- **Nieto:** Error de 1.6-2.5 pp. El modelo lo subestimó, consistente con lo visto en BdU.
+
+#### IC 90% vs conteo rápido (FOTO FINAL)
+
+| Candidato | IC [p10, p90] | Ipsos CR | ¿Dentro? | Datum CR | ¿Dentro? |
+|---|---|---|---|---|---|
+| Keiko | [22.8, 37.3] | 17.1% | NO | 16.8% | NO |
+| Aliaga | [9.7, 16.4] | 11.3% | SI | 12.9% | SI |
+| Belmont | [8.7, 14.5] | 10.2% | SI | 10.1% | SI |
+| Nieto | [6.6, 12.2] | 10.7% | SI | 11.6% | SI |
+| Sánchez | [6.5, 12.0] | 12.4% | NO (borde) | 9.4% | SI |
+
+**Cobertura IC vs Ipsos:** 3/5 = 60%. Sánchez queda fuera por 0.4 pp (12.4% vs tope de 12.0%).  
+**Cobertura IC vs Datum:** 4/5 = 80%. Consistente con lo visto contra BdU.
+
+#### Veredicto preliminar
+
+El conteo rápido confirma la historia central del modelo: **acierto en la estructura general de la elección** (Keiko primera por amplio margen, empate cerrado del 2do al 5to), **precisión notable en candidatos individuales** (Aliaga a 0.1 pp contra Datum), y **un error sistemático en Keiko** cuya causa está diagnosticada. La pregunta abierta es Sánchez — y para eso necesitamos la ONPE.
 
 ### 7.5. Pendiente: Resultados Oficiales ONPE
 

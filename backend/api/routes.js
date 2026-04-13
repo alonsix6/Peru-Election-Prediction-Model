@@ -528,6 +528,72 @@ router.get('/model-history', async (req, res) => {
   }
 });
 
+// ─── GET /api/post-mortem ───────────────────────────────────
+// Devuelve ambas corridas clave (6pm freeze + foto final) para análisis
+router.get('/post-mortem', async (req, res) => {
+  try {
+    // Corrida 1: la de las 6pm Lima (auto run más cercana a las 18:00)
+    const { rows: run6pm } = await db.query(`
+      SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+             prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
+             posterior_pct, generated_at_lima, trigger, polymarket_weight, polls_weight
+      FROM model_predictions
+      WHERE trigger = 'auto_polymarket_update'
+        AND generated_at_lima = (
+          SELECT MAX(generated_at_lima) FROM model_predictions
+          WHERE trigger = 'auto_polymarket_update'
+        )
+      ORDER BY predicted_pct_mean DESC
+    `);
+
+    // Corrida 2: foto final
+    const { rows: runFinal } = await db.query(`
+      SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+             prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
+             posterior_pct, generated_at_lima, trigger, polymarket_weight, polls_weight,
+             frozen_at
+      FROM model_predictions
+      WHERE trigger = 'final_election_day'
+        AND generated_at_lima = (
+          SELECT MAX(generated_at_lima) FROM model_predictions
+          WHERE trigger = 'final_election_day'
+        )
+      ORDER BY predicted_pct_mean DESC
+    `);
+
+    const format = (rows) => rows.map(r => ({
+      candidate: r.candidate,
+      mean: parseFloat(r.predicted_pct_mean),
+      p10: parseFloat(r.predicted_pct_p10),
+      p90: parseFloat(r.predicted_pct_p90),
+      prob_runoff: parseFloat(r.prob_first_round),
+      prob_win: parseFloat(r.prob_win_overall),
+      polls_pct: r.polls_pct ? parseFloat(r.polls_pct) : null,
+      polymarket_pct: r.polymarket_pct ? parseFloat(r.polymarket_pct) : null,
+      posterior_pct: r.posterior_pct ? parseFloat(r.posterior_pct) : null,
+    }));
+
+    res.json({
+      run_6pm: {
+        generated_at_lima: run6pm[0]?.generated_at_lima,
+        trigger: run6pm[0]?.trigger,
+        alpha: run6pm[0]?.polymarket_weight ? parseFloat(run6pm[0].polymarket_weight) : null,
+        candidates: format(run6pm),
+      },
+      run_final: {
+        generated_at_lima: runFinal[0]?.generated_at_lima,
+        trigger: runFinal[0]?.trigger,
+        alpha: runFinal[0]?.polymarket_weight ? parseFloat(runFinal[0].polymarket_weight) : null,
+        frozen_at: runFinal[0]?.frozen_at,
+        candidates: format(runFinal),
+      }
+    });
+  } catch (err) {
+    console.error('Error post-mortem:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── POST /api/results/onpe ─────────────────────────────────
 // Insertar resultados oficiales ONPE para post-mortem
 router.post('/results/onpe', async (req, res) => {

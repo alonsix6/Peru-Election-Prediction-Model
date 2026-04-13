@@ -611,3 +611,258 @@ Si hay segunda vuelta (junio 2026), este problema se mitiga significativamente:
 
 ---
 
+## 13. Errores y Áreas de Mejora
+
+### 13.1. Errores Identificados
+
+#### Error #1: Tratar P(ganar) como % de Voto (CRÍTICO)
+
+- **Impacto:** +12.8 pp de error en Keiko, dominó el MAE global.
+- **Causa raíz:** El diseño original del modelo asume que los precios de Polymarket son proxies directos de porcentaje de voto. Esta asunción es razonable en elecciones bipartidistas (EE.UU.) pero colapsa en elecciones fragmentadas con 26+ candidatos.
+- **Severidad:** Alta — afecta la credibilidad de la predicción principal.
+- **Corrección:** Implementar función de transformación P(ganar) → % voto (ver Sección 11.4). Prioridad máxima para segunda vuelta.
+
+#### Error #2: Alpha Excesivo el Día de Elección
+
+- **Impacto:** α=0.77 amplificó el error de PM. Con α=0.08 el MAE habría sido 2.79 en lugar de 3.70.
+- **Causa raíz:** La curva logística fue calibrada para maximizar velocidad de reacción, no precisión. Se priorizó que el modelo "se moviera" rápido sobre que "acertara" preciso.
+- **Severidad:** Media — el error se concentra en Keiko; para otros candidatos α=0.77 fue casi óptimo.
+- **Corrección:** Recalibrar la curva de alpha. Posiblemente cap el alpha máximo en 0.50 para primera vuelta fragmentada, y permitir 0.80+ solo en segunda vuelta (2 candidatos).
+
+#### Error #3: Subestimación Sistemática de Candidatos "Pequeños" Pre-BdU
+
+- **Impacto:** Sánchez (3.9% vs 11.3%) y Nieto (3.2% vs 11.0%) fueron severamente subestimados en la corrida de las 6pm.
+- **Causa raíz:** Polymarket pre-BdU tenía liquidez concentrada en los primeros 3-4 candidatos. Los candidatos con baja actividad de trading tenían precios que no reflejaban su fuerza real.
+- **Severidad:** Media-alta — el modelo no capturaba la competitividad real de 5+ candidatos.
+- **Corrección:** Implementar un "piso mínimo" de encuestas para candidatos con baja liquidez en PM, o reducir α selectivamente para candidatos con bajo volumen de trading.
+
+#### Error #4: Intervalos de Credibilidad Mal Calibrados (6pm)
+
+- **Impacto:** Solo 1/5 candidatos cubierto por el IC 90% en la corrida pre-BdU.
+- **Causa raíz:** La simulación Monte Carlo genera variabilidad alrededor de la media, pero si la media está sesgada (por PM), el IC se sesga también. El IC captura incertidumbre estadística, no incertidumbre de modelo.
+- **Severidad:** Media — los IC mejoraron significativamente en la FOTO FINAL (4/5).
+- **Corrección:** Agregar incertidumbre de modelo (model uncertainty) además de incertidumbre estadística. Usar ensemble de modelos con diferentes α para generar IC más robustos.
+
+#### Error #5: Vulnerabilidad a Redeploy en Producción
+
+- **Impacto:** Un redeploy de Railway post-elección ejecutó el pipeline con α=0, generando predicciones espurias que sobrescribieron las históricas como "últimas".
+- **Causa raíz:** `startup.js` ejecutaba `ensureFirstPrediction()` sin verificar la fase electoral.
+- **Severidad:** Baja (corregido durante el día).
+- **Corrección:** Ya implementada — `electoralPhase() === 'post_election'` guard en startup.js.
+
+### 13.2. Mejoras Propuestas (Roadmap)
+
+| # | Mejora | Prioridad | Complejidad | Impacto Estimado |
+|---|---|---|---|---|
+| 1 | Transformación P(ganar) → % voto | **P0** | Media | −8 a −10 pp error Keiko |
+| 2 | Alpha adaptativo por candidato (basado en liquidez PM) | P1 | Alta | Mejor calibración candidatos menores |
+| 3 | Cap de alpha máximo por tipo de elección (1ra vs 2da vuelta) | P1 | Baja | Evitar sobreconfianza en PM fragmentada |
+| 4 | IC con model uncertainty (ensemble) | P2 | Alta | IC mejor calibrados |
+| 5 | Incorporar volumen de trading como señal de confianza | P2 | Media | Detectar candidatos con PM ilíquido |
+| 6 | Modelo de segunda vuelta dedicado | **P0** | Media | Necesario para junio 2026 |
+| 7 | Backtesting con elecciones anteriores (2021, 2016, 2011) | P1 | Media | Calibración empírica de alpha y transformación |
+| 8 | Alertas automáticas cuando PM diverge >10pp de encuestas | P2 | Baja | Detección temprana de sesgo |
+
+---
+
+## 14. Conclusiones y Recomendaciones
+
+### 14.1. Conclusiones Generales
+
+1. **El modelo funciona, pero con un sesgo estructural identificado y corregible.** La arquitectura de blend Encuestas + Polymarket es sólida y demostró valor en 4 de 5 candidatos del top-5. El error principal (Keiko +12.8 pp) tiene una causa raíz clara (P(ganar) ≠ % voto) y una corrección conocida.
+
+2. **Polymarket aporta valor real, pero requiere interpretación.** Sin PM, el modelo habría dado a Belmont solo 5.8% (vs 11.6% real). PM fue responsable de corregir la mayor subestimación de las encuestas. El problema no es PM en sí, sino cómo se integra su señal.
+
+3. **La velocidad de incorporación de información es impresionante.** En 45 minutos post-BdU, Polymarket reconfiguró completamente el panorama: corrigió Belmont, detectó el colapso de Álvarez, y elevó a Sánchez/Nieto. Ninguna otra fuente de datos podría haber hecho esto tan rápido.
+
+4. **Las encuestas peruanas subestimaron candidatos clave.** Belmont (5.8% encuestas vs 11.6% BdU) y Nieto (6.5% vs 11.0%) fueron significativamente subestimados. Esto es consistente con el patrón histórico de encuestas peruanas que no capturan voto oculto o votantes indecisos.
+
+5. **La infraestructura cumplió su objetivo.** 20 corridas automáticas, cero caídas, congelamiento exitoso, trazabilidad completa. El sistema de producción demostró ser confiable.
+
+### 14.2. Recomendaciones para Segunda Vuelta (Junio 2026)
+
+Si se confirma segunda vuelta:
+
+1. **Implementar transformación P(ganar) → % voto.** En segunda vuelta con 2 candidatos, P(ganar) ≈ % voto, por lo que este problema se mitiga naturalmente. Aun así, conviene implementar la corrección como seguro.
+
+2. **Mantener α=0.70–0.80 para segunda vuelta.** El análisis sin Keiko muestra que α=0.72 era óptimo para los otros candidatos. Con 2 candidatos, este alpha debería funcionar bien.
+
+3. **Incorporar encuestas de segunda vuelta.** Las encuestas head-to-head son más precisas que las de primera vuelta multi-candidato. El peso de encuestas debería ser mayor.
+
+4. **Monitorear volumen de trading.** Mercados ilíquidos producen señales ruidosas. Si el volumen cae, reducir α automáticamente.
+
+### 14.3. Calificación Global del Modelo
+
+| Dimensión | Nota | Justificación |
+|---|---|---|
+| Ranking top-3 | **A** | Orden exacto correcto en FOTO FINAL |
+| Precisión puntual (MAE) | **C+** | 3.70 pts global, excelente sin Keiko (1.43) |
+| Calibración de IC | **B−** | 80% cobertura (nominal 90%) |
+| Velocidad de reacción | **A+** | 45 min para reconfigurar tras BdU |
+| Infraestructura | **A** | Cero downtime, trazabilidad completa |
+| Interpretabilidad | **A** | Descomposición transparente por fuente |
+| **Global** | **B** | Sólido con error dominante identificado y corregible |
+
+---
+
+## 15. Pendiente: Conteo Rápido ONPE
+
+> **Esta sección será actualizada cuando la ONPE publique los resultados del conteo rápido (estimado: noche del 12 o madrugada del 13 de abril 2026).**
+
+### 15.1. Datos del Conteo Rápido
+
+| # | Candidato | % Conteo Rápido | Error vs Modelo (FOTO FINAL) | Error vs BdU |
+|---|---|---|---|---|
+| 1 | _pendiente_ | —% | — | — |
+| 2 | _pendiente_ | —% | — | — |
+| 3 | _pendiente_ | —% | — | — |
+| 4 | _pendiente_ | —% | — | — |
+| 5 | _pendiente_ | —% | — | — |
+
+### 15.2. Análisis Comparativo
+
+_Pendiente: Se recalculará MAE, cobertura IC, y ranking accuracy contra el conteo rápido._
+
+### 15.3. ¿Boca de Urna vs Conteo Rápido?
+
+_Pendiente: Se analizará si las boca de urna fueron buenas predictoras del conteo rápido, lo cual informa sobre la calidad de nuestro benchmark de referencia._
+
+---
+
+## 16. Pendiente: Resultados Oficiales ONPE
+
+> **Esta sección será actualizada cuando la ONPE publique los resultados oficiales al 100% de actas procesadas (estimado: 3–5 días post-elección).**
+
+### 16.1. Resultados Oficiales
+
+| # | Candidato | Partido | % Votos Válidos | % Votos Emitidos |
+|---|---|---|---|---|
+| 1 | _pendiente_ | — | —% | —% |
+| 2 | _pendiente_ | — | —% | —% |
+| 3 | _pendiente_ | — | —% | —% |
+| 4 | _pendiente_ | — | —% | —% |
+| 5 | _pendiente_ | — | —% | —% |
+
+### 16.2. Post-Mortem Final (vs ONPE)
+
+_Pendiente: Se recalculará todo el análisis de este documento usando resultados oficiales como ground truth._
+
+| Métrica | vs BdU (actual) | vs ONPE (pendiente) |
+|---|---|---|
+| MAE FOTO FINAL | 3.70 | — |
+| MAE 6pm | 6.42 | — |
+| IC Coverage FOTO FINAL | 80% | — |
+| Ranking top-3 | Correcto | — |
+
+### 16.3. Script de Post-Mortem Automatizado
+
+El endpoint `POST /api/results/onpe` permite ingresar los resultados oficiales a la base de datos. Una vez ingresados, el script `post_mortem.js` generará automáticamente:
+
+- MAE por candidato
+- Ranking accuracy
+- Cobertura de IC
+- Comparación encuestas-solas vs PM-solo vs blend
+- Alpha óptimo ex-post
+- Informe completo en consola
+
+```bash
+# Ingresar resultados oficiales:
+curl -X POST https://api.peru-election-model.com/api/results/onpe \
+  -H "Content-Type: application/json" \
+  -d '{"election_year": 2026, "round": 1, "results": [
+    {"candidate": "Keiko Fujimori", "party": "Fuerza Popular", "valid_vote_pct": XX.X},
+    {"candidate": "Rafael López Aliaga", "party": "Renovación Popular", "valid_vote_pct": XX.X},
+    ...
+  ]}'
+
+# Ejecutar post-mortem automatizado:
+node backend/post_mortem.js
+```
+
+### 16.4. Segunda Vuelta
+
+_Si se confirma segunda vuelta (junio 2026), se creará un documento separado para el modelo de segunda vuelta._
+
+---
+
+## 17. Anexos y Notas Técnicas
+
+### 17.1. Glosario
+
+| Término | Definición |
+|---|---|
+| **MAE** | Mean Absolute Error — promedio de errores absolutos |
+| **IC 90%** | Intervalo de Credibilidad al 90% — rango [p10, p90] de la simulación Monte Carlo |
+| **α (alpha)** | Peso asignado a Polymarket en el blend |
+| **P(ganar)** | Probabilidad de ganar la elección (1ra + 2da vuelta), cotizada en Polymarket |
+| **BdU** | Boca de Urna — encuesta a la salida de la mesa de votación (exit poll) |
+| **Posterior** | Distribución resultante del blend bayesiano encuestas + PM |
+| **FOTO FINAL** | Último snapshot del modelo antes del congelamiento |
+| **Trigger** | Evento que dispara una corrida del modelo (auto, manual, final) |
+| **Pipeline** | Secuencia completa: scraping → blending → simulación → persistencia |
+
+### 17.2. Stack Tecnológico
+
+| Componente | Tecnología |
+|---|---|
+| Backend | Node.js + Express |
+| Base de datos | PostgreSQL (Railway) |
+| Frontend | React + Vite (Netlify) |
+| Scraping | API REST Polymarket, cron cada 5 min |
+| Modelo | Monte Carlo, 10,000 simulaciones |
+| Deployment | Railway (backend), Netlify (frontend) |
+| Monitoreo | Logs Railway + dashboard en tiempo real |
+
+### 17.3. Datos Crudos de la DB
+
+#### Corrida 6:00pm — Query
+
+```sql
+SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+       polls_pct, polymarket_pct, posterior_pct, generated_at_lima, trigger, polymarket_weight
+FROM model_predictions
+WHERE trigger = 'auto_polymarket_update'
+  AND polymarket_weight > 0
+  AND generated_at_lima < '2026-04-12T23:30:00Z'
+  AND generated_at_lima = (
+    SELECT MAX(generated_at_lima) FROM model_predictions
+    WHERE trigger = 'auto_polymarket_update'
+      AND polymarket_weight > 0
+      AND generated_at_lima < '2026-04-12T23:30:00Z'
+  )
+ORDER BY predicted_pct_mean DESC
+```
+
+#### FOTO FINAL — Query
+
+```sql
+SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+       polls_pct, polymarket_pct, posterior_pct, generated_at_lima, trigger, polymarket_weight
+FROM model_predictions
+WHERE trigger = 'final_election_day'
+  AND generated_at_lima = (
+    SELECT MAX(generated_at_lima) FROM model_predictions
+    WHERE trigger = 'final_election_day'
+  )
+ORDER BY predicted_pct_mean DESC
+```
+
+### 17.4. Historial de Versiones del Documento
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 0.1 | 2026-04-13 | Versión inicial con análisis vs boca de urna |
+| 0.2 | _pendiente_ | Actualización con conteo rápido ONPE |
+| 1.0 | _pendiente_ | Versión final con resultados oficiales ONPE |
+
+### 17.5. Contacto y Repositorio
+
+- **Repositorio:** github.com/alonsix6/Peru-Election-Prediction-Model
+- **Dashboard:** peru-election-model.netlify.app
+- **API:** Railway (URL privada)
+
+---
+
+*Documento generado el 13 de abril de 2026. Versión 0.1 — Preliminar.*  
+*Este análisis es de carácter académico y experimental. No constituye asesoría electoral ni predicción oficial.*
+

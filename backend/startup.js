@@ -123,22 +123,37 @@ async function validateSystemIntegrity() {
     await handleError('SEED_DATA_CORRUPT', { module: 'startup' }, e);
   }
 
-  // 4b. Limpieza: borrar corridas espurias de final_election_day
-  // Mantener solo la primera (la FOTO FINAL real de las 6:45pm)
+  // 4b. Limpieza post-elección: borrar corridas espurias
   try {
-    const { rowCount } = await db.query(`
-      DELETE FROM model_predictions
+    // Obtener timestamp de la FOTO FINAL real (la primera con trigger final_election_day)
+    const { rows: fotoFinal } = await db.query(`
+      SELECT MIN(generated_at_lima) as ts FROM model_predictions
       WHERE trigger = 'final_election_day'
-        AND generated_at_lima > (
-          SELECT MIN(generated_at_lima) FROM model_predictions
-          WHERE trigger = 'final_election_day'
-        )
     `);
-    if (rowCount > 0) {
-      console.log(`   🧹 ${rowCount} registros espurios de final_election_day eliminados`);
+
+    if (fotoFinal[0].ts) {
+      // Borrar corridas final_election_day duplicadas (mantener solo la primera)
+      const r1 = await db.query(`
+        DELETE FROM model_predictions
+        WHERE trigger = 'final_election_day'
+          AND generated_at_lima > $1
+      `, [fotoFinal[0].ts]);
+      if (r1.rowCount > 0) {
+        console.log(`   🧹 ${r1.rowCount} registros espurios de final_election_day eliminados`);
+      }
+
+      // Borrar corridas auto_polymarket_update posteriores a la FOTO FINAL
+      const r2 = await db.query(`
+        DELETE FROM model_predictions
+        WHERE trigger = 'auto_polymarket_update'
+          AND generated_at_lima > $1
+      `, [fotoFinal[0].ts]);
+      if (r2.rowCount > 0) {
+        console.log(`   🧹 ${r2.rowCount} registros post-FOTO FINAL eliminados`);
+      }
     }
   } catch (e) {
-    console.warn('⚠️  Limpieza final_election_day falló:', e.message);
+    console.warn('⚠️  Limpieza post-elección falló:', e.message);
   }
 
   // 5. Verificar datos seed

@@ -123,6 +123,24 @@ async function validateSystemIntegrity() {
     await handleError('SEED_DATA_CORRUPT', { module: 'startup' }, e);
   }
 
+  // 4b. Limpieza: borrar corridas espurias de final_election_day
+  // Mantener solo la primera (la FOTO FINAL real de las 6:45pm)
+  try {
+    const { rowCount } = await db.query(`
+      DELETE FROM model_predictions
+      WHERE trigger = 'final_election_day'
+        AND generated_at_lima > (
+          SELECT MIN(generated_at_lima) FROM model_predictions
+          WHERE trigger = 'final_election_day'
+        )
+    `);
+    if (rowCount > 0) {
+      console.log(`   🧹 ${rowCount} registros espurios de final_election_day eliminados`);
+    }
+  } catch (e) {
+    console.warn('⚠️  Limpieza final_election_day falló:', e.message);
+  }
+
   // 5. Verificar datos seed
   try {
     const { rows } = await db.query('SELECT COUNT(*) FROM polls');

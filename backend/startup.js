@@ -123,37 +123,71 @@ async function validateSystemIntegrity() {
     await handleError('SEED_DATA_CORRUPT', { module: 'startup' }, e);
   }
 
-  // 4b. Limpieza post-elección: borrar corridas espurias
+  // 4b. Reconstrucción FOTO FINAL post-BdU
+  // Si el final_election_day actual tiene datos pre-BdU (KF < 28%), reconstruir
+  // usando el último snapshot de PM de la noche electoral (con datos post-BdU).
   try {
-    // Obtener timestamp de la FOTO FINAL real (la primera con trigger final_election_day)
-    const { rows: fotoFinal } = await db.query(`
-      SELECT MIN(generated_at_lima) as ts FROM model_predictions
-      WHERE trigger = 'final_election_day'
+    const { rows: finalCheck } = await db.query(`
+      SELECT predicted_pct_mean FROM model_predictions
+      WHERE trigger = 'final_election_day' AND candidate = 'Keiko Fujimori'
+      LIMIT 1
     `);
 
+    if (finalCheck.length > 0) {
+      const kfPct = parseFloat(finalCheck[0].predicted_pct_mean);
+
+      if (kfPct < 28) {
+        // Datos pre-BdU detectados — buscar último PM snapshot de la noche electoral
+        const { rows: pmSnap } = await db.query(`
+          SELECT DISTINCT captured_at_lima
+          FROM polymarket_snapshots
+          WHERE captured_at_lima >= '2026-04-12T18:30:00-05:00'
+            AND captured_at_lima < '2026-04-13T00:00:00-05:00'
+          ORDER BY captured_at_lima DESC
+          LIMIT 1
+        `);
+
+        if (pmSnap.length > 0) {
+          const pmTs = pmSnap[0].captured_at_lima;
+          console.log(`🔄 FOTO FINAL pre-BdU detectada (KF ${kfPct.toFixed(1)}%) — reconstruyendo con PM snapshot de ${pmTs}...`);
+
+          // Borrar final_election_day actual (pre-BdU)
+          await db.query("DELETE FROM model_predictions WHERE trigger = 'final_election_day'");
+
+          // Reconstruir con datos post-BdU, alpha=0.77 (el valor del día electoral)
+          await runFullPipeline({
+            saveToDB: true,
+            trigger: 'final_election_day',
+            pmTimestamp: pmTs,
+            overrideTimestamp: pmTs,
+            overrideAlpha: 0.77
+          });
+          console.log('✅ FOTO FINAL reconstruida con datos post-BdU');
+        } else {
+          console.warn('⚠️  No hay PM snapshots post-BdU para reconstruir');
+        }
+      } else {
+        console.log(`✅ FOTO FINAL OK (KF ${kfPct.toFixed(1)}% — datos post-BdU)`);
+      }
+    }
+
+    // Dedup: borrar final_election_day duplicados (mantener solo el último)
+    const { rows: fotoFinal } = await db.query(`
+      SELECT MAX(generated_at_lima) as ts FROM model_predictions
+      WHERE trigger = 'final_election_day'
+    `);
     if (fotoFinal[0].ts) {
-      // Borrar corridas final_election_day duplicadas (mantener solo la primera)
       const r1 = await db.query(`
         DELETE FROM model_predictions
         WHERE trigger = 'final_election_day'
-          AND generated_at_lima > $1
+          AND generated_at_lima < $1
       `, [fotoFinal[0].ts]);
       if (r1.rowCount > 0) {
-        console.log(`   🧹 ${r1.rowCount} registros espurios de final_election_day eliminados`);
-      }
-
-      // Borrar corridas auto_polymarket_update posteriores a la FOTO FINAL
-      const r2 = await db.query(`
-        DELETE FROM model_predictions
-        WHERE trigger = 'auto_polymarket_update'
-          AND generated_at_lima > $1
-      `, [fotoFinal[0].ts]);
-      if (r2.rowCount > 0) {
-        console.log(`   🧹 ${r2.rowCount} registros post-FOTO FINAL eliminados`);
+        console.log(`   🧹 ${r1.rowCount} registros duplicados de final_election_day eliminados`);
       }
     }
   } catch (e) {
-    console.warn('⚠️  Limpieza post-elección falló:', e.message);
+    console.warn('⚠️  Reconstrucción/limpieza FOTO FINAL falló:', e.message);
   }
 
   // 5. Verificar datos seed

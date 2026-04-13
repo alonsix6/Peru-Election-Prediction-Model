@@ -18,7 +18,7 @@ const db = require('../db');
  * @param {string} options.trigger - 'auto_polymarket_update' | 'user_simulation'
  * @returns {Object} { candidates, runoffSummary, meta }
  */
-async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_update' } = {}) {
+async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_update', pmTimestamp = null, overrideTimestamp = null, overrideAlpha = null } = {}) {
   const now = nowPeru();
   const phase = electoralPhase();
   console.log(`\n🧮 Pipeline @ ${now.toFormat('dd/MM HH:mm')} Lima (fase: ${phase}, trigger: ${trigger})...`);
@@ -73,11 +73,16 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   console.log('   ✅ Indecisos redistribuidos:', avgUndecided.toFixed(1) + '%');
 
   // 4. Integración Bayesiana con Polymarket
-  const { rows: pmSnapshots } = await db.query(`
-    SELECT candidate, probability, volume_usd
-    FROM polymarket_snapshots
-    WHERE captured_at_lima = (SELECT MAX(captured_at_lima) FROM polymarket_snapshots)
-  `);
+  const pmQuery = pmTimestamp
+    ? `SELECT candidate, probability, volume_usd
+       FROM polymarket_snapshots
+       WHERE captured_at_lima = $1`
+    : `SELECT candidate, probability, volume_usd
+       FROM polymarket_snapshots
+       WHERE captured_at_lima = (SELECT MAX(captured_at_lima) FROM polymarket_snapshots)`;
+  const { rows: pmSnapshots } = pmTimestamp
+    ? await db.query(pmQuery, [pmTimestamp])
+    : await db.query(pmQuery);
 
   const polymarketData = {};
   let pmVolume = 0;
@@ -86,7 +91,7 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     pmVolume = parseFloat(s.volume_usd);
   }
 
-  const bayesian = bayesianIntegration(withUndecided, polymarketData, pmVolume);
+  const bayesian = bayesianIntegration(withUndecided, polymarketData, pmVolume, overrideAlpha);
   console.log('   ✅ Bayesian: α=' + bayesian.polymarket_weight.toFixed(3));
 
   // 5. Monte Carlo
@@ -110,11 +115,11 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
            polls_pct, polymarket_pct, posterior_pct, risk_json,
            is_final_snapshot, frozen_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-      `, [now.toISO(), phase, α, 1 - α,
+      `, [overrideTimestamp || now.toISO(), phase, α, 1 - α,
           candidate, data.mean, data.p10, data.p90,
           data.prob_runoff, data.prob_win, '2.0', trigger, runoffJson,
           bc?.polls_pct ?? null, bc?.polymarket_pct ?? null, bc?.posterior_pct ?? null, riskJson,
-          isFinal, isFinal ? now.toISO() : null]);
+          isFinal, isFinal ? (overrideTimestamp || now.toISO()) : null]);
     }
     console.log('   ✅ Guardado en DB (trigger: ' + trigger + ')');
   }

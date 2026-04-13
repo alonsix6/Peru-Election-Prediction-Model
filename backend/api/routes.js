@@ -42,9 +42,6 @@ router.get('/predictions', async (req, res) => {
     const isFrozen = parseInt(finalCheck[0].count) > 0;
     const triggerFilter = isFrozen ? 'final_election_day' : 'auto_polymarket_update';
 
-    // Para final_election_day, usar MIN (la primera foto final = la real de las 6:45pm)
-    // Para auto_polymarket_update, usar MAX (la más reciente)
-    const aggFn = isFrozen ? 'MIN' : 'MAX';
     const { rows } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, electoral_phase,
@@ -55,7 +52,7 @@ router.get('/predictions', async (req, res) => {
       WHERE trigger = $1
         AND polymarket_weight > 0
         AND generated_at_lima = (
-          SELECT ${aggFn}(generated_at_lima) FROM model_predictions
+          SELECT MAX(generated_at_lima) FROM model_predictions
           WHERE trigger = $1 AND polymarket_weight > 0
         )
       ORDER BY predicted_pct_mean DESC
@@ -499,7 +496,8 @@ router.get('/model-history', async (req, res) => {
     const { rows } = await db.query(`
       SELECT DISTINCT generated_at_lima
       FROM model_predictions
-      WHERE trigger = 'auto_polymarket_update'
+      WHERE trigger IN ('auto_polymarket_update', 'final_election_day')
+        AND polymarket_weight > 0
       ORDER BY generated_at_lima DESC
       LIMIT 20
     `);
@@ -509,7 +507,8 @@ router.get('/model-history', async (req, res) => {
       const { rows: candidates } = await db.query(`
         SELECT candidate, predicted_pct_mean, prob_first_round, prob_win_overall
         FROM model_predictions
-        WHERE generated_at_lima = $1 AND trigger = 'auto_polymarket_update'
+        WHERE generated_at_lima = $1
+          AND trigger IN ('auto_polymarket_update', 'final_election_day')
         ORDER BY predicted_pct_mean DESC
         LIMIT 3
       `, [row.generated_at_lima]);

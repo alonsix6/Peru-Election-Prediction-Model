@@ -123,9 +123,11 @@ async function validateSystemIntegrity() {
     await handleError('SEED_DATA_CORRUPT', { module: 'startup' }, e);
   }
 
-  // 4b. Limpieza post-elección: borrar corridas espurias
+  // 4b. Limpieza post-elección: borrar SOLO corridas final_election_day duplicadas
+  // IMPORTANT: Never delete auto_polymarket_update records — they are historical data
+  // (including post-boca-de-urna runs with real-time PM data).
+  // Only deduplicate the final_election_day trigger (keep the first one).
   try {
-    // Obtener timestamp de la FOTO FINAL real (la primera con trigger final_election_day)
     const { rows: fotoFinal } = await db.query(`
       SELECT MIN(generated_at_lima) as ts FROM model_predictions
       WHERE trigger = 'final_election_day'
@@ -142,15 +144,9 @@ async function validateSystemIntegrity() {
         console.log(`   🧹 ${r1.rowCount} registros espurios de final_election_day eliminados`);
       }
 
-      // Borrar corridas auto_polymarket_update posteriores a la FOTO FINAL
-      const r2 = await db.query(`
-        DELETE FROM model_predictions
-        WHERE trigger = 'auto_polymarket_update'
-          AND generated_at_lima > $1
-      `, [fotoFinal[0].ts]);
-      if (r2.rowCount > 0) {
-        console.log(`   🧹 ${r2.rowCount} registros post-FOTO FINAL eliminados`);
-      }
+      // NOTE: auto_polymarket_update records are NEVER deleted.
+      // They contain valuable historical model runs including post-election
+      // scrapes with boca-de-urna data reflected in PM prices.
     }
   } catch (e) {
     console.warn('⚠️  Limpieza post-elección falló:', e.message);

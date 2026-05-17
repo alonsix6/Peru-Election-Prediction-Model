@@ -2,32 +2,38 @@
 
 **Fecha de elección:** 12 de abril de 2026  
 **Documento generado:** 13 de abril de 2026  
-**Estado:** Preliminar — pendiente conteo rápido y resultados oficiales ONPE  
+**Última actualización:** 17 de mayo de 2026 — resultados oficiales ONPE al 100%  
+**Estado:** Final — ONPE 100% contabilizado, JNE proclamó resultados el 17/05/2026  
 
 ---
 
 ## 1. Resumen Ejecutivo
 
-Un modelo experimental logró predecir el podio completo de la primera vuelta peruana — **Keiko Fujimori primera, López Aliaga segundo, Belmont tercero** — en una elección con 26 candidatos donde ninguna encuestadora se había atrevido a dar un pronóstico integrado en tiempo real.
+Un modelo experimental logró identificar a los cinco candidatos del top-5 en la primera vuelta peruana — con **Keiko Fujimori primera** por amplio margen — en una elección con 26 candidatos donde ninguna encuestadora se había atrevido a dar un pronóstico integrado en tiempo real.
 
-La FOTO FINAL del modelo, generada a las 6:45pm del 12 de abril con Polymarket ya reflejando las boca de urna, clavó a Belmont a solo **0.3 puntos** del resultado real y detectó el colapso de Álvarez antes de que cualquier medio lo reportara. Para 4 de los 5 candidatos principales, el error promedio fue de apenas **1.4 puntos porcentuales** — precisión de nivel profesional.
+La FOTO FINAL del modelo, generada a las 6:45pm del 12 de abril con Polymarket ya reflejando las boca de urna, detectó el colapso de Álvarez antes de que cualquier medio lo reportara y mantuvo un error promedio de **1.81 puntos** para los 4 candidatos no-Keiko del top-5 — buena precisión en un campo tan fragmentado.
 
-Pero el modelo tiene un talón de Aquiles que este post-mortem documenta con transparencia: **sobreestimó a Keiko Fujimori por 12.8 puntos.** La causa es clara y corregible — Polymarket cotiza la probabilidad de *ganar la presidencia* (~45%), no el porcentaje de voto en primera vuelta (~17%). Esa confusión, amplificada por un peso de mercado del 77%, es la lección metodológica central de este ejercicio.
+Sin embargo, el modelo tiene dos talones de Aquiles documentados con transparencia: primero, **sobreestimó a Keiko Fujimori por 12.8-13.0 puntos** (Polymarket cotiza P(ganar presidencia), no % voto en 1ra vuelta). Segundo, **el ranking 2do-5to fue incorrecto según ONPE**: la FOTO FINAL predicho `Aliaga > Belmont > Nieto > Sánchez`, pero el resultado oficial fue `Sánchez > Aliaga > Nieto > Belmont`, con Roberto Sánchez pasando a segunda vuelta en lugar de Aliaga.
+
+> **Nota de datos:** El modelo identificó internamente a los candidatos como "Carlos Sánchez" y "José Álvarez". Los nombres completos oficiales ONPE son **Roberto Helbert Sánchez Palomino** (Juntos por el Perú) y **Carlos Gonsalo Álvarez Loayza** (País para Todos). Además, **Pablo Alfonso López Chau Nava** (Ahora Nación, 7.296%) no estaba rastreado en el modelo.
 
 ### Resultados clave
 
-| Métrica | 6:00pm (pre-BdU) | FOTO FINAL (post-BdU) |
-|---|---|---|
-| MAE top-5 | 6.42 pts | 3.70 pts |
-| MAE top-5 sin Keiko | — | **1.43 pts** |
-| Cobertura IC 90% | 1/5 (20%) | 4/5 (80%) |
-| Ranking top-3 (orden exacto) | No | **Si** |
-| Alpha (peso Polymarket) | 0.77 | 0.77 |
+| Métrica | 6:00pm (pre-BdU) | FOTO FINAL vs BdU | FOTO FINAL vs ONPE 100% |
+|---|---|---|---|
+| MAE top-5 | 6.42 pts | 3.70 pts | **4.01 pts** |
+| MAE top-5 sin Keiko | — | 1.43 pts | **1.81 pts** |
+| Cobertura IC 90% | 1/5 (20%) | 4/5 (80%) | **3/5 (60%)** |
+| Ranking top-3 (orden exacto) | No | Sí (vs BdU) | **No — solo 1ro correcto** |
+| Alpha (peso Polymarket) | 0.77 | 0.77 | 0.77 |
 
 **Referencia — boca de urna (promedio ponderado Ipsos 50%, Datum 30%, CIT 20%):**  
 Keiko 17.2% · Aliaga 11.9% · Belmont 11.6% · Sánchez 11.3% · Nieto 11.0%
 
-> Las boca de urna NO son resultados oficiales. Este documento será actualizado con el conteo rápido y los resultados de la ONPE.
+**Referencia — ONPE oficial 100% (17/05/2026):**  
+Keiko **17.192%** · R.Sánchez **12.039%** · Aliaga **11.912%** · Nieto **10.978%** · Belmont **10.150%**
+
+> Segunda vuelta confirmada por JNE: **Keiko Fujimori vs Roberto Sánchez Palomino**, 7 de junio de 2026.
 
 ---
 
@@ -102,17 +108,19 @@ En 45 minutos pasaron cuatro cosas notables:
 
 A las 6:45pm, el modelo se congeló automáticamente. La última predicción quedó registrada en la base de datos con el sello `final_election_day`.
 
-**Ranking de la FOTO FINAL vs boca de urna:**
+**Ranking de la FOTO FINAL vs boca de urna vs ONPE oficial:**
 
-| Posición | FOTO FINAL | BdU Ponderada | ¿Match? |
-|---|---|---|---|
-| 1ro | Keiko Fujimori | Keiko Fujimori | **Si** |
-| 2do | Rafael López Aliaga | Rafael López Aliaga | **Si** |
-| 3ro | Ricardo Belmont | Ricardo Belmont | **Si** |
-| 4to | Jorge Nieto | Carlos Sánchez | Invertidos (empate técnico: 9.1% vs 8.9%) |
-| 5to | Carlos Sánchez | Jorge Nieto | Invertidos |
+| Posición | FOTO FINAL | BdU Ponderada | ONPE 100% | vs BdU | vs ONPE |
+|---|---|---|---|---|---|
+| 1ro | Keiko Fujimori | Keiko Fujimori | Keiko Fujimori | **✓** | **✓** |
+| 2do | Rafael López Aliaga | Rafael López Aliaga | **R. Sánchez** | ✓ | **✗** |
+| 3ro | Ricardo Belmont | Ricardo Belmont | **Rafael López Aliaga** | ✓ | **✗** |
+| 4to | Jorge Nieto | Carlos Sánchez | Jorge Nieto | ✗ | **✓** |
+| 5to | Carlos Sánchez | Jorge Nieto | **Ricardo Belmont** | ✗ | **✗** |
 
-**Top-3 perfecto en orden exacto.** Los puestos 4 y 5 están invertidos por 0.2 puntos — un empate estadístico que ningún modelo podría resolver con certeza.
+**Vs boca de urna: top-3 perfecto en orden exacto.** Los puestos 4 y 5 invertidos por 0.2 pp — un empate estadístico.
+
+**Vs ONPE oficial: solo posiciones 1 y 4 correctas (2/5).** La BdU mostró un ordenamiento diferente al definitivo. La gran sorpresa fue Roberto Sánchez, que las BdU y el conteo rápido de Datum subestimaron y que terminó siendo el rival de Keiko en segunda vuelta.
 
 ### 3.4. Las boca de urna en detalle
 
@@ -302,25 +310,28 @@ La tabla revela algo importante: el alpha que minimiza el error global (0.08) es
 | 6 | IC con model uncertainty (ensemble) | P2 | Intervalos mejor calibrados |
 | 7 | Alertas cuando PM diverge >10pp de encuestas | P2 | Detección temprana de sesgo |
 
-### 7.2. Recomendaciones para segunda vuelta (junio 2026)
+### 7.2. Recomendaciones para segunda vuelta (7 junio 2026)
 
-Si se confirma segunda vuelta, el modelo tiene ventajas naturales:
+Segunda vuelta confirmada: **Keiko Fujimori (Fuerza Popular) vs. Roberto Helbert Sánchez Palomino (Juntos por el Perú)**. El modelo tiene ventajas naturales para este formato:
 
 1. **P(ganar) ≈ % de voto** con 2 candidatos. El problema central de primera vuelta desaparece.
 2. **α=0.70-0.80 debería funcionar bien.** El análisis sin Keiko mostró que 0.72 era óptimo — y en segunda vuelta todos los candidatos se comportan como "sin Keiko".
 3. **Encuestas head-to-head** son más precisas que las de primera vuelta multi-candidato.
 4. **Monitorear volumen de trading.** Si la liquidez cae, reducir alpha automáticamente.
+5. **Roberto Sánchez fue el candidato más subestimado** por el modelo (8.9% vs 12.039% ONPE, −3.1 pp). Sus encuestas estaban más cerca de la realidad (7.9-12.4%) que Polymarket (11.0%). Para la segunda vuelta, sus encuestas head-to-head serán la señal más relevante.
 
 ### 7.3. Calificación global
 
 | Dimensión | Nota | Justificación |
 |---|---|---|
-| Ranking top-3 | **A** | Orden exacto correcto |
-| Precisión puntual | **B** | MAE 3.70 global, 1.43 sin Keiko |
-| Calibración de IC | **B-** | 80% cobertura (nominal 90%) |
+| Ranking top-3 | **C+** | Top-3 correcto vs BdU; vs ONPE oficial solo posición 1 y 4 correctas |
+| Precisión puntual | **B-** | MAE 4.01 vs ONPE (1.81 sin Keiko); Sánchez subestimado 3.1 pp, Álvarez 5.4 pp |
+| Calibración de IC | **C+** | 60% cobertura vs ONPE (3/5); Sánchez marginalmente fuera |
 | Velocidad de reacción | **A+** | 45 minutos para reconfigurar post-BdU |
 | Infraestructura | **A** | 20 corridas automáticas, cero downtime |
-| **Global** | **B+** | Sólido, con un error dominante identificado y corregible |
+| **Global** | **B-** | Identificó top-5 correctamente pero el orden fue incorrecto; error Keiko dominante y corregible |
+
+> **Nota:** La calificación de ranking era A basado en BdU (donde aparecía Aliaga 2do). Los resultados oficiales ONPE revelan que el ranking real fue diferente: Sánchez 2do, no Aliaga. Las BdU y el conteo rápido de Datum eran inexactos en el puesto 2.
 
 ### 7.4. Conteo Rápido: Ipsos y Datum (13 de abril)
 
@@ -399,18 +410,62 @@ Con márgenes de error de ±1.0 a ±1.3, los rangos reales de Sánchez (11.1-13.
 
 El conteo rápido confirma la historia central del modelo: **acierto en la estructura general de la elección** (Keiko primera por amplio margen, empate cerrado del 2do al 5to), **precisión notable en candidatos individuales** (Aliaga a 0.1 pp contra Datum), y **un error sistemático en Keiko** cuya causa está diagnosticada. La pregunta abierta es Sánchez — y para eso necesitamos la ONPE.
 
-### 7.5. Pendiente: Resultados Oficiales ONPE
+### 7.5. Resultados Oficiales ONPE (100% — 17 mayo 2026)
 
-> Esta sección será actualizada cuando la ONPE publique resultados al 100% de actas (estimado: 3-5 días).
+Resultados del escrutinio oficial, fuente: `resultadoelectoral.onpe.gob.pe`, 100% de actas contabilizadas al 17/05/2026 03:15pm Lima. JNE proclamó resultados el mismo día.
 
-| Métrica | vs BdU (actual) | vs ONPE (pendiente) |
-|---|---|---|
-| MAE FOTO FINAL | 3.70 | — |
-| MAE sin Keiko | 1.43 | — |
-| IC Coverage | 80% | — |
-| Ranking top-3 | Correcto | — |
+#### Tabla completa de candidatos
 
-Una vez disponibles los resultados oficiales, se ingresarán al sistema vía `POST /api/results/onpe` y se re-ejecutará el análisis completo con ground truth oficial.
+| # | Candidato (nombre completo ONPE) | Partido | Votos | % Válidos |
+|---|---|---|---|---|
+| 1 | **Keiko Sofia Fujimori Higuchi** | Fuerza Popular | 2'877,678 | **17.192%** |
+| 2 | **Roberto Helbert Sánchez Palomino** | Juntos por el Perú | 2'015,114 | **12.039%** |
+| 3 | **Rafael Bernardo López Aliaga Cazorla** | Renovación Popular | 1'993,905 | **11.912%** |
+| 4 | **Jorge Nieto Montesinos** | Partido del Buen Gobierno | 1'837,517 | **10.978%** |
+| 5 | **Ricardo Pablo Belmont Cassinelli** | Partido Cívico Obras | 1'698,903 | **10.150%** |
+| 6 | **Carlos Gonsalo Álvarez Loayza** | País para Todos | 1'326,717 | **7.926%** |
+| 7 | **Pablo Alfonso López Chau Nava** | Ahora Nación | 1'221,272 | **7.296%** |
+| 8 | **María Soledad Pérez Tello** | Primero la Gente | 571,170 | **3.412%** |
+| 9 | **Alfonso Carlos Espá y Garcés-Alvear** | SiCreo | 560,792 | **3.350%** |
+
+> Diferencia entre 2do y 3er lugar: **21,209 votos** (0.127 pp). Sánchez superó a Aliaga por un margen estrecho pero definitivo.
+
+#### FOTO FINAL vs ONPE: error por candidato
+
+| Candidato | Nombre en modelo | FOTO FINAL | ONPE 100% | Error | IC [p10, p90] | ¿IC cubre? |
+|---|---|---|---|---|---|---|
+| Keiko Fujimori | Keiko Fujimori | 30.0% | **17.192%** | **+12.808 pp** | [22.8, 37.3] | NO (−5.6 pp bajo p10) |
+| R. Sánchez Palomino | "Carlos Sánchez" | 8.9% | **12.039%** | **−3.139 pp** | [6.5, 12.0] | NO (0.039 pp sobre p90) |
+| López Aliaga | López Aliaga | 13.0% | **11.912%** | +1.088 pp | [9.7, 16.4] | SI |
+| Nieto Montesinos | Nieto | 9.1% | **10.978%** | −1.878 pp | [6.6, 12.2] | SI |
+| Belmont Cassinelli | Belmont | 11.3% | **10.150%** | +1.150 pp | [8.7, 14.5] | SI |
+| Álvarez Loayza | "José Álvarez" | 2.5% | **7.926%** | **−5.426 pp** | — | — |
+| López Chau Nava | **NO RASTREADO** | — | **7.296%** | — | — | — |
+
+#### Métricas finales vs ONPE
+
+| Métrica | vs BdU | vs Ipsos CR | vs Datum CR | **vs ONPE 100%** |
+|---|---|---|---|---|
+| MAE top-5 | 3.70 | 4.16 | 3.50 | **4.01** |
+| MAE sin Keiko | 1.43 | 1.98 | 1.08 | **1.81** |
+| IC Coverage | 4/5 (80%) | 3/5 (60%) | 4/5 (80%) | **3/5 (60%)** |
+| Ranking top-1 | ✓ Keiko | ✓ | ✓ | **✓ Keiko** |
+| Ranking top-2 | ✓ Aliaga | ✗ | ✓ Aliaga | **✗ (Sánchez real)** |
+| Ranking top-3 | ✓ (3 correctos) | ✗ | ✓ | **✗ (1 correcto: 1ro y 4to)** |
+
+#### Análisis de las sorpresas
+
+**Roberto Sánchez: el gran subestimado.** Las BdU de Ipsos lo daban 2do (12.4%), Datum 5to (9.4%), el modelo 5to (8.9%). ONPE lo confirmó 2do (12.039%). El modelo y Datum erraron por completo en la posición. La señal de Ipsos fue la más precisa. Sánchez fue tan subestimado por Polymarket (11.0%) como por el modelo, reflejando que los mercados también erraron su posición relativa frente a Aliaga.
+
+**Carlos Álvarez: colapso real o nombre equivocado.** El modelo rastreaba a "José Álvarez" con polls al 12.7% y lo bajó a 2.5% con el Polymarket (0.2%). Carlos Álvarez Loayza (País para Todos) obtuvo 7.926% real. Hay una discrepancia de nombres en la BD del modelo que merece revisión. Si son la misma persona, el modelo lo subestimó por 5.4 pp incluso después de la corrección de Polymarket.
+
+**Pablo López Chau: el candidato invisible.** Con 7.296% (7mo lugar), obtuvo más votos que varios candidatos rastreados. El modelo no lo incluía en absoluto. A efectos de MAE global (todos los candidatos), este es un error de cobertura importante.
+
+**La BdU fue engañosa sobre el 2do lugar.** El consenso de exit polls apuntaba a Aliaga como 2do, con Sánchez en disputado 4to-5to. ONPE revirtió esto. Esto muestra que las boca de urna peruanas tienen dificultad especial para capturar el voto de candidatos de izquierda/centro-izquierda (Sánchez, Nieto) que tienden a subestimarse en encuestas a pie de urna.
+
+#### Segunda vuelta
+
+JNE proclamó el 17/05/2026: **Keiko Fujimori vs. Roberto Helbert Sánchez Palomino** para el 7 de junio de 2026. El modelo actualizó `clock.js` a esta fecha.
 
 ---
 
@@ -450,12 +505,12 @@ Una vez disponibles los resultados oficiales, se ingresarán al sistema vía `PO
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 2026-04-13 | Versión inicial — análisis vs boca de urna |
-| 1.1 | _pendiente_ | Actualización con conteo rápido ONPE |
-| 2.0 | _pendiente_ | Versión final con resultados oficiales ONPE |
+| 1.1 | 2026-04-13 | Sección 7.4 — conteo rápido Ipsos y Datum |
+| 2.0 | 2026-05-17 | Sección 7.5 completa con ONPE 100%; actualización de métricas globales, ranking, grades; corrección de nombres de candidatos; nota sobre López Chau no rastreado; actualización de segunda vuelta (Keiko vs R.Sánchez) |
 
 ---
 
-*Documento generado el 13 de abril de 2026.*  
+*Documento generado el 13 de abril de 2026. Última actualización: 17 de mayo de 2026 con resultados oficiales ONPE 100%.*  
 *Este análisis es de carácter académico y experimental. No constituye asesoría electoral ni predicción oficial.*  
-*Repositorio: github.com/alonsix6/Peru-Election-Prediction-Model*
+*Repositorio: github.com/alonsix33/Peru-Election-Prediction-Model*
 

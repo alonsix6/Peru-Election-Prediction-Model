@@ -222,17 +222,25 @@ export default function BacktestingTab() {
         </div>
 
         {/* Model row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #F0EDE8' }}>
-          <span style={{ width: 100, color: '#1D4ED8', fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Modelo</span>
-          <div style={{ flex: 1, height: 8, background: '#F0EDE8', borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ width: `${(d.mae / 6) * 100}%`, height: '100%', background: '#1D4ED8', borderRadius: 4 }} />
-          </div>
-          <span style={{ width: 55, textAlign: 'right', color: '#1D4ED8', fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{d.mae} pts</span>
-          <span style={{
-            fontSize: 10, padding: '2px 6px', background: '#EFF6FF', color: '#1D4ED8',
-            border: '1px solid #BFDBFE', borderRadius: 4, flexShrink: 0
-          }}>menor MAE</span>
-        </div>
+        {(() => {
+          const modelBetter = d.mae < d.pollsters[0].mae;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #F0EDE8' }}>
+              <span style={{ width: 100, color: '#1D4ED8', fontWeight: 600, fontSize: 13, flexShrink: 0 }}>Modelo</span>
+              <div style={{ flex: 1, height: 8, background: '#F0EDE8', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${(d.mae / 6) * 100}%`, height: '100%', background: '#1D4ED8', borderRadius: 4 }} />
+              </div>
+              <span style={{ width: 55, textAlign: 'right', color: '#1D4ED8', fontWeight: 600, fontSize: 13, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{d.mae} pts</span>
+              <span style={{
+                fontSize: 10, padding: '2px 6px',
+                background: modelBetter ? '#EFF6FF' : '#FEF2F2',
+                color: modelBetter ? '#1D4ED8' : '#DC2626',
+                border: modelBetter ? '1px solid #BFDBFE' : '1px solid #FECACA',
+                borderRadius: 4, flexShrink: 0
+              }}>{modelBetter ? 'menor MAE' : 'mayor MAE'}</span>
+            </div>
+          );
+        })()}
 
         {/* Pollster rows */}
         {d.pollsters.map(p => (

@@ -1,5 +1,4 @@
 const { getPollWeight } = require('./weights');
-const { timeToElection } = require('./clock');
 
 /**
  * House effects — sesgos sistemáticos por encuestadora (sección 5.3).
@@ -10,27 +9,34 @@ const HOUSE_EFFECTS = {
   CIT: {
     'Rafael López Aliaga': +3.5,
     'Keiko Fujimori':      +1.5,
-    'López Chau':          +0.5
+    'López Chau':          +0.5,
+    'Roberto Sánchez Palomino': 0.0,  // sin datos R2 CIT disponibles
   },
   CPI: {
     'Rafael López Aliaga': +1.2,
     'Keiko Fujimori':      -0.5,
-    'López Chau':          +0.8
+    'López Chau':          +0.8,
+    'Roberto Sánchez Palomino': 0.0,  // sin datos R2 CPI disponibles
   },
   Ipsos: {
     'Rafael López Aliaga': -0.5,
     'Keiko Fujimori':      +0.5,
-    'López Chau':          -0.3
+    'López Chau':          -0.3,
+    // R2: Ipsos (38%) muestra a Sánchez ~6pp más alto que IEP (32%) → sesgo relativo +3pp
+    'Roberto Sánchez Palomino': +3.0,
   },
   Datum: {
     'Rafael López Aliaga': -0.8,
     'Keiko Fujimori':      +0.8,
-    'López Chau':          -0.3
+    'López Chau':          -0.3,
+    'Roberto Sánchez Palomino': 0.0,  // sin datos R2 Datum disponibles
   },
   IEP: {
     'Rafael López Aliaga': -1.5,
     'Keiko Fujimori':      -0.5,
-    'López Chau':          +0.2
+    'López Chau':          +0.2,
+    // R2: IEP (32%) muestra a Sánchez ~6pp más bajo que Ipsos (38%) → sesgo relativo -3pp
+    'Roberto Sánchez Palomino': -3.0,
   }
 };
 
@@ -54,7 +60,7 @@ function getHouseEffect(pollsterName, candidate) {
  *   { pollster_name, field_end, sample_n, poll_type, margin_error,
  *     results: [{ candidate, pct_raw }] }
  * @param {Object} pollsterWeights - { pollster_name: weight_multiplier }
- * @returns {Object} - { candidate: { weighted_pct, combined_error, n_polls } }
+ * @returns {Object} - { candidate: { weighted_pct, n_polls } }
  */
 function aggregatePolls(polls, pollsterWeights) {
   // Acumuladores por candidato
@@ -76,7 +82,6 @@ function aggregatePolls(polls, pollsterWeights) {
         accum[candidate] = {
           weightedSum: 0,
           totalWeight: 0,
-          errors: [],
           n_polls: 0
         };
       }
@@ -84,14 +89,6 @@ function aggregatePolls(polls, pollsterWeights) {
       accum[candidate].weightedSum += adjustedPct * W;
       accum[candidate].totalWeight += W;
       accum[candidate].n_polls += 1;
-
-      // Acumular error para el cálculo de incertidumbre combinada
-      if (poll.margin_error) {
-        accum[candidate].errors.push({
-          margin_error: poll.margin_error,
-          weight: W
-        });
-      }
     }
   }
 
@@ -103,25 +100,8 @@ function aggregatePolls(polls, pollsterWeights) {
       ? data.weightedSum / data.totalWeight
       : 0;
 
-    // Error combinado ponderado: sqrt(Σ(w_i² × me_i²) / (Σw_i)²)
-    // Esto da el error ponderado del promedio
-    let combined_error = 0;
-    if (data.errors.length > 0) {
-      const sumWeightedErrorSq = data.errors.reduce(
-        (sum, e) => sum + (e.weight * e.weight * e.margin_error * e.margin_error), 0
-      );
-      combined_error = Math.sqrt(sumWeightedErrorSq) / data.totalWeight;
-    }
-
-    // Drift temporal: más días hasta la elección = más incertidumbre
-    // 9 días × 0.30 = 2.7 pts adicionales (calibrado para volatilidad peruana)
-    const { days } = timeToElection();
-    const temporalDrift = Math.max(0, days) * 0.30;
-    combined_error = Math.sqrt(combined_error * combined_error + temporalDrift * temporalDrift);
-
     aggregated[candidate] = {
-      weighted_pct: Math.max(0, weighted_pct), // Clamp negativo a 0
-      combined_error,
+      weighted_pct: Math.max(0, weighted_pct),
       n_polls: data.n_polls
     };
   }

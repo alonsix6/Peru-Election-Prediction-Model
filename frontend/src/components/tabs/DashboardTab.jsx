@@ -62,6 +62,7 @@ function CompactRow({ c }) {
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <div style={{ color: party.primary, fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.mean.toFixed(1)}%</div>
+        <div style={{ color: '#A8A29E', fontSize: 10 }}>% v.v.</div>
         <div style={{ color: '#8C877F', fontSize: 11, marginTop: 2 }}>P(Ganar)</div>
         <div style={{ color: probColor, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{c.prob_win.toFixed(1)}%</div>
       </div>
@@ -449,12 +450,35 @@ function SimulationCard() {
 // ─── Risk Scenarios ─────────────────────────────────────────
 function RiskScenarios({ risk, candidates }) {
   if (!risk) return null;
-
-  // Candidatos con datos de riesgo interesantes
+  const isR2 = risk.p_close_race !== undefined && risk.top2_not_expected === undefined;
   const topCands = risk.candidates || [];
 
-  // Cards de riesgo principales
-  const riskCards = [
+  // R2: 3 escenarios analíticos claros
+  const r2Cards = isR2 ? [
+    {
+      label: '¿Resultado reñido? (margen < 5 pts)',
+      value: risk.p_close_race,
+      desc: 'Probabilidad de que la diferencia entre ambos candidatos sea menor a 5 puntos — zona donde el voto blanco y el antivoto pueden decidir la elección.',
+      color: risk.p_close_race > 40 ? '#D97706' : '#059669',
+      bg: risk.p_close_race > 40 ? '#FFFBEB' : '#F0FDF4',
+    },
+    {
+      label: 'Solo encuestas, sin Polymarket',
+      value: null,
+      desc: null,
+      isPolls: true,
+    },
+    {
+      label: 'Si encuestas subestiman a Sánchez en +5 pts',
+      value: risk.bias_5pts_sanchez_win,
+      desc: `Patrón "voto vergüenza": en 2021 las encuestas subestimaron a Castillo sistemáticamente. Si se repite, Sánchez P(ganar) = ${risk.bias_5pts_sanchez_win ?? '—'}%.`,
+      color: risk.bias_5pts_sanchez_win > 50 ? '#16A34A' : '#78716C',
+      bg: risk.bias_5pts_sanchez_win > 50 ? '#F0FDF4' : '#FFFFFF',
+    },
+  ] : [];
+
+  // R1: escenarios clásicos de primera vuelta
+  const r1Cards = !isR2 ? [
     {
       label: '¿Y si el top-2 no es el esperado?',
       value: risk.top2_not_expected,
@@ -469,7 +493,16 @@ function RiskScenarios({ risk, candidates }) {
       color: risk.surprise_winner > 10 ? '#DC2626' : '#78716C',
       bg: risk.surprise_winner > 10 ? '#FEF2F2' : '#FFFFFF',
     },
-  ];
+    {
+      label: '¿Resultado muy reñido?',
+      value: risk.p_close_race,
+      desc: 'Probabilidad de que la diferencia entre ambos finalistas sea menor a 5 puntos en segunda vuelta.',
+      color: '#78716C',
+      bg: '#FFFFFF',
+    },
+  ] : [];
+
+  const activeCards = isR2 ? r2Cards : r1Cards;
 
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 20 }}>
@@ -478,23 +511,57 @@ function RiskScenarios({ risk, candidates }) {
         <h3 style={{ color: '#1C1917', fontSize: 16, fontWeight: 600, margin: 0 }}>Escenarios de riesgo</h3>
       </div>
       <p style={{ color: '#78716C', fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>
-        ¿Qué tan probable es que el modelo se equivoque? Calculado en cada corrida de 10,000 simulaciones.
+        {isR2
+          ? '¿Qué tan probable es que el modelo se equivoque? Escenarios calculados en 10,000 simulaciones + análisis estadístico.'
+          : '¿Qué tan probable es que el modelo se equivoque? Calculado en cada corrida de 10,000 simulaciones.'}
       </p>
 
       {/* Hero risk cards */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        {riskCards.map((r, i) => (
-          <div key={i} style={{
-            flex: 1, minWidth: 220, background: r.bg, border: `1px solid ${r.color}22`,
-            borderRadius: 10, padding: 14
-          }}>
-            <div style={{ color: '#78716C', fontSize: 12, marginBottom: 6 }}>{r.label}</div>
-            <div style={{ color: r.color, fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-              {r.value}%
+        {activeCards.map((r, i) => {
+          if (r.isPolls) {
+            // Card especial: encuestas solo
+            const kw = risk.polls_only_keiko_win;
+            const sw = risk.polls_only_sanchez_win;
+            return (
+              <div key={i} style={{
+                flex: 1, minWidth: 220, background: '#EFF6FF', border: '1px solid #BFDBFE22',
+                borderRadius: 10, padding: 14
+              }}>
+                <div style={{ color: '#78716C', fontSize: 12, marginBottom: 8 }}>{r.label}</div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div>
+                    <div style={{ color: getPartyColor('Keiko Fujimori').primary, fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                      {kw != null ? `${kw}%` : '—'}
+                    </div>
+                    <div style={{ color: '#8C877F', fontSize: 10 }}>Keiko</div>
+                  </div>
+                  <div>
+                    <div style={{ color: getPartyColor('Roberto Sánchez Palomino').primary, fontSize: 22, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                      {sw != null ? `${sw}%` : '—'}
+                    </div>
+                    <div style={{ color: '#8C877F', fontSize: 10 }}>Sánchez</div>
+                  </div>
+                </div>
+                <div style={{ color: '#8C877F', fontSize: 11, marginTop: 6, lineHeight: 1.4 }}>
+                  Las encuestas (IEP + Ipsos) solas, sin la señal de Polymarket. El mercado añade {risk.polls_only_keiko_win != null && risk.polls_only_sanchez_win != null ? Math.abs(Math.round((100 - risk.polls_only_keiko_win) - risk.polls_only_sanchez_win)) + ' pp de ventaja' : '—'} a Keiko.
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{
+              flex: 1, minWidth: 220, background: r.bg, border: `1px solid ${r.color}22`,
+              borderRadius: 10, padding: 14
+            }}>
+              <div style={{ color: '#78716C', fontSize: 12, marginBottom: 6 }}>{r.label}</div>
+              <div style={{ color: r.color, fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                {r.value != null ? `${r.value}%` : '—'}
+              </div>
+              <div style={{ color: '#8C877F', fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>{r.desc}</div>
             </div>
-            <div style={{ color: '#8C877F', fontSize: 11, marginTop: 4, lineHeight: 1.5 }}>{r.desc}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Per-candidate risk table */}
@@ -503,14 +570,42 @@ function RiskScenarios({ risk, candidates }) {
           <thead>
             <tr style={{ borderBottom: '1px solid #E5E0D8' }}>
               <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'left' }}>Candidato</th>
-              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Pasa a 2da vuelta</th>
-              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>No pasa</th>
-              <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Gana 1ra vuelta</th>
+              {isR2 ? (
+                <>
+                  <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Pasa a 2da vuelta</th>
+                  <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>No pasa</th>
+                  <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>P(Ganar R2)</th>
+                </>
+              ) : (
+                <>
+                  <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Pasa a 2da vuelta</th>
+                  <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>No pasa</th>
+                  <th style={{ color: '#78716C', fontWeight: 500, padding: '8px 10px', textAlign: 'center' }}>Gana 1ra vuelta</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
-            {topCands.map((c, i) => {
+            {topCands.map((c) => {
               const party = getPartyColor(c.candidate);
+              if (isR2) {
+                const matchedCand = candidates?.find(cd => cd.candidate === c.candidate);
+                const probWin = c.prob_win ?? matchedCand?.prob_win ?? null;
+                return (
+                  <tr key={c.candidate} style={{ borderBottom: '1px solid #F0EDE8' }}>
+                    <td style={{ padding: '8px 10px' }}>
+                      <span style={{ color: party.primary, fontWeight: 500 }}>{c.candidate}</span>
+                    </td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#059669', fontWeight: 600 }}>100%</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', color: '#78716C' }}>0%</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ color: party.primary, fontWeight: 700, fontSize: 14 }}>
+                        {probWin != null ? `${probWin.toFixed(1)}%` : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }
               const missColor = c.misses_runoff > 50 ? '#DC2626' : c.misses_runoff > 20 ? '#D97706' : '#78716C';
               return (
                 <tr key={c.candidate} style={{ borderBottom: '1px solid #F0EDE8' }}>
@@ -541,7 +636,9 @@ function RiskScenarios({ risk, candidates }) {
       }}>
         <AlertTriangle size={14} style={{ color: '#D97706', flexShrink: 0, marginTop: 2 }} />
         <span style={{ color: '#78716C', fontSize: 12, lineHeight: 1.5 }}>
-          Estos porcentajes se actualizan cada 30 minutos. En Perú, 3 de las últimas 4 elecciones tuvieron sorpresas significativas en las últimas semanas. La incertidumbre es parte del proceso.
+          {isR2
+            ? 'Estos porcentajes se actualizan cada 30 minutos. Keiko ha llegado a segunda vuelta dos veces y ha perdido ambas por menos de 45 mil votos. El antivoto y el voto rural son los factores que el modelo estima con menor precisión.'
+            : 'Estos porcentajes se actualizan cada 30 minutos. En Perú, 3 de las últimas 4 elecciones tuvieron sorpresas significativas en las últimas semanas. La incertidumbre es parte del proceso.'}
         </span>
       </div>
     </div>
@@ -571,12 +668,13 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
   const secondParty = getPartyColor(second.candidate);
 
   const modelMap = {};
-  for (const c of predictions.candidates) modelMap[c.candidate] = c.mean;
+  for (const c of predictions.candidates) modelMap[c.candidate] = c.prob_win;
   const pmTop = polymarket?.candidates?.slice(0, 5) || [];
 
   // Runoff scenario for hero card
   const runoff = predictions.runoff_scenarios?.[0];
-  const blankPct = runoff?.avg_blank_pct;
+  // expected_blank_null = poll-observed intent (IEP 24%, Ipsos 17%), more grounded than MC model
+  const blankPct = predictions.risk_scenarios?.expected_blank_null ?? runoff?.avg_blank_pct;
 
   // Runoff pair candidates for bicolor bar
   let runoffC1 = null, runoffC2 = null, runoffC1Party = null, runoffC2Party = null;
@@ -679,8 +777,8 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                 </div>
                 {pmTop.map(c => {
                   const party = getPartyColor(c.candidate);
-                  const modelMean = modelMap[c.candidate];
-                  const delta = modelMean != null ? c.probability - modelMean : null;
+                  const modelProb = modelMap[c.candidate];
+                  const delta = modelProb != null ? c.probability - modelProb : null;
                   return (
                     <div key={c.candidate} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -700,7 +798,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                   );
                 })}
                 <div style={{ color: '#8C877F', fontSize: 11, marginTop: 8 }}>
-                  Δ = diferencia entre probabilidad de mercado y estimación del modelo
+                  PM = P(ganar) en mercado · Δ vs P(ganar) del modelo
                 </div>
               </div>
               <SimulationCard />

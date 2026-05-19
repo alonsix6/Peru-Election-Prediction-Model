@@ -54,6 +54,7 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     poll_type: p.poll_type,
     margin_error: parseFloat(p.margin_error),
     pct_undecided: p.pct_undecided ? parseFloat(p.pct_undecided) : null,
+    pct_blank_null: p.pct_blank_null ? parseFloat(p.pct_blank_null) : null,
     results: resultsByPoll[p.id] || []
   }));
 
@@ -107,6 +108,44 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   // 5. Monte Carlo
   const { results: mcResults, runoffSummary, riskScenarios } = runMonteCarlo(bayesian.candidates, 10_000);
   console.log('   ✅ Monte Carlo: 10,000 simulaciones');
+
+  // 5b. Escenarios analíticos R2 (no requieren MC adicional)
+  if (electionRound === 2 && riskScenarios) {
+    const keikoPollsPct = bayesian.candidates['Keiko Fujimori']?.polls_pct ?? 50;
+    const sanchezPollsPct = bayesian.candidates['Roberto Sánchez Palomino']?.polls_pct ?? 50;
+
+    // Aproximación de la función error (Abramowitz & Stegun)
+    const erf = (x) => {
+      const s = x < 0 ? -1 : 1, a = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * a);
+      return s * (1 - (0.254829592*t - 0.284496736*t**2 + 1.421413741*t**3 - 1.453152027*t**4 + 1.061405429*t**5) * Math.exp(-a*a));
+    };
+    const Phi = (z) => 0.5 * (1 + erf(z / Math.sqrt(2)));
+
+    // lead > 0 → Sánchez lidera encuestas
+    const lead = sanchezPollsPct - keikoPollsPct;
+    const sigma = 3.0;
+    const rt2 = Math.sqrt(2);
+
+    riskScenarios.polls_only_keiko_win   = parseFloat(((1 - Phi(lead / (sigma * rt2))) * 100).toFixed(1));
+    riskScenarios.polls_only_sanchez_win = parseFloat((Phi(lead / (sigma * rt2)) * 100).toFixed(1));
+    riskScenarios.bias_5pts_sanchez_win  = parseFloat((Phi((lead + 5) / (sigma * rt2)) * 100).toFixed(1));
+    riskScenarios.bias_5pts_keiko_win    = parseFloat(((1 - Phi((lead + 5) / (sigma * rt2))) * 100).toFixed(1));
+
+    // Opción E: P(voto blanco/nulo) por rechazo bilateral calibrado.
+    // P(blank) = [P(rechaza KF) × P(rechaza RSP) + ρ × σ_KF × σ_RSP] × franchise_factor
+    // ρ ≈ -0.20: correlación negativa — izquierda rechaza KF, derecha rechaza RSP → grupos distintos.
+    // Tasas de rechazo de REJECTION_RATES (montecarlo.js): KF=60.5%, RSP=44.2%.
+    // franchise_factor=0.75: encuestas sobreestiman blanqueo 1.3-1.5x históricamente.
+    const rejKF  = 60.5 / 100;
+    const rejRSP = 44.2 / 100;
+    const rhoBlank  = -0.20;
+    const sigmaKF   = Math.sqrt(rejKF  * (1 - rejKF));
+    const sigmaRSP  = Math.sqrt(rejRSP * (1 - rejRSP));
+    const pRejectBoth = rejKF * rejRSP + rhoBlank * sigmaKF * sigmaRSP;
+    riskScenarios.expected_blank_null = parseFloat((Math.max(0, pRejectBoth) * 0.75 * 100).toFixed(1));
+    console.log(`   ✅ Escenarios R2: solo encuestas KF=${riskScenarios.polls_only_keiko_win}% / RSP=${riskScenarios.polls_only_sanchez_win}%, B/N modelo=${riskScenarios.expected_blank_null}%`);
+  }
 
   const α = bayesian.polymarket_weight;
 

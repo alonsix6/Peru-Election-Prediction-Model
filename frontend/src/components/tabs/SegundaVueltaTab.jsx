@@ -1,5 +1,8 @@
-const KEIKO_COLOR = '#DC2626';
-const SANCHEZ_COLOR = '#1D4ED8';
+import { getPartyColor } from '../../config/partyColors';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+
+const KEIKO_COLOR = getPartyColor('Keiko Fujimori').primary;                // #F97316
+const SANCHEZ_COLOR = getPartyColor('Roberto Sánchez Palomino').primary;   // #16A34A
 
 // Alliance context — editorial data (news-sourced, not from live polls)
 // Sources: communicados oficiales, declaraciones públicas, La República, RPP, Infobae
@@ -172,13 +175,13 @@ function HeadToHead({ predictions }) {
           <div style={{ color: '#1C1917', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{name}</div>
 
           <div style={{ marginBottom: 12 }}>
-            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Predicción del modelo</div>
+            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>% votos válidos (estimación MC)</div>
             <div style={{ color, fontWeight: 700, fontSize: 28, fontVariantNumeric: 'tabular-nums' }}>
               {data ? data.mean.toFixed(1) : '—'}%
             </div>
             {data && (
               <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 2 }}>
-                IC 90%: [{data.p10.toFixed(1)}%, {data.p90.toFixed(1)}%]
+                IC 90% v.v.: [{data.p10.toFixed(1)}%, {data.p90.toFixed(1)}%]
               </div>
             )}
           </div>
@@ -231,20 +234,20 @@ function PMvsPollsSection({ polymarket, r2polls }) {
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
           <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 6 }}>
-            Polymarket (mercado){volumeM && <span style={{ color: '#A8A29E' }}> · ${volumeM}M vol.</span>}
+            Polymarket · P(ganar){volumeM && <span style={{ color: '#A8A29E' }}> · ${volumeM}M vol.</span>}
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <div>
               <div style={{ color: KEIKO_COLOR, fontWeight: 700, fontSize: 20, fontVariantNumeric: 'tabular-nums' }}>
                 {keikoPct != null ? keikoPct + '%' : '—'}
               </div>
-              <div style={{ color: '#A8A29E', fontSize: 10 }}>Keiko</div>
+              <div style={{ color: '#A8A29E', fontSize: 10 }}>Keiko · prob. ganar</div>
             </div>
             <div>
               <div style={{ color: SANCHEZ_COLOR, fontWeight: 700, fontSize: 20, fontVariantNumeric: 'tabular-nums' }}>
                 {sanchezPct != null ? sanchezPct + '%' : '—'}
               </div>
-              <div style={{ color: '#A8A29E', fontSize: 10 }}>Sánchez</div>
+              <div style={{ color: '#A8A29E', fontSize: 10 }}>Sánchez · prob. ganar</div>
             </div>
           </div>
           {polymarket?.captured_at_lima && (
@@ -288,8 +291,8 @@ function PMvsPollsSection({ polymarket, r2polls }) {
         (encuestas internas de campaña, alianzas en formación) o bien que existe un sesgo especulativo.
       </p>
       <p style={{ color: '#8C877F', fontSize: 12, margin: 0 }}>
-        El modelo usa α=0.65 (cap reducido desde 0.77 en R1) para evitar sobreponderación del mercado ante este gap inusual.
-        Las encuestas mantienen el 35% del peso en todo momento.
+        El modelo asigna α=20–60% al mercado (sube progresivamente durante la veda).
+        Polymarket se incorpora como P(ganar), capada en ±10 pts desde el 50% para evitar vote shares imposibles.
       </p>
     </div>
   );
@@ -439,126 +442,68 @@ function AntiVotoTrendChart({ antivoto }) {
 
   if (!keiko?.history?.length && !sanchez?.history?.length) return null;
 
-  const allPoints = [
-    ...(keiko?.history || []),
-    ...(sanchez?.history || []),
-  ];
-  if (allPoints.length < 2) return null;
+  // Build unified dataset keyed by timestamp (numeric for continuous X axis)
+  const pointMap = {};
+  for (const h of keiko?.history || []) {
+    const ts = parseDate(h.field_end)?.getTime();
+    if (!ts) continue;
+    if (!pointMap[ts]) pointMap[ts] = { ts, dateRaw: h.field_end };
+    pointMap[ts].keiko = h.pct_no;
+  }
+  for (const h of sanchez?.history || []) {
+    const ts = parseDate(h.field_end)?.getTime();
+    if (!ts) continue;
+    if (!pointMap[ts]) pointMap[ts] = { ts, dateRaw: h.field_end };
+    pointMap[ts].sanchez = h.pct_no;
+  }
+  const chartData = Object.values(pointMap).sort((a, b) => a.ts - b.ts);
+  if (chartData.length < 2) return null;
 
-  const allDates = allPoints.map(h => parseDate(h.field_end)).filter(Boolean);
-  const minDate = new Date(Math.min(...allDates));
-  const maxDate = new Date(Math.max(...allDates));
-  const startDate = new Date(minDate); startDate.setDate(startDate.getDate() - 6);
-  const endDate = new Date(maxDate); endDate.setDate(endDate.getDate() + 6);
-  const totalMs = endDate - startDate;
-
-  const W = 420, H = 190;
-  const PAD = { left: 34, right: 12, top: 18, bottom: 28 };
-  const chartW = W - PAD.left - PAD.right;
-  const chartH = H - PAD.top - PAD.bottom;
-  const yMin = 30, yMax = 72;
-
-  const toX = d => PAD.left + ((parseDate(d) - startDate) / totalMs) * chartW;
-  const toY = v => PAD.top + ((yMax - v) / (yMax - yMin)) * chartH;
-
-  const sortByDate = arr => [...arr].sort((a, b) => parseDate(a.field_end) - parseDate(b.field_end));
-
-  const buildPath = history => {
-    const sorted = sortByDate(history);
-    return sorted.map((h, i) => `${i === 0 ? 'M' : 'L'}${toX(h.field_end).toFixed(1)},${toY(h.pct_no).toFixed(1)}`).join(' ');
-  };
-
-  const r1X = toX('2026-04-12');
-  const yTicks = [35, 45, 55, 65];
-
-  const formatDateLabel = dateStr => {
-    const d = parseDate(dateStr);
-    if (!d) return '';
-    return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
-  };
+  const r1Ts = new Date('2026-04-12T12:00:00Z').getTime();
+  const WEEK_MS = 7 * 24 * 3600 * 1000;
+  const fmtDate = (ts) => new Date(ts).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>
+      <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 8 }}>
         Tendencia del rechazo definitivo — R1 → R2
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-        {/* Y grid */}
-        {yTicks.map(t => (
-          <g key={t}>
-            <line x1={PAD.left} y1={toY(t)} x2={W - PAD.right} y2={toY(t)}
-              stroke="#F0EDE8" strokeWidth="1" />
-            <text x={PAD.left - 4} y={toY(t) + 3.5} fontSize="8.5" fill="#A8A29E" textAnchor="end">{t}%</text>
-          </g>
-        ))}
-
-        {/* R1 election day marker */}
-        <line x1={r1X} y1={PAD.top} x2={r1X} y2={H - PAD.bottom}
-          stroke="#D97706" strokeWidth="1.5" strokeDasharray="4,3" />
-        <text x={r1X + 3} y={PAD.top + 9} fontSize="8" fill="#D97706" fontWeight="600">R1 12 abr</text>
-
-        {/* Sánchez line + dots */}
-        {sanchez?.history?.length > 0 && (() => {
-          const sorted = sortByDate(sanchez.history);
-          return (
-            <g>
-              <path d={buildPath(sanchez.history)} fill="none" stroke={SANCHEZ_COLOR} strokeWidth="2" />
-              {sorted.map((h, i) => {
-                const x = toX(h.field_end), y = toY(h.pct_no);
-                const above = i < sorted.length - 1 && sorted[i + 1].pct_no <= h.pct_no;
-                return (
-                  <g key={h.field_end + i}>
-                    <circle cx={x} cy={y} r="4" fill={SANCHEZ_COLOR} />
-                    <text x={x} y={above ? y - 7 : y + 14} fontSize="8.5" fill={SANCHEZ_COLOR} textAnchor="middle" fontWeight="600">
-                      {h.pct_no}%
-                    </text>
-                    {i === 0 || i === sorted.length - 1 ? (
-                      <text x={x} y={H - PAD.bottom + 12} fontSize="8" fill="#8C877F" textAnchor="middle">
-                        {formatDateLabel(h.field_end)}
-                      </text>
-                    ) : null}
-                  </g>
-                );
-              })}
-            </g>
-          );
-        })()}
-
-        {/* Keiko line + dots */}
-        {keiko?.history?.length > 0 && (() => {
-          const sorted = sortByDate(keiko.history);
-          return (
-            <g>
-              <path d={buildPath(keiko.history)} fill="none" stroke={KEIKO_COLOR} strokeWidth="2" />
-              {sorted.map((h, i) => {
-                const x = toX(h.field_end), y = toY(h.pct_no);
-                return (
-                  <g key={h.field_end + i}>
-                    <circle cx={x} cy={y} r="4" fill={KEIKO_COLOR} />
-                    <text x={x} y={y - 7} fontSize="8.5" fill={KEIKO_COLOR} textAnchor="middle" fontWeight="600">
-                      {h.pct_no}%
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-          );
-        })()}
-
-        {/* Legend */}
-        <rect x={W - PAD.right - 78} y={PAD.top} width="76" height="30" rx="3" fill="white" opacity="0.9" stroke="#F0EDE8" strokeWidth="1" />
-        <line x1={W - PAD.right - 72} y1={PAD.top + 10} x2={W - PAD.right - 58} y2={PAD.top + 10} stroke={KEIKO_COLOR} strokeWidth="2" />
-        <circle cx={W - PAD.right - 65} cy={PAD.top + 10} r="3" fill={KEIKO_COLOR} />
-        <text x={W - PAD.right - 54} y={PAD.top + 13.5} fontSize="8.5" fill="#1C1917">Keiko</text>
-        <line x1={W - PAD.right - 72} y1={PAD.top + 22} x2={W - PAD.right - 58} y2={PAD.top + 22} stroke={SANCHEZ_COLOR} strokeWidth="2" />
-        <circle cx={W - PAD.right - 65} cy={PAD.top + 22} r="3" fill={SANCHEZ_COLOR} />
-        <text x={W - PAD.right - 54} y={PAD.top + 25.5} fontSize="8.5" fill="#1C1917">Sánchez</text>
-      </svg>
-      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 2 }}>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#F0EDE8" />
+          <XAxis
+            dataKey="ts" type="number" scale="time"
+            domain={[chartData[0].ts - WEEK_MS, chartData[chartData.length - 1].ts + WEEK_MS]}
+            tickFormatter={fmtDate}
+            tick={{ fontSize: 10, fill: '#A8A29E' }}
+          />
+          <YAxis domain={[30, 70]} tickFormatter={v => `${v}%`} width={34} tick={{ fontSize: 10, fill: '#A8A29E' }} />
+          <Tooltip
+            labelFormatter={fmtDate}
+            formatter={(val, key) => [`${val}%`, key === 'keiko' ? 'Keiko Fujimori' : 'Roberto Sánchez']}
+            contentStyle={{ fontSize: 12, borderColor: '#E5E0D8', borderRadius: 6 }}
+          />
+          <ReferenceLine
+            x={r1Ts} stroke="#D97706" strokeDasharray="4 3"
+            label={{ value: 'R1 12 abr', position: 'insideTopRight', fontSize: 9, fill: '#D97706', fontWeight: 600 }}
+          />
+          <Line type="monotone" dataKey="keiko" name="Keiko Fujimori"
+            stroke={KEIKO_COLOR} strokeWidth={2}
+            dot={{ r: 4, fill: KEIKO_COLOR, strokeWidth: 0 }} activeDot={{ r: 5 }} connectNulls
+          />
+          <Line type="monotone" dataKey="sanchez" name="Roberto Sánchez"
+            stroke={SANCHEZ_COLOR} strokeWidth={2}
+            dot={{ r: 4, fill: SANCHEZ_COLOR, strokeWidth: 0 }} activeDot={{ r: 5 }} connectNulls
+          />
+        </LineChart>
+      </ResponsiveContainer>
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 4 }}>
         Fuentes: Ipsos (21-22 mar, 2 abr, 23-24 abr 2026) · CIT (20-23 mar 2026)
       </div>
     </div>
   );
+
+
 }
 
 function AntiVotoSection({ antivoto }) {

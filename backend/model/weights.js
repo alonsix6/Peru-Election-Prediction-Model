@@ -3,11 +3,12 @@ const { nowPeru, electoralPhase, timeToElection } = require('./clock');
 
 /**
  * Calcula el peso de Polymarket (α) en tiempo real basado en hora Lima.
- * Segunda vuelta (R2): cap reducido para moderar el gap de 27pp entre PM y encuestas.
+ * R2: rango 20-60%. Encuestas empatadas (50/50) vs PM (65/33) → PM tiene sesgo
+ * histórico en R2 (Keiko sobre-representada), por eso cap más conservador.
  *
- * PRE_VEDA  (hasta 31 may 8am):  α = 0.25–0.30  → encuestas dominan
- * VEDA      (31 may – 6 jun):    α crece 0.30→0.65  → Polymarket sube con cap
- * ELECTION  (7 jun):             α = 0.65  → encuestas mantienen 35% de peso
+ * PRE_VEDA  (hasta 31 may 8am):  α = 0.20–0.25  → encuestas dominan fuertemente
+ * VEDA      (31 may – 6 jun):    α crece 0.20→0.60  → PM sube gradualmente
+ * ELECTION  (7 jun):             α = 0.60  → encuestas mantienen 40% de peso
  */
 function getPolymarketWeight(volumeUSD = 5_100_000) {
   const phase = electoralPhase();
@@ -16,26 +17,23 @@ function getPolymarketWeight(volumeUSD = 5_100_000) {
 
   switch (phase) {
     case 'pre_veda':
-      return Math.min(0.30, 0.25 + (liquidityFactor * 0.05));
+      return Math.min(0.25, 0.20 + (liquidityFactor * 0.05));
 
     case 'veda': {
       const vedaHours = 7 * 24; // 168 horas de veda
       const hoursInVeda = vedaHours - Math.max(0, totalHours);
       const vedaProgress = Math.min(1, hoursInVeda / vedaHours);
-      // Curva exponencial (^0.6): sube rápido al inicio de veda.
-      // Capped at 0.65 for R2 — en 2 candidatos PM sí refleja P(win), pero
-      // gap de 27pp (PM 65% Keiko vs encuestas 38-38) sugiere sobreponderación.
-      return Math.min(0.65, 0.30 + (Math.pow(vedaProgress, 0.6) * 0.47));
+      return Math.min(0.60, 0.20 + (Math.pow(vedaProgress, 0.6) * 0.42));
     }
 
     case 'election_day':
-      return 0.65; // Cap R2 — encuestas mantienen 35% de peso
+      return 0.60;
 
     case 'post_election':
       return null;
 
     default:
-      return 0.30; // Fallback conservador
+      return 0.20;
   }
 }
 

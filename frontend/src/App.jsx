@@ -41,7 +41,7 @@ class ErrorBoundary extends Component {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { status, predictions, r1predictions, polymarket, polls, loading, error, lastUpdated, refresh } = useElectionData();
+  const { status, predictions, r1predictions, polymarket, polls, r2polls, antivoto, loading, error, lastUpdated, refresh } = useElectionData();
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-page)' }}>
@@ -99,7 +99,7 @@ function AppContent() {
               <PrimeraVueltaTab predictions={r1predictions} polls={polls} />
             )}
             {activeTab === 'segunda' && (
-              <SegundaVueltaTab predictions={predictions} />
+              <SegundaVueltaTab predictions={predictions} polymarket={polymarket} r2polls={r2polls} antivoto={antivoto} />
             )}
             {activeTab === 'metodologia' && (
               <MetodologiaTab />

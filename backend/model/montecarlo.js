@@ -413,6 +413,7 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
   const simResults = candidates.map(() => []);
   const runoffCount = candidates.map(() => 0);
   const winCount = candidates.map(() => 0);
+  let closeRunoffCount = 0; // runoff con margen < 5 pts entre finalistas
 
   // Acumuladores de segunda vuelta por par
   const runoffPairStats = {};
@@ -548,6 +549,7 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
     } else {
       winCount[secondIdx]++;
     }
+    if (Math.abs(runoff.votesA - runoff.votesB) < 5) closeRunoffCount++;
 
     // Acumular stats del par
     const pairKey = [finalistA, finalistB].sort().join(' vs ');
@@ -594,15 +596,25 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
   // Escenarios de riesgo
   const pct = (n) => parseFloat(((n / nSimulations) * 100).toFixed(1));
   const topByMean = Object.entries(results).sort((a, b) => b[1].mean - a[1].mean);
-  const riskScenarios = {
+
+  // R2 (2 candidatos): escenarios relevantes para segunda vuelta
+  // R1 (≥3 candidatos): escenarios de primera vuelta clásicos
+  const riskScenarios = nCandidates > 2 ? {
     top2_not_expected: pct(riskCounters.top2NotTop2Expected),
     surprise_winner: pct(riskCounters.surpriseFirstRoundWinner),
+    p_close_race: pct(closeRunoffCount),
     candidates: topByMean.slice(0, 6).map(([name, data]) => ({
       candidate: name,
       misses_runoff: pct(riskCounters.perCandidate[name].missesRunoff),
       wins_first_round: pct(riskCounters.perCandidate[name].winsFirstRound),
       in_top2: pct(riskCounters.perCandidate[name].inTop2),
       gets_20plus: pct(riskCounters.perCandidate[name].gets20plus),
+    }))
+  } : {
+    p_close_race: pct(closeRunoffCount),
+    candidates: topByMean.slice(0, 2).map(([name, data]) => ({
+      candidate: name,
+      prob_win: data.prob_win,
     }))
   };
 

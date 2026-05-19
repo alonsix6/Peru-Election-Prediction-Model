@@ -54,6 +54,7 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     poll_type: p.poll_type,
     margin_error: parseFloat(p.margin_error),
     pct_undecided: p.pct_undecided ? parseFloat(p.pct_undecided) : null,
+    pct_blank_null: p.pct_blank_null ? parseFloat(p.pct_blank_null) : null,
     results: resultsByPoll[p.id] || []
   }));
 
@@ -107,6 +108,40 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   // 5. Monte Carlo
   const { results: mcResults, runoffSummary, riskScenarios } = runMonteCarlo(bayesian.candidates, 10_000);
   console.log('   ✅ Monte Carlo: 10,000 simulaciones');
+
+  // 5b. Escenarios analíticos R2 (no requieren MC adicional)
+  if (electionRound === 2 && riskScenarios) {
+    const keikoPollsPct = bayesian.candidates['Keiko Fujimori']?.polls_pct ?? 50;
+    const sanchezPollsPct = bayesian.candidates['Roberto Sánchez Palomino']?.polls_pct ?? 50;
+
+    // Aproximación de la función error (Abramowitz & Stegun)
+    const erf = (x) => {
+      const s = x < 0 ? -1 : 1, a = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * a);
+      return s * (1 - (0.254829592*t - 0.284496736*t**2 + 1.421413741*t**3 - 1.453152027*t**4 + 1.061405429*t**5) * Math.exp(-a*a));
+    };
+    const Phi = (z) => 0.5 * (1 + erf(z / Math.sqrt(2)));
+
+    // lead > 0 → Sánchez lidera encuestas
+    const lead = sanchezPollsPct - keikoPollsPct;
+    const sigma = 3.0;
+    const rt2 = Math.sqrt(2);
+
+    riskScenarios.polls_only_keiko_win   = parseFloat(((1 - Phi(lead / (sigma * rt2))) * 100).toFixed(1));
+    riskScenarios.polls_only_sanchez_win = parseFloat((Phi(lead / (sigma * rt2)) * 100).toFixed(1));
+    riskScenarios.bias_5pts_sanchez_win  = parseFloat((Phi((lead + 5) / (sigma * rt2)) * 100).toFixed(1));
+    riskScenarios.bias_5pts_keiko_win    = parseFloat(((1 - Phi((lead + 5) / (sigma * rt2))) * 100).toFixed(1));
+
+    // Voto blanco/nulo esperado — promedio ponderado de encuestas R2 recientes
+    const blankPolls = polls
+      .filter(p => p.pct_blank_null != null)
+      .sort((a, b) => new Date(b.field_end) - new Date(a.field_end))
+      .slice(0, 3);
+    riskScenarios.expected_blank_null = blankPolls.length > 0
+      ? parseFloat((blankPolls.reduce((s, p) => s + p.pct_blank_null, 0) / blankPolls.length).toFixed(1))
+      : null;
+    console.log(`   ✅ Escenarios R2: solo encuestas KF=${riskScenarios.polls_only_keiko_win}% / RSP=${riskScenarios.polls_only_sanchez_win}%, B/N esperado=${riskScenarios.expected_blank_null}%`);
+  }
 
   const α = bayesian.polymarket_weight;
 

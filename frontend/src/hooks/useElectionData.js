@@ -41,7 +41,7 @@ function normalizePredictions(data) {
 export function useElectionData() {
   const [data, setData] = useState({
     status: null, predictions: null, r1predictions: null,
-    polymarket: null, polls: null,
+    polymarket: null, polls: null, r2polls: null, antivoto: null,
     loading: true, error: null, lastUpdated: null
   });
 
@@ -52,18 +52,21 @@ export function useElectionData() {
       // predictions = R2 (segunda vuelta, live model)
       // r1predictions = R1 (primera vuelta, always frozen)
       // polls = R1 polls (round=1 default, for TrendChart history)
-      const [status, predictions, r1predictions, polymarket, polls] = await Promise.all([
+      // r2polls = R2 polls (head-to-head segunda vuelta)
+      // antivoto = rechazo definitivo por candidato, historial + latest
+      const [status, predictions, r1predictions, polymarket, polls, r2polls, antivoto] = await Promise.all([
         safeFetch(`${API}/api/status`),
         safeFetch(`${API}/api/predictions`),
         safeFetch(`${API}/api/predictions?round=1`),
         safeFetch(`${API}/api/polymarket`),
         safeFetch(`${API}/api/polls`),
+        safeFetch(`${API}/api/polls?round=2`),
+        safeFetch(`${API}/api/antivoto?round=all`),
       ]);
 
       const normalized = normalizePredictions(predictions);
       const normalizedR1 = normalizePredictions(r1predictions);
       const anyFailed = [status, normalized, polymarket, polls].some(d => d === null);
-      // normalizedR1 fallo no bloquea la app (R1 es frozen/opcional), pero sí lo reportamos
 
       setData({
         status,
@@ -71,6 +74,8 @@ export function useElectionData() {
         r1predictions: normalizedR1,
         polymarket,
         polls,
+        r2polls,
+        antivoto,
         loading: false,
         error: anyFailed ? 'Algunos datos no están disponibles' : null,
         lastUpdated: new Date()

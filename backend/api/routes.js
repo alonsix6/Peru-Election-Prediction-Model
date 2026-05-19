@@ -195,10 +195,12 @@ router.get('/polls', async (req, res) => {
       return {
         id: p.id, pollster: p.pollster_name,
         field_start: p.field_start, field_end: p.field_end,
+        published_date: p.published_date || null,
         sample_n: p.sample_n, margin_error: parseFloat(p.margin_error),
         poll_type: p.poll_type,
         pct_undecided: p.pct_undecided ? parseFloat(p.pct_undecided) : null,
         pct_blank_null: p.pct_blank_null ? parseFloat(p.pct_blank_null) : null,
+        notes: p.notes || null,
         effective_weight: parseFloat(weight.toFixed(4)),
         house_effects: HOUSE_EFFECTS[p.pollster_name] || {},
         results: (resultsByPoll[p.id] || []).map(r => ({
@@ -210,6 +212,69 @@ router.get('/polls', async (req, res) => {
     res.json({ total_polls: pollsWithWeights.length, polls: pollsWithWeights });
   } catch (err) {
     await handleError('DB_CONNECTION_FAILED', { module: 'api/polls' }, err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ─── GET /api/antivoto ──────────────────────────────────────
+// Historial de rechazo definitivo por candidato.
+// ?round=2 (default) → solo R2 | ?round=1 → solo R1 | ?round=all → todos los rounds
+// El historial completo (round=all) se usa para el trend chart R1→R2.
+router.get('/antivoto', async (req, res) => {
+  try {
+    const roundParam = req.query.round;
+    const allRounds = roundParam === 'all';
+    const round = allRounds ? null : (parseInt(roundParam) || 2);
+
+    const { rows } = allRounds
+      ? await db.query(`
+          SELECT a.candidate, a.pct_no, a.field_end, a.published_date, a.notes,
+                 a.election_round, ps.name as pollster
+          FROM antivoto_snapshots a
+          LEFT JOIN pollsters ps ON a.pollster_id = ps.id
+          ORDER BY a.field_end ASC, a.candidate ASC
+        `)
+      : await db.query(`
+          SELECT a.candidate, a.pct_no, a.field_end, a.published_date, a.notes,
+                 a.election_round, ps.name as pollster
+          FROM antivoto_snapshots a
+          LEFT JOIN pollsters ps ON a.pollster_id = ps.id
+          WHERE a.election_round = $1
+          ORDER BY a.field_end ASC, a.candidate ASC
+        `, [round]);
+
+    // Agrupa por candidato: historial completo + latest
+    const byCandidate = {};
+    for (const r of rows) {
+      if (!byCandidate[r.candidate]) byCandidate[r.candidate] = [];
+      byCandidate[r.candidate].push({
+        pct_no: parseFloat(r.pct_no),
+        field_end: r.field_end,
+        published_date: r.published_date,
+        pollster: r.pollster,
+        notes: r.notes,
+        election_round: r.election_round,
+      });
+    }
+
+    const candidates = Object.entries(byCandidate).map(([candidate, snapshots]) => {
+      // "latest" = most recent R2 measurement if available; else overall most recent
+      const r2snaps = snapshots.filter(s => s.election_round === 2);
+      const latest = r2snaps.length > 0
+        ? r2snaps[r2snaps.length - 1]
+        : snapshots[snapshots.length - 1];
+      return {
+        candidate,
+        latest_pct_no: latest.pct_no,
+        latest_field_end: latest.field_end,
+        pollster: latest.pollster,
+        history: snapshots,
+      };
+    });
+
+    res.json({ election_round: allRounds ? 'all' : round, candidates });
+  } catch (err) {
+    await handleError('DB_CONNECTION_FAILED', { module: 'api/antivoto' }, err);
     res.status(500).json({ error: 'Database error' });
   }
 });

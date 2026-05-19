@@ -1,6 +1,7 @@
 /**
  * Voto potencial — promedio ponderado CIT marzo (40%) + Ipsos abril (60%).
  * Piso = "Definitivamente sí", Techo = Potencial, Rechazo = "Definitivamente no".
+ * Solo aplica en R1 (multi-candidato). En R2 se usa distribución proporcional simple.
  */
 const VOTE_POTENTIAL_CIT = {
   'Rafael López Aliaga': { ceiling: 25.5, floor:  9.2, rejection: 50.9 },  // CIT 27.7/14.6/50.8 + Ipsos 24/6/51
@@ -12,45 +13,63 @@ const VOTE_POTENTIAL_CIT = {
 };
 
 /**
- * Redistribuye el voto indeciso proporcionalmente al espacio de crecimiento.
+ * Redistribuye el voto indeciso.
  *
- * Fórmula (sección 6, Fase 2):
- *   espacio = (techo_potencial − estimado_actual) × (1 − rechazo/100)
- *   redistribucion = indecisos_totales × (espacio / Σ espacios)
- *   estimado_final = estimado_actual + redistribucion
+ * R1 (multi-candidato): fórmula de espacio de crecimiento con techos CIT/Ipsos.
+ *   espacio = (techo − estimado_actual) × (1 − rechazo/100)
+ *   redistribucion = indecisos × (espacio_i / Σ espacios)
  *
- * @param {Object} aggregated - Salida de aggregatePolls():
- *   { candidate: { weighted_pct, combined_error, n_polls } }
+ * R2 (2 candidatos): distribución proporcional simple.
+ *   Los techos R1 no aplican — en R2 los dos candidatos capturan el voto válido.
+ *   redistribucion = indecisos × (current_pct_i / Σ current_pct)
+ *
+ * @param {Object} aggregated  - Salida de aggregatePolls(): { candidate: { weighted_pct, ... } }
  * @param {number} undecidedPct - % de indecisos a redistribuir
- * @param {Object} [votePotential] - Override de voto potencial CIT.
- *   Si no se pasa, usa VOTE_POTENTIAL_CIT.
+ * @param {Object} [votePotential] - Override de voto potencial CIT (solo R1)
+ * @param {number} [electionRound] - 1 (default) o 2
  * @returns {Object} - { candidate: { estimated_pct, redistribution, ceiling, floor, rejection } }
  */
-function redistributeUndecided(aggregated, undecidedPct, votePotential = VOTE_POTENTIAL_CIT) {
+function redistributeUndecided(aggregated, undecidedPct, votePotential = VOTE_POTENTIAL_CIT, electionRound = 1) {
   const result = {};
+
+  // ── R2: distribución proporcional simple ──────────────────────────────────
+  if (electionRound === 2) {
+    const totalPolled = Object.values(aggregated).reduce((s, d) => s + d.weighted_pct, 0);
+    for (const [candidate, data] of Object.entries(aggregated)) {
+      const current = data.weighted_pct;
+      const share = totalPolled > 0 ? current / totalPolled : 0.5;
+      const redistribution = undecidedPct * share;
+      result[candidate] = {
+        current_pct: current,
+        ceiling: 100,
+        floor: 0,
+        rejection: null,
+        space: undecidedPct * share,
+        redistribution,
+        estimated_pct: current + redistribution,
+      };
+    }
+    return result;
+  }
+
+  // ── R1: espacio de crecimiento con techos CIT/Ipsos ──────────────────────
   let totalSpace = 0;
 
-  // Paso 1: Calcular espacio de crecimiento por candidato
   for (const [candidate, data] of Object.entries(aggregated)) {
     const current = data.weighted_pct;
     const potential = votePotential[candidate];
 
     let ceiling, floor, rejection;
-
     if (potential) {
       ceiling = potential.ceiling;
       floor = potential.floor;
       rejection = potential.rejection;
     } else {
-      // Candidatos sin datos CIT/Ipsos: techo = weighted_pct × 2, piso = 0
-      // Rechazo 40%: más realista que 50% para candidatos poco conocidos
-      // (bajo rechazo por falta de exposición, no por popularidad)
       ceiling = current * 2;
       floor = 0;
       rejection = 40;
     }
 
-    // espacio = (techo − estimado_actual) × (1 − rechazo/100)
     const rawSpace = Math.max(0, ceiling - current);
     const space = rawSpace * (1 - rejection / 100);
 
@@ -60,27 +79,24 @@ function redistributeUndecided(aggregated, undecidedPct, votePotential = VOTE_PO
       floor,
       rejection,
       space,
-      redistribution: 0,  // Se calcula en paso 2
+      redistribution: 0,
       estimated_pct: current
     };
 
     totalSpace += space;
   }
 
-  // Paso 2: Redistribuir indecisos proporcionalmente
   if (totalSpace > 0 && undecidedPct > 0) {
     for (const [candidate, data] of Object.entries(result)) {
       const proportion = data.space / totalSpace;
       data.redistribution = undecidedPct * proportion;
       data.estimated_pct = data.current_pct + data.redistribution;
 
-      // Clamp: no superar el techo de voto potencial
       if (data.estimated_pct > data.ceiling) {
-        const excess = data.estimated_pct - data.ceiling;
         data.estimated_pct = data.ceiling;
         data.redistribution = data.ceiling - data.current_pct;
         data.clamped = true;
-        data.excess = excess;
+        data.excess = data.estimated_pct - data.ceiling;
       }
     }
   }

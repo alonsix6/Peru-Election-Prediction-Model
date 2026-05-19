@@ -453,11 +453,13 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
       const shockSize = 5 + Math.random() * 10; // -5 a -15 pts
       const lost = Math.min(perturbed[maxIdx] - 1, shockSize);
       perturbed[maxIdx] -= lost;
-      // Redistribuir al #3, #4, #5
+      // R1: redistribuir al #3-#5; R2: al único otro candidato
       const sorted = perturbed.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
-      const receivers = sorted.slice(2, 5).map(s => s.i);
-      const perReceiver = lost / receivers.length;
-      for (const ri of receivers) perturbed[ri] += perReceiver;
+      const receivers = (sorted.length > 2 ? sorted.slice(2, 5) : sorted.slice(1)).map(s => s.i);
+      if (receivers.length > 0) {
+        const perReceiver = lost / receivers.length;
+        for (const ri of receivers) perturbed[ri] += perReceiver;
+      }
     }
     // 3b. Shock negativo al #2: 10% de simulaciones
     else if (roll < 0.25) {
@@ -467,9 +469,12 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
         const shockSize = 5 + Math.random() * 7; // -5 a -12 pts
         const lost = Math.min(perturbed[secondIdx] - 1, shockSize);
         perturbed[secondIdx] -= lost;
-        const receivers = sorted.slice(2, 5).map(s => s.i);
-        const perReceiver = lost / receivers.length;
-        for (const ri of receivers) perturbed[ri] += perReceiver;
+        // R1: redistribuir al #3-#5; R2: al único líder
+        const receivers = (sorted.length > 2 ? sorted.slice(2, 5) : sorted.slice(0, 1)).map(s => s.i);
+        if (receivers.length > 0) {
+          const perReceiver = lost / receivers.length;
+          for (const ri of receivers) perturbed[ri] += perReceiver;
+        }
       }
     }
     // 3c. Shock positivo: 10% de simulaciones
@@ -520,10 +525,12 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
     if (!((firstIdx === exp1 && secondIdx === exp2) || (firstIdx === exp2 && secondIdx === exp1))) {
       riskCounters.top2NotTop2Expected++;
     }
-    // Sorpresa: ganador no está en top-3 del posterior base
-    const exp3 = expectedTop[2].i;
-    if (firstIdx !== exp1 && firstIdx !== exp2 && firstIdx !== exp3) {
-      riskCounters.surpriseFirstRoundWinner++;
+    // Sorpresa: ganador no está en top-3 del posterior base (solo aplica R1)
+    if (expectedTop.length > 2) {
+      const exp3 = expectedTop[2].i;
+      if (firstIdx !== exp1 && firstIdx !== exp2 && firstIdx !== exp3) {
+        riskCounters.surpriseFirstRoundWinner++;
+      }
     }
 
     // 6. Segunda vuelta con simulateRunoff()

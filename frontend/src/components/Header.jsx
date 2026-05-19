@@ -26,9 +26,11 @@ export default function Header({ status, predictions }) {
   const ps = PHASE_STYLES[phase] || PHASE_STYLES.pre_veda;
   const alpha = status?.polymarket_weight;
 
-  // Countdown real calculado cada segundo desde la hora actual
-  const electionDate = new Date('2026-04-12T18:00:00-05:00'); // 6pm Lima — cierre de mesas extendido por JNE/ONPE
-  const diffMs = electionDate - now;
+  // Countdown hasta cierre de mesas segunda vuelta: 7 junio 2026 5pm Lima
+  // 5pm Lima (UTC-5) = 10pm UTC = 2026-06-07T22:00:00Z
+  const electionClose = new Date('2026-06-07T22:00:00Z');
+  const diffMs = electionClose - now;
+  const isPast = diffMs <= 0;
   const totalSecsLeft = Math.max(0, Math.floor(diffMs / 1000));
   const days = Math.floor(totalSecsLeft / 86400);
   const hours = Math.floor((totalSecsLeft % 86400) / 3600);
@@ -62,7 +64,7 @@ export default function Header({ status, predictions }) {
             Modelo Electoral Perú 2026
           </h1>
           <p style={{ color: '#6B6560', fontSize: '13px', margin: '2px 0 0' }}>
-            Primera vuelta {'\u00B7'} 12 abril 2026
+            Segunda vuelta {'\u00B7'} 7 junio 2026 {'\u00B7'} Keiko Fujimori vs Roberto S\u00E1nchez
           </p>
         </div>
 
@@ -78,13 +80,24 @@ export default function Header({ status, predictions }) {
             border: ps.border
           }}>{ps.label}</span>
 
-          <span style={{
-            color: '#1C1917', fontVariantNumeric: 'tabular-nums',
-            fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4
-          }}>
-            <Timer size={12} style={{ color: '#8C877F' }} />
-            {days}d {String(hours).padStart(2, '0')}h {String(mins).padStart(2, '0')}m {String(secs).padStart(2, '0')}s
-          </span>
+          {isPast ? (
+            <span style={{
+              background: '#F0FDF4', color: '#15803D', padding: '3px 10px',
+              borderRadius: '9999px', fontSize: '12px', fontWeight: 600,
+              border: '1px solid #86EFAC', display: 'flex', alignItems: 'center', gap: 4
+            }}>
+              <Timer size={12} />
+              Mesas cerradas
+            </span>
+          ) : (
+            <span style={{
+              color: '#1C1917', fontVariantNumeric: 'tabular-nums',
+              fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4
+            }}>
+              <Timer size={12} style={{ color: '#8C877F' }} />
+              {days > 0 && `${days}d `}{String(hours).padStart(2, '0')}h {String(mins).padStart(2, '0')}m {String(secs).padStart(2, '0')}s
+            </span>
+          )}
 
           {alpha !== null && alpha !== undefined && (
             <span style={{

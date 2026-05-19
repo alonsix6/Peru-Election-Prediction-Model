@@ -70,8 +70,8 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     ? recentPolls.reduce((s, p) => s + p.pct_undecided, 0) / recentPolls.length
     : 25;
 
-  const withUndecided = redistributeUndecided(aggregated, avgUndecided);
-  console.log('   ✅ Indecisos redistribuidos:', avgUndecided.toFixed(1) + '%');
+  const withUndecided = redistributeUndecided(aggregated, avgUndecided, undefined, electionRound);
+  console.log('   ✅ Indecisos redistribuidos:', avgUndecided.toFixed(1) + '%', electionRound === 2 ? '(R2 proporcional)' : '(R1 CIT ceilings)');
 
   // 4. Integración Bayesiana con Polymarket
   let pmSnapshots;

@@ -40,7 +40,8 @@ function normalizePredictions(data) {
 
 export function useElectionData() {
   const [data, setData] = useState({
-    status: null, predictions: null, polymarket: null, polls: null,
+    status: null, predictions: null, r1predictions: null,
+    polymarket: null, polls: null,
     loading: true, error: null, lastUpdated: null
   });
 
@@ -48,21 +49,26 @@ export function useElectionData() {
     setData(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // /api/predictions ahora sirve todo desde DB (incluyendo runoff_scenarios)
-      // No necesita llamar /api/run-model — el servidor se actualiza solo cada 30 min
-      const [status, predictions, polymarket, polls] = await Promise.all([
+      // predictions = R2 (segunda vuelta, live model)
+      // r1predictions = R1 (primera vuelta, always frozen)
+      // polls = R1 polls (round=1 default, for TrendChart history)
+      const [status, predictions, r1predictions, polymarket, polls] = await Promise.all([
         safeFetch(`${API}/api/status`),
         safeFetch(`${API}/api/predictions`),
+        safeFetch(`${API}/api/predictions?round=1`),
         safeFetch(`${API}/api/polymarket`),
         safeFetch(`${API}/api/polls`),
       ]);
 
       const normalized = normalizePredictions(predictions);
+      const normalizedR1 = normalizePredictions(r1predictions);
       const anyFailed = [status, normalized, polymarket, polls].some(d => d === null);
+      // normalizedR1 fallo no bloquea la app (R1 es frozen/opcional), pero sí lo reportamos
 
       setData({
         status,
         predictions: normalized,
+        r1predictions: normalizedR1,
         polymarket,
         polls,
         loading: false,

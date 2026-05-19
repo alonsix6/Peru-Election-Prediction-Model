@@ -1,8 +1,8 @@
 const { DateTime } = require('luxon');
 
 const PERU_TIMEZONE = 'America/Lima'; // UTC-5, sin horario de verano
-const ELECTION_DAY  = '2026-04-12';
-const VEDA_START    = '2026-04-05T08:00:00'; // Veda desde 8am del sábado
+const ELECTION_DAY  = '2026-06-07'; // Segunda vuelta: Keiko Fujimori vs Roberto Sánchez
+const VEDA_START    = '2026-05-31T08:00:00'; // Veda desde 8am del sábado anterior
 
 /**
  * Retorna el DateTime actual en hora de Perú.
@@ -46,4 +46,4 @@ function electoralPhase() {
   return 'post_election';
 }
 
-module.exports = { nowPeru, timeToElection, electoralPhase, PERU_TIMEZONE };
+module.exports = { nowPeru, timeToElection, electoralPhase, PERU_TIMEZONE, ELECTION_DAY };

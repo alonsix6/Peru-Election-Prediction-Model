@@ -3,10 +3,11 @@ const { nowPeru, electoralPhase, timeToElection } = require('./clock');
 
 /**
  * Calcula el peso de Polymarket (α) en tiempo real basado en hora Lima.
+ * Segunda vuelta (R2): cap reducido para moderar el gap de 27pp entre PM y encuestas.
  *
- * PRE_VEDA  (hasta 5 abr 8am):  α = 0.25–0.30  → encuestas dominan
- * VEDA      (5–11 abr):          α crece 0.30→0.80  → Polymarket toma el control
- * ELECTION  (12 abr):            α = 0.85  → Polymarket es casi todo
+ * PRE_VEDA  (hasta 31 may 8am):  α = 0.25–0.30  → encuestas dominan
+ * VEDA      (31 may – 6 jun):    α crece 0.30→0.65  → Polymarket sube con cap
+ * ELECTION  (7 jun):             α = 0.65  → encuestas mantienen 35% de peso
  */
 function getPolymarketWeight(volumeUSD = 5_100_000) {
   const phase = electoralPhase();
@@ -21,14 +22,14 @@ function getPolymarketWeight(volumeUSD = 5_100_000) {
       const vedaHours = 7 * 24; // 168 horas de veda
       const hoursInVeda = vedaHours - Math.max(0, totalHours);
       const vedaProgress = Math.min(1, hoursInVeda / vedaHours);
-      // Curva exponencial (^0.6): sube rápido al inicio de veda
-      // Víspera: ~74%, día elección: 77%
-      // Encuestas mantienen al menos 23% de peso siempre
-      return 0.30 + (Math.pow(vedaProgress, 0.6) * 0.47);
+      // Curva exponencial (^0.6): sube rápido al inicio de veda.
+      // Capped at 0.65 for R2 — en 2 candidatos PM sí refleja P(win), pero
+      // gap de 27pp (PM 65% Keiko vs encuestas 38-38) sugiere sobreponderación.
+      return Math.min(0.65, 0.30 + (Math.pow(vedaProgress, 0.6) * 0.47));
     }
 
     case 'election_day':
-      return 0.77;
+      return 0.65; // Cap R2 — encuestas mantienen 35% de peso
 
     case 'post_election':
       return null;

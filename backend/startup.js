@@ -51,6 +51,26 @@ async function autoMigrate() {
     }
   }
 
+  // Migración R2: election_round column (idempotent — IF NOT EXISTS)
+  const { rows: r2Check } = await db.query(`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'polls' AND column_name = 'election_round'
+  `);
+  if (r2Check.length === 0) {
+    const migration2 = fs.readFileSync(path.join(__dirname, 'db', 'migration_r2.sql'), 'utf8');
+    await db.query(migration2);
+    console.log('   ✅ migration_r2.sql ejecutado (columna election_round agregada)');
+  }
+
+  // Seed R2: actualizar pesos de encuestadoras e insertar encuestas R2 (idempotent)
+  try {
+    const seed2 = fs.readFileSync(path.join(__dirname, 'db', 'seed_r2.sql'), 'utf8');
+    await db.query(seed2);
+    console.log('   ✅ seed_r2.sql ejecutado (pesos R2 + encuestas segunda vuelta)');
+  } catch (e) {
+    console.warn('⚠️  seed_r2.sql falló (no fatal):', e.message);
+  }
+
   return false;
 }
 
@@ -61,17 +81,18 @@ async function autoMigrate() {
 async function ensureFirstPrediction() {
   try {
     const { rows } = await db.query(`
-      SELECT COUNT(*) FROM model_predictions WHERE trigger = 'auto_polymarket_update'
+      SELECT COUNT(*) FROM model_predictions
+      WHERE trigger = 'auto_polymarket_update' AND election_round = 2
     `);
     if (parseInt(rows[0].count) === 0) {
-      console.log('🧮 Sin predicciones automáticas — corriendo pipeline inicial...');
-      await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update' });
-      console.log('✅ Primera predicción guardada en DB');
+      console.log('🧮 Sin predicciones R2 — corriendo pipeline inicial segunda vuelta...');
+      await runFullPipeline({ saveToDB: true, trigger: 'auto_polymarket_update', electionRound: 2 });
+      console.log('✅ Primera predicción R2 guardada en DB');
     } else {
-      console.log(`✅ Predicciones en DB: ${rows[0].count} registros automáticos`);
+      console.log(`✅ Predicciones R2 en DB: ${rows[0].count} registros automáticos`);
     }
   } catch (e) {
-    console.error('⚠️  No se pudo generar predicción inicial:', e.message);
+    console.error('⚠️  No se pudo generar predicción R2 inicial:', e.message);
   }
 }
 
@@ -129,7 +150,7 @@ async function validateSystemIntegrity() {
   try {
     const { rows: finalCheck } = await db.query(`
       SELECT generated_at_lima FROM model_predictions
-      WHERE trigger = 'final_election_day'
+      WHERE trigger = 'final_election_day' AND election_round = 1
       LIMIT 1
     `);
 
@@ -156,16 +177,17 @@ async function validateSystemIntegrity() {
           const pmTs = pmSnap[0].captured_at_lima;
           console.log(`🔄 FOTO FINAL incorrecta (ts=${fotoTs.toISOString()}) — reconstruyendo con PM snapshot de ${pmTs}...`);
 
-          // Borrar final_election_day actual
-          await db.query("DELETE FROM model_predictions WHERE trigger = 'final_election_day'");
+          // Borrar final_election_day R1 incorrecto
+          await db.query("DELETE FROM model_predictions WHERE trigger = 'final_election_day' AND election_round = 1");
 
-          // Reconstruir con datos post-BdU, alpha=0.77 (el valor del día electoral)
+          // Reconstruir R1 con datos post-BdU, alpha=0.77 (el valor del día electoral R1)
           await runFullPipeline({
             saveToDB: true,
             trigger: 'final_election_day',
             pmTimestamp: pmTs,
             overrideTimestamp: pmTs,
-            overrideAlpha: 0.77
+            overrideAlpha: 0.77,
+            electionRound: 1
           });
           console.log('✅ FOTO FINAL reconstruida con datos post-BdU');
         } else {
@@ -179,12 +201,13 @@ async function validateSystemIntegrity() {
     // Dedup: borrar final_election_day duplicados (mantener solo el último)
     const { rows: fotoFinal } = await db.query(`
       SELECT MAX(generated_at_lima) as ts FROM model_predictions
-      WHERE trigger = 'final_election_day'
+      WHERE trigger = 'final_election_day' AND election_round = 1
     `);
     if (fotoFinal[0].ts) {
       const r1 = await db.query(`
         DELETE FROM model_predictions
         WHERE trigger = 'final_election_day'
+          AND election_round = 1
           AND generated_at_lima < $1
       `, [fotoFinal[0].ts]);
       if (r1.rowCount > 0) {

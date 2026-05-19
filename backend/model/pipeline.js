@@ -18,7 +18,7 @@ const db = require('../db');
  * @param {string} options.trigger - 'auto_polymarket_update' | 'user_simulation'
  * @returns {Object} { candidates, runoffSummary, meta }
  */
-async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_update', pmTimestamp = null, overrideTimestamp = null, overrideAlpha = null } = {}) {
+async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_update', pmTimestamp = null, overrideTimestamp = null, overrideAlpha = null, electionRound = 2 } = {}) {
   const now = nowPeru();
   const phase = electoralPhase();
   console.log(`\n🧮 Pipeline @ ${now.toFormat('dd/MM HH:mm')} Lima (fase: ${phase}, trigger: ${trigger})...`);
@@ -33,7 +33,8 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   const { rows: dbPolls } = await db.query(`
     SELECT p.*, ps.name as pollster_name
     FROM polls p JOIN pollsters ps ON p.pollster_id = ps.id
-  `);
+    WHERE p.election_round = $1
+  `, [electionRound]);
 
   // Normalización de nombres (corrige datos legacy en DB)
   const NAME_FIX = { 'Martín Vizcarra': 'Mario Vizcarra' };
@@ -73,16 +74,25 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
   console.log('   ✅ Indecisos redistribuidos:', avgUndecided.toFixed(1) + '%');
 
   // 4. Integración Bayesiana con Polymarket
-  const pmQuery = pmTimestamp
-    ? `SELECT candidate, probability, volume_usd
-       FROM polymarket_snapshots
-       WHERE captured_at_lima = $1`
-    : `SELECT candidate, probability, volume_usd
-       FROM polymarket_snapshots
-       WHERE captured_at_lima = (SELECT MAX(captured_at_lima) FROM polymarket_snapshots)`;
-  const { rows: pmSnapshots } = pmTimestamp
-    ? await db.query(pmQuery, [pmTimestamp])
-    : await db.query(pmQuery);
+  let pmSnapshots;
+  if (pmTimestamp) {
+    const { rows } = await db.query(`
+      SELECT candidate, probability, volume_usd
+      FROM polymarket_snapshots
+      WHERE captured_at_lima = $1 AND election_round = $2
+    `, [pmTimestamp, electionRound]);
+    pmSnapshots = rows;
+  } else {
+    const { rows } = await db.query(`
+      SELECT candidate, probability, volume_usd
+      FROM polymarket_snapshots
+      WHERE election_round = $1
+        AND captured_at_lima = (
+          SELECT MAX(captured_at_lima) FROM polymarket_snapshots WHERE election_round = $1
+        )
+    `, [electionRound]);
+    pmSnapshots = rows;
+  }
 
   const polymarketData = {};
   let pmVolume = 0;
@@ -113,13 +123,14 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
            candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
            prob_first_round, prob_win_overall, model_version, trigger, runoff_json,
            polls_pct, polymarket_pct, posterior_pct, risk_json,
-           is_final_snapshot, frozen_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+           is_final_snapshot, frozen_at, election_round)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       `, [overrideTimestamp || now.toISO(), phase, α, 1 - α,
           candidate, data.mean, data.p10, data.p90,
           data.prob_runoff, data.prob_win, '2.0', trigger, runoffJson,
           bc?.polls_pct ?? null, bc?.polymarket_pct ?? null, bc?.posterior_pct ?? null, riskJson,
-          isFinal, isFinal ? (overrideTimestamp || now.toISO()) : null]);
+          isFinal, isFinal ? (overrideTimestamp || now.toISO()) : null,
+          electionRound]);
     }
     console.log('   ✅ Guardado en DB (trigger: ' + trigger + ')');
   }

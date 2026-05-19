@@ -46,6 +46,24 @@ const DATA = {
     highlight: 'El modelo ubicó a Castillo en el #3 con 23.6% de probabilidad de pasar a segunda vuelta — una señal más clara que la de las encuestas individuales. El error de -6.2 pts refleja la misma subestimación del voto rural que afectó a todas las encuestadoras.',
     note: 'Lescano (+6.2) y Forsyth (+6.6) fueron los mayores errores, probablemente por migración de voto estratégico en las últimas horas — un patrón similar al de Barnechea en 2016.',
   },
+  2026: {
+    context: 'Primera vuelta 12 abril 2026. Blend bayesiano Polymarket + encuestas (α=0.77 día electoral). Primer ciclo incorporando mercados de predicción en tiempo real como señal complementaria.',
+    candidates: [
+      { name: 'Keiko Fujimori', modelo: 30.0, onpe: 17.2, error: +12.8, inIC: false },
+      { name: 'Rafael López Aliaga', modelo: 13.0, onpe: 11.9, error: +1.1, inIC: true },
+      { name: 'Ricardo Belmont', modelo: 11.3, onpe: 10.2, error: +1.1, inIC: true },
+      { name: 'Jorge Nieto', modelo: 9.1, onpe: 11.0, error: -1.9, inIC: true },
+      { name: 'Roberto Sánchez Palomino', modelo: 8.9, onpe: 12.0, error: -3.1, inIC: false },
+    ],
+    mae: 4.01,
+    ic: '3/5 (60%)',
+    pollsters: [
+      { name: 'Ipsos CR', mae: 0.28 },
+      { name: 'Datum CR', mae: 2.0 },
+    ],
+    highlight: 'El mayor error fue Keiko +12.8pp. Polymarket la tenía al 45.5%, pero eso refleja P(ganar la presidencia) incluyendo segunda vuelta — no el % de votos en primera. En una carrera con N candidatos, ese sesgo es sistemático y corrompe el blend. Correcto: detectar el ascenso de Belmont, Aliaga en el top-3, y la posición del candidato #1 (Keiko). Fallo crítico: Sánchez en el #5 del modelo, llegó #2 en ONPE.',
+    note: 'Correcciones para R2: (1) solo 2 candidatos — desaparece el problema P(win)≠%voto, PM sí refleja la probabilidad directa; (2) cap alpha 0.77→0.65 para evitar sobreponderación (gap 27pp entre PM y encuestas); (3) pesos encuestadoras calibrados por precisión R1: Ipsos 1.30×, Datum 1.05×.',
+  },
 };
 
 const POLLSTER_COLORS = {
@@ -66,7 +84,7 @@ function MetricCard({ label, value, sub, color }) {
 }
 
 export default function BacktestingTab() {
-  const [activeYear, setActiveYear] = useState(2016);
+  const [activeYear, setActiveYear] = useState(2026);
   const d = DATA[activeYear];
 
   return (
@@ -96,7 +114,7 @@ export default function BacktestingTab() {
 
       {/* Year tabs */}
       <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E5E0D8' }}>
-        {[2016, 2021].map(y => (
+        {[2026, 2021, 2016].map(y => (
           <button
             key={y}
             onClick={() => setActiveYear(y)}
@@ -107,7 +125,7 @@ export default function BacktestingTab() {
               cursor: 'pointer', marginBottom: -1,
             }}
           >
-            {y}
+            {y === 2026 ? '2026 ★' : y}
           </button>
         ))}
       </div>
@@ -116,16 +134,24 @@ export default function BacktestingTab() {
       <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.6 }}>{d.context}</p>
 
       {/* Metric cards */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <MetricCard label="MAE del modelo" value={`${d.mae} pts`} sub="error absoluto medio" color="#059669" />
-        <MetricCard label="Calibración IC 90%" value={d.ic} sub="candidatos dentro del intervalo" color="#1D4ED8" />
-        <MetricCard
-          label="Vs. mejor encuestadora"
-          value={`−${(d.pollsters[0].mae - d.mae).toFixed(1)} pts`}
-          sub={`mejor que ${d.pollsters[0].name} (${d.pollsters[0].mae} pts)`}
-          color="#059669"
-        />
-      </div>
+      {(() => {
+        const diff = d.pollsters[0].mae - d.mae; // positive = model better
+        const modelBetter = diff > 0;
+        return (
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <MetricCard label="MAE del modelo" value={`${d.mae} pts`} sub="error absoluto medio" color={d.mae < 3 ? '#059669' : '#D97706'} />
+            <MetricCard label="Calibración IC 90%" value={d.ic} sub="candidatos dentro del intervalo" color="#1D4ED8" />
+            <MetricCard
+              label="Vs. mejor encuestadora"
+              value={modelBetter ? `−${diff.toFixed(1)} pts` : `+${Math.abs(diff).toFixed(1)} pts`}
+              sub={modelBetter
+                ? `mejor que ${d.pollsters[0].name} (${d.pollsters[0].mae} pts)`
+                : `peor que ${d.pollsters[0].name} (${d.pollsters[0].mae} pts)`}
+              color={modelBetter ? '#059669' : '#DC2626'}
+            />
+          </div>
+        );
+      })()}
 
       {/* Results table */}
       <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, overflow: 'hidden' }}>
@@ -221,22 +247,22 @@ export default function BacktestingTab() {
         ))}
       </div>
 
-      {/* 2026 Polymarket note */}
+      {/* 2026 lessons & R2 updates note */}
       <div style={{
         background: '#FFFFFF', border: '1px solid #E5E0D8', borderLeft: '3px solid #1D4ED8',
         borderRadius: '0 12px 12px 0', padding: '20px 24px',
       }}>
-        <div style={{ color: '#1D4ED8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Elecciones 2026</div>
-        <h4 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 10px' }}>Una fuente adicional: Polymarket</h4>
+        <div style={{ color: '#1D4ED8', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Segunda vuelta — Junio 2026</div>
+        <h4 style={{ color: '#1C1917', fontSize: 15, fontWeight: 600, margin: '0 0 10px' }}>Qué cambiamos para la segunda vuelta</h4>
         <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '0 0 10px' }}>
-          Los backtestings de 2016 y 2021 se corrieron <strong style={{ color: '#1C1917' }}>solo con encuestas</strong> — la misma
-          base metodológica que usamos en 2026. Para este ciclo incorporamos adicionalmente los precios de Polymarket como
-          señal complementaria, con peso dinámico que crece a medida que avanza la veda electoral.
+          El mayor aprendizaje de 2026 R1: Polymarket cotiza <strong style={{ color: '#1C1917' }}>P(ganar la presidencia)</strong>,
+          no el porcentaje en primera vuelta. En una carrera de N candidatos, eso crea un sesgo sistemático para los líderes (Keiko
+          +12.8pp). En segunda vuelta con 2 candidatos, P(win) ≈ % votos — el sesgo desaparece.
         </p>
         <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-          Polymarket puede reflejar información adicional — percepción de campaña, movimientos de último momento —
-          pero no es una fuente independiente: los traders también leen las encuestas. Por eso entra con peso calibrado, no como verdad absoluta.
-          Su peso máximo el día de la elección es del 77%, manteniendo siempre al menos 23% de peso para las encuestas.
+          Ajustes para R2: <strong style={{ color: '#1C1917' }}>alpha cap 0.65</strong> (era 0.77) para moderar la señal PM ante el
+          gap de 27pp con las encuestas; <strong style={{ color: '#1C1917' }}>Ipsos 1.30×</strong> (mejor MAE R1) y{' '}
+          <strong style={{ color: '#1C1917' }}>Datum 1.05×</strong> basados en performance real del conteo rápido.
         </p>
       </div>
     </div>

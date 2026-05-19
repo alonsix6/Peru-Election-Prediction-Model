@@ -31,13 +31,17 @@ router.get('/status', (req, res) => {
 });
 
 // ─── GET /api/predictions ───────────────────────────────────
-// Sirve SIEMPRE la última predicción automática guardada en DB.
-// No corre ningún cálculo — solo lee y sirve.
+// Sirve la última predicción guardada en DB para el round especificado.
+// ?round=1 → R1 frozen snapshot | ?round=2 (default) → R2 live model
 router.get('/predictions', async (req, res) => {
   try {
-    // Primero verificar si existe foto final (modelo congelado)
+    const round = parseInt(req.query.round) || 2;
+
+    // R1 always serves the frozen final snapshot
+    // R2 serves latest auto update, or final if frozen
     const { rows: finalCheck } = await db.query(
-      "SELECT COUNT(*) FROM model_predictions WHERE trigger = 'final_election_day'"
+      "SELECT COUNT(*) FROM model_predictions WHERE trigger = 'final_election_day' AND election_round = $1",
+      [round]
     );
     const isFrozen = parseInt(finalCheck[0].count) > 0;
     const triggerFilter = isFrozen ? 'final_election_day' : 'auto_polymarket_update';
@@ -50,13 +54,14 @@ router.get('/predictions', async (req, res) => {
              frozen_at
       FROM model_predictions
       WHERE trigger = $1
+        AND election_round = $2
         AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
-          WHERE trigger = $1 AND polymarket_weight > 0
+          WHERE trigger = $1 AND election_round = $2 AND polymarket_weight > 0
         )
       ORDER BY predicted_pct_mean DESC
-    `, [triggerFilter]);
+    `, [triggerFilter, round]);
 
     if (rows.length === 0) {
       return res.json({ message: 'No predictions yet.', candidates: [], runoff_scenarios: [] });
@@ -99,15 +104,20 @@ router.get('/predictions', async (req, res) => {
 });
 
 // ─── GET /api/polymarket ────────────────────────────────────
+// ?round=2 (default) → R2 snapshots | ?round=1 → R1 historical
 router.get('/polymarket', async (req, res) => {
   try {
+    const round = parseInt(req.query.round) || 2;
     const { rows } = await db.query(`
       SELECT candidate, probability, price_yes, price_no,
              volume_usd, phase, captured_at_lima
       FROM polymarket_snapshots
-      WHERE captured_at_lima = (SELECT MAX(captured_at_lima) FROM polymarket_snapshots)
+      WHERE election_round = $1
+        AND captured_at_lima = (
+          SELECT MAX(captured_at_lima) FROM polymarket_snapshots WHERE election_round = $1
+        )
       ORDER BY probability DESC
-    `);
+    `, [round]);
 
     if (rows.length === 0) {
       return res.json({ message: 'No Polymarket snapshots yet.', candidates: [] });
@@ -131,14 +141,17 @@ router.get('/polymarket', async (req, res) => {
 });
 
 // ─── GET /api/polymarket/history ─────────────────────────────
-// Todos los snapshots agrupados por timestamp para gráfico de tendencia
+// Snapshots agrupados por timestamp para gráfico de tendencia.
+// ?round=2 (default) → R2 | ?round=1 → R1 histórico
 router.get('/polymarket/history', async (req, res) => {
   try {
+    const round = parseInt(req.query.round) || 2;
     const { rows } = await db.query(`
       SELECT captured_at_lima, candidate, probability
       FROM polymarket_snapshots
+      WHERE election_round = $1
       ORDER BY captured_at_lima ASC
-    `);
+    `, [round]);
 
     // Agrupar por timestamp
     const byTime = {};
@@ -156,13 +169,16 @@ router.get('/polymarket/history', async (req, res) => {
 });
 
 // ─── GET /api/polls ─────────────────────────────────────────
+// Default: R1 (backward compat for TrendChart). ?round=2 for R2 polls.
 router.get('/polls', async (req, res) => {
   try {
+    const round = req.query.round ? parseInt(req.query.round) : 1;
     const { rows: polls } = await db.query(`
       SELECT p.*, ps.name as pollster_name, ps.weight_multiplier
       FROM polls p JOIN pollsters ps ON p.pollster_id = ps.id
+      WHERE p.election_round = $1
       ORDER BY p.field_end DESC
-    `);
+    `, [round]);
 
     const { rows: results } = await db.query(
       'SELECT * FROM poll_results ORDER BY poll_id, pct_raw DESC'
@@ -475,12 +491,12 @@ router.get('/force-run', async (req, res) => {
 
     console.log('Encuestas insertadas:', inserted.length > 0 ? inserted.join(', ') : 'ninguna nueva');
 
-    // Forzar pipeline — si es post-cierre, guardar como foto final
-    const { nowPeru } = require('../model/clock');
+    // Forzar pipeline R2 — si es post-cierre del 7 junio, guardar como foto final R2
+    const { nowPeru, ELECTION_DAY } = require('../model/clock');
     const now = nowPeru();
-    const isPostClose = now.toISODate() === '2026-04-12' && now.hour >= 18;
+    const isPostClose = now.toISODate() === ELECTION_DAY && now.hour >= 18;
     const trigger = isPostClose ? 'final_election_day' : 'auto_polymarket_update';
-    const result = await runFullPipeline({ saveToDB: true, trigger });
+    const result = await runFullPipeline({ saveToDB: true, trigger, electionRound: 2 });
 
     res.json({ polls_inserted: inserted, ...result });
   } catch (err) {
@@ -490,17 +506,19 @@ router.get('/force-run', async (req, res) => {
 });
 
 // ─── GET /api/model-history ─────────────────────────────────
-// Últimas 20 corridas automáticas
+// Últimas 20 corridas automáticas. ?round=2 (default) | ?round=1
 router.get('/model-history', async (req, res) => {
   try {
+    const round = parseInt(req.query.round) || 2;
     const { rows } = await db.query(`
       SELECT DISTINCT generated_at_lima
       FROM model_predictions
       WHERE trigger IN ('auto_polymarket_update', 'final_election_day')
+        AND election_round = $1
         AND polymarket_weight > 0
       ORDER BY generated_at_lima DESC
       LIMIT 20
-    `);
+    `, [round]);
 
     const history = [];
     for (const row of rows) {
@@ -508,10 +526,11 @@ router.get('/model-history', async (req, res) => {
         SELECT candidate, predicted_pct_mean, prob_first_round, prob_win_overall
         FROM model_predictions
         WHERE generated_at_lima = $1
+          AND election_round = $2
           AND trigger IN ('auto_polymarket_update', 'final_election_day')
         ORDER BY predicted_pct_mean DESC
         LIMIT 3
-      `, [row.generated_at_lima]);
+      `, [row.generated_at_lima, round]);
 
       history.push({
         generated_at_lima: row.generated_at_lima,
@@ -535,25 +554,27 @@ router.get('/model-history', async (req, res) => {
 // Devuelve ambas corridas clave (6pm freeze + foto final) para análisis
 router.get('/post-mortem', async (req, res) => {
   try {
-    // Corrida 1: auto run de las 6pm Lima (18:00 = 23:00 UTC) CON PM
-    // Buscar la corrida automática más cercana a 23:00 UTC del 12 de abril
+    // Post-mortem R1: scoped explícitamente a election_round = 1
+    // Corrida 1: auto run más cercana a 23:00 UTC del 12 de abril R1
     const { rows: run6pm } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
              posterior_pct, generated_at_lima, trigger, polymarket_weight, polls_weight
       FROM model_predictions
       WHERE trigger = 'auto_polymarket_update'
+        AND election_round = 1
         AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
           WHERE trigger = 'auto_polymarket_update'
+            AND election_round = 1
             AND polymarket_weight > 0
             AND generated_at_lima < '2026-04-12T23:30:00Z'
         )
       ORDER BY predicted_pct_mean DESC
     `);
 
-    // Corrida 2: foto final CON datos de Polymarket (alpha > 0)
+    // Corrida 2: foto final R1 CON datos de Polymarket (alpha > 0)
     const { rows: runFinal } = await db.query(`
       SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
              prob_first_round, prob_win_overall, polls_pct, polymarket_pct,
@@ -561,10 +582,11 @@ router.get('/post-mortem', async (req, res) => {
              frozen_at
       FROM model_predictions
       WHERE trigger = 'final_election_day'
+        AND election_round = 1
         AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
-          WHERE trigger = 'final_election_day' AND polymarket_weight > 0
+          WHERE trigger = 'final_election_day' AND election_round = 1 AND polymarket_weight > 0
         )
       ORDER BY predicted_pct_mean DESC
     `);

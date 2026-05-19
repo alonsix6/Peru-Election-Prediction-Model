@@ -66,7 +66,7 @@ export function useElectionData() {
 
       const normalized = normalizePredictions(predictions);
       const normalizedR1 = normalizePredictions(r1predictions);
-      const anyFailed = [status, normalized, polymarket, polls].some(d => d === null);
+      const anyFailed = [status, normalized, polymarket, polls, r2polls, antivoto].some(d => d === null);
 
       setData({
         status,

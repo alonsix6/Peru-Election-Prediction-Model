@@ -37,9 +37,16 @@ const SIN_POSICION = [
   { name: 'Belmont', pct: 10.2, note: 'Retirado, sin pronunciamiento público.' },
 ];
 
+function parseDate(raw) {
+  if (!raw) return null;
+  // Postgres DATE can arrive as "2026-04-24" or "2026-04-24T00:00:00.000Z"
+  if (typeof raw === 'string' && !raw.includes('T')) return new Date(raw + 'T12:00:00Z');
+  return new Date(raw);
+}
+
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr + 'T12:00:00Z');
+  const d = parseDate(dateStr);
+  if (!d || isNaN(d)) return '—';
   return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -91,9 +98,19 @@ function PollsTable({ r2polls }) {
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: KEIKO_COLOR, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                     {keiko ? keiko.pct_raw.toFixed(0) + '%' : '—'}
+                    {keiko && sanchez && (
+                      <div style={{ color: '#A8A29E', fontSize: 9, fontWeight: 400, marginTop: 1 }}>
+                        {((keiko.pct_raw / (keiko.pct_raw + sanchez.pct_raw)) * 100).toFixed(1)}% v.v.
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: SANCHEZ_COLOR, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                     {sanchez ? sanchez.pct_raw.toFixed(0) + '%' : '—'}
+                    {keiko && sanchez && (
+                      <div style={{ color: '#A8A29E', fontSize: 9, fontWeight: 400, marginTop: 1 }}>
+                        {((sanchez.pct_raw / (keiko.pct_raw + sanchez.pct_raw)) * 100).toFixed(1)}% v.v.
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: '#78716C', fontVariantNumeric: 'tabular-nums' }}>
                     {p.pct_blank_null != null ? p.pct_blank_null.toFixed(0) + '%' : '—'}
@@ -110,8 +127,11 @@ function PollsTable({ r2polls }) {
           <strong>{p.pollster}:</strong> {p.notes}
         </div>
       ))}
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 6 }}>
+        v.v. = votos válidos (excluye blanco/nulo y NS/NP). Calculado del intento declarado de cada encuesta.
+      </div>
       <div style={{
-        marginTop: 10, background: '#FFFBEB', border: '1px solid #FCD34D',
+        marginTop: 8, background: '#FFFBEB', border: '1px solid #FCD34D',
         borderRadius: 6, padding: '6px 10px', fontSize: 11, color: '#92400E',
       }}>
         Circulan encuestas falsas atribuidas a Datum, Ipsos e IEP. Solo las encuestas mostradas aquí han sido verificadas. IEP emitió comunicado el 16/05/2026 confirmando que no publicó ninguna encuesta de mayo.
@@ -424,7 +444,7 @@ function AntiVotoTrendChart({ antivoto }) {
   ];
   if (allPoints.length < 2) return null;
 
-  const allDates = allPoints.map(h => new Date(h.field_end + 'T12:00:00Z'));
+  const allDates = allPoints.map(h => parseDate(h.field_end)).filter(Boolean);
   const minDate = new Date(Math.min(...allDates));
   const maxDate = new Date(Math.max(...allDates));
   const startDate = new Date(minDate); startDate.setDate(startDate.getDate() - 6);
@@ -437,11 +457,13 @@ function AntiVotoTrendChart({ antivoto }) {
   const chartH = H - PAD.top - PAD.bottom;
   const yMin = 30, yMax = 72;
 
-  const toX = d => PAD.left + ((new Date(d + 'T12:00:00Z') - startDate) / totalMs) * chartW;
+  const toX = d => PAD.left + ((parseDate(d) - startDate) / totalMs) * chartW;
   const toY = v => PAD.top + ((yMax - v) / (yMax - yMin)) * chartH;
 
+  const sortByDate = arr => [...arr].sort((a, b) => parseDate(a.field_end) - parseDate(b.field_end));
+
   const buildPath = history => {
-    const sorted = [...history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+    const sorted = sortByDate(history);
     return sorted.map((h, i) => `${i === 0 ? 'M' : 'L'}${toX(h.field_end).toFixed(1)},${toY(h.pct_no).toFixed(1)}`).join(' ');
   };
 
@@ -449,7 +471,8 @@ function AntiVotoTrendChart({ antivoto }) {
   const yTicks = [35, 45, 55, 65];
 
   const formatDateLabel = dateStr => {
-    const d = new Date(dateStr + 'T12:00:00Z');
+    const d = parseDate(dateStr);
+    if (!d) return '';
     return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
   };
 
@@ -475,7 +498,7 @@ function AntiVotoTrendChart({ antivoto }) {
 
         {/* Sánchez line + dots */}
         {sanchez?.history?.length > 0 && (() => {
-          const sorted = [...sanchez.history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+          const sorted = sortByDate(sanchez.history);
           return (
             <g>
               <path d={buildPath(sanchez.history)} fill="none" stroke={SANCHEZ_COLOR} strokeWidth="2" />
@@ -502,7 +525,7 @@ function AntiVotoTrendChart({ antivoto }) {
 
         {/* Keiko line + dots */}
         {keiko?.history?.length > 0 && (() => {
-          const sorted = [...keiko.history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+          const sorted = sortByDate(keiko.history);
           return (
             <g>
               <path d={buildPath(keiko.history)} fill="none" stroke={KEIKO_COLOR} strokeWidth="2" />
@@ -549,8 +572,8 @@ function AntiVotoSection({ antivoto }) {
     const prev = r2hist.length > 1 ? r2hist[r2hist.length - 2] : null;
     const delta = prev ? (data.latest_pct_no - prev.pct_no).toFixed(0) : null;
     const deltaLabel = delta === null ? null
-      : delta > 0 ? `+${delta}pp desde ${prev.field_end.slice(5).replace('-', '/')}`
-      : `${delta}pp desde ${prev.field_end.slice(5).replace('-', '/')}`;
+      : delta > 0 ? `+${delta}pp desde ${formatDate(prev.field_end)}`
+      : `${delta}pp desde ${formatDate(prev.field_end)}`;
 
     return (
       <div style={{ flex: 1, minWidth: 160, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
@@ -566,7 +589,7 @@ function AntiVotoSection({ antivoto }) {
         )}
         {data.pollster && (
           <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 4 }}>
-            {data.pollster} · {data.latest_field_end}
+            {data.pollster} · {formatDate(data.latest_field_end)}
           </div>
         )}
       </div>

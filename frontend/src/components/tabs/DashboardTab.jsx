@@ -62,6 +62,7 @@ function CompactRow({ c }) {
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <div style={{ color: party.primary, fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{c.mean.toFixed(1)}%</div>
+        <div style={{ color: '#A8A29E', fontSize: 10 }}>% v.v.</div>
         <div style={{ color: '#8C877F', fontSize: 11, marginTop: 2 }}>P(Ganar)</div>
         <div style={{ color: probColor, fontSize: 12, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{c.prob_win.toFixed(1)}%</div>
       </div>
@@ -667,7 +668,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
   const secondParty = getPartyColor(second.candidate);
 
   const modelMap = {};
-  for (const c of predictions.candidates) modelMap[c.candidate] = c.mean;
+  for (const c of predictions.candidates) modelMap[c.candidate] = c.prob_win;
   const pmTop = polymarket?.candidates?.slice(0, 5) || [];
 
   // Runoff scenario for hero card
@@ -797,7 +798,7 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                   );
                 })}
                 <div style={{ color: '#8C877F', fontSize: 11, marginTop: 8 }}>
-                  Δ = diferencia entre probabilidad de mercado y estimación del modelo
+                  PM = P(ganar) en mercado · Δ vs P(ganar) del modelo
                 </div>
               </div>
               <SimulationCard />

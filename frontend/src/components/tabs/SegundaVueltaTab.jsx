@@ -175,13 +175,13 @@ function HeadToHead({ predictions }) {
           <div style={{ color: '#1C1917', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{name}</div>
 
           <div style={{ marginBottom: 12 }}>
-            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Predicción del modelo</div>
+            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>% votos válidos (estimación MC)</div>
             <div style={{ color, fontWeight: 700, fontSize: 28, fontVariantNumeric: 'tabular-nums' }}>
               {data ? data.mean.toFixed(1) : '—'}%
             </div>
             {data && (
               <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 2 }}>
-                IC 90%: [{data.p10.toFixed(1)}%, {data.p90.toFixed(1)}%]
+                IC 90% v.v.: [{data.p10.toFixed(1)}%, {data.p90.toFixed(1)}%]
               </div>
             )}
           </div>
@@ -234,20 +234,20 @@ function PMvsPollsSection({ polymarket, r2polls }) {
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={{ flex: 1, minWidth: 180, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
           <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 6 }}>
-            Polymarket (mercado){volumeM && <span style={{ color: '#A8A29E' }}> · ${volumeM}M vol.</span>}
+            Polymarket · P(ganar){volumeM && <span style={{ color: '#A8A29E' }}> · ${volumeM}M vol.</span>}
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <div>
               <div style={{ color: KEIKO_COLOR, fontWeight: 700, fontSize: 20, fontVariantNumeric: 'tabular-nums' }}>
                 {keikoPct != null ? keikoPct + '%' : '—'}
               </div>
-              <div style={{ color: '#A8A29E', fontSize: 10 }}>Keiko</div>
+              <div style={{ color: '#A8A29E', fontSize: 10 }}>Keiko · prob. ganar</div>
             </div>
             <div>
               <div style={{ color: SANCHEZ_COLOR, fontWeight: 700, fontSize: 20, fontVariantNumeric: 'tabular-nums' }}>
                 {sanchezPct != null ? sanchezPct + '%' : '—'}
               </div>
-              <div style={{ color: '#A8A29E', fontSize: 10 }}>Sánchez</div>
+              <div style={{ color: '#A8A29E', fontSize: 10 }}>Sánchez · prob. ganar</div>
             </div>
           </div>
           {polymarket?.captured_at_lima && (
@@ -291,8 +291,8 @@ function PMvsPollsSection({ polymarket, r2polls }) {
         (encuestas internas de campaña, alianzas en formación) o bien que existe un sesgo especulativo.
       </p>
       <p style={{ color: '#8C877F', fontSize: 12, margin: 0 }}>
-        El modelo usa α=0.65 (cap reducido desde 0.77 en R1) para evitar sobreponderación del mercado ante este gap inusual.
-        Las encuestas mantienen el 35% del peso en todo momento.
+        El modelo asigna α=20–60% al mercado (sube progresivamente durante la veda).
+        Polymarket se incorpora como P(ganar), capada en ±10 pts desde el 50% para evitar vote shares imposibles.
       </p>
     </div>
   );

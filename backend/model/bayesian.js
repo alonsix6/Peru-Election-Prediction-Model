@@ -47,12 +47,17 @@ function bayesianIntegration(pollsEstimate, polymarketData, volumeUSD, overrideA
     const pollsPct = pollsEstimate[candidate]?.estimated_pct ?? 0;
     const polyPct = polymarketData[candidate] ?? 0;
 
+    // Cap PM a ±10 pts desde el 50% — impide vote shares imposibles (>60%) a α alto.
+    // Históricamente ningún candidato peruano ha superado el 62% en segunda vuelta.
+    // En rango normal (45-60%) el cap no altera nada; solo actúa en escenarios extremos.
+    const polyPctCapped = 50 + Math.max(-10, Math.min(10, polyPct - 50));
+
     let posterior_pct;
     let source;
 
     if (pollsPct > 0 && polyPct > 0) {
       // Ambas fuentes disponibles: integración bayesiana
-      posterior_pct = α * polyPct + pollsWeight * pollsPct;
+      posterior_pct = α * polyPctCapped + pollsWeight * pollsPct;
       source = 'integrated';
     } else if (pollsPct > 0) {
       // Solo encuestas (candidato no está en Polymarket)
@@ -60,7 +65,7 @@ function bayesianIntegration(pollsEstimate, polymarketData, volumeUSD, overrideA
       source = 'polls_only';
     } else {
       // Solo Polymarket (candidato no está en encuestas)
-      posterior_pct = polyPct * α;
+      posterior_pct = polyPctCapped * α;
       source = 'polymarket_only';
     }
 

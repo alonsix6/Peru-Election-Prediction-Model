@@ -132,15 +132,19 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     riskScenarios.bias_5pts_sanchez_win  = parseFloat((Phi((lead + 5) / (sigma * rt2)) * 100).toFixed(1));
     riskScenarios.bias_5pts_keiko_win    = parseFloat(((1 - Phi((lead + 5) / (sigma * rt2))) * 100).toFixed(1));
 
-    // Voto blanco/nulo esperado — promedio ponderado de encuestas R2 recientes
-    const blankPolls = polls
-      .filter(p => p.pct_blank_null != null)
-      .sort((a, b) => new Date(b.field_end) - new Date(a.field_end))
-      .slice(0, 3);
-    riskScenarios.expected_blank_null = blankPolls.length > 0
-      ? parseFloat((blankPolls.reduce((s, p) => s + p.pct_blank_null, 0) / blankPolls.length).toFixed(1))
-      : null;
-    console.log(`   ✅ Escenarios R2: solo encuestas KF=${riskScenarios.polls_only_keiko_win}% / RSP=${riskScenarios.polls_only_sanchez_win}%, B/N esperado=${riskScenarios.expected_blank_null}%`);
+    // Opción E: P(voto blanco/nulo) por rechazo bilateral calibrado.
+    // P(blank) = [P(rechaza KF) × P(rechaza RSP) + ρ × σ_KF × σ_RSP] × franchise_factor
+    // ρ ≈ -0.20: correlación negativa — izquierda rechaza KF, derecha rechaza RSP → grupos distintos.
+    // Tasas de rechazo de REJECTION_RATES (montecarlo.js): KF=60.5%, RSP=44.2%.
+    // franchise_factor=0.75: encuestas sobreestiman blanqueo 1.3-1.5x históricamente.
+    const rejKF  = 60.5 / 100;
+    const rejRSP = 44.2 / 100;
+    const rhoBlank  = -0.20;
+    const sigmaKF   = Math.sqrt(rejKF  * (1 - rejKF));
+    const sigmaRSP  = Math.sqrt(rejRSP * (1 - rejRSP));
+    const pRejectBoth = rejKF * rejRSP + rhoBlank * sigmaKF * sigmaRSP;
+    riskScenarios.expected_blank_null = parseFloat((Math.max(0, pRejectBoth) * 0.75 * 100).toFixed(1));
+    console.log(`   ✅ Escenarios R2: solo encuestas KF=${riskScenarios.polls_only_keiko_win}% / RSP=${riskScenarios.polls_only_sanchez_win}%, B/N modelo=${riskScenarios.expected_blank_null}%`);
   }
 
   const α = bayesian.polymarket_weight;

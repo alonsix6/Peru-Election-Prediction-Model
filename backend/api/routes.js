@@ -320,6 +320,98 @@ router.get('/force-run', async (req, res) => {
   try {
     const inserted = [];
 
+    // Limpiar registros IEP R2 con fechas incorrectas (mayo 2026)
+    // y asegurar que el correcto (abr 21-25, intención de voto 31/32) exista.
+    try {
+      const { rows: iepRows } = await db.query(
+        `SELECT id FROM polls p
+         JOIN pollsters ps ON p.pollster_id = ps.id
+         WHERE ps.name = 'IEP' AND p.election_round = 2
+           AND p.field_end BETWEEN '2026-05-01' AND '2026-05-31'`
+      );
+      for (const row of iepRows) {
+        await db.query('DELETE FROM poll_results WHERE poll_id = $1', [row.id]);
+        await db.query('DELETE FROM polls WHERE id = $1', [row.id]);
+        inserted.push(`IEP R2 registro incorrecto eliminado (id=${row.id})`);
+      }
+
+      // Insertar correcto si no existe
+      const { rows: iepOk } = await db.query(
+        `SELECT id FROM polls p
+         JOIN pollsters ps ON p.pollster_id = ps.id
+         WHERE ps.name = 'IEP' AND p.election_round = 2 AND p.field_end = '2026-04-25'`
+      );
+      if (iepOk.length === 0) {
+        const { rows: [iepPollster] } = await db.query(`SELECT id FROM pollsters WHERE name = 'IEP'`);
+        if (iepPollster) {
+          const { rows: [newPoll] } = await db.query(`
+            INSERT INTO polls (pollster_id, field_start, field_end, published_date, sample_n, margin_error,
+                               confidence_lvl, scope, technique, poll_type,
+                               pct_undecided, pct_blank_null, notes, election_round)
+            VALUES ($1, '2026-04-21', '2026-04-25', '2026-05-02', 1600, 2.80, 95.0,
+                    'nacional', 'presencial', 'intencion_voto', 37.0, 24.0,
+                    'IEP abr 21-25 2026. Intención de voto segunda vuelta: Sánchez 32%, Keiko 31%, B/N 24%, NS/NP 13%. IEP confirmó que no hubo encuesta de mayo.',
+                    2)
+            RETURNING id`, [iepPollster.id]);
+          await db.query(`INSERT INTO poll_results (poll_id, candidate, party, pct_raw) VALUES
+            ($1, 'Keiko Fujimori', 'Fuerza Popular', 31.0),
+            ($1, 'Roberto Sánchez Palomino', 'Juntos por el Perú', 32.0)`, [newPoll.id]);
+          inserted.push('IEP abr 21-25 2026 (intención de voto 31/32) insertado');
+        }
+      }
+    } catch (iepErr) {
+      console.warn('IEP cleanup falló:', iepErr.message);
+    }
+
+    // Crear tabla antivoto_snapshots si no existe
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS antivoto_snapshots (
+          id             SERIAL PRIMARY KEY,
+          election_round INT          DEFAULT 2,
+          candidate      VARCHAR(100) NOT NULL,
+          pct_no         NUMERIC(5,2) NOT NULL,
+          pollster_id    INT          REFERENCES pollsters(id),
+          field_end      DATE         NOT NULL,
+          published_date DATE,
+          notes          TEXT,
+          created_at     TIMESTAMPTZ  DEFAULT NOW()
+        )
+      `);
+
+      // Seed antivoto data si no existe
+      const { rows: [ipsos] } = await db.query(`SELECT id FROM pollsters WHERE name = 'Ipsos'`);
+      const { rows: [cit] }   = await db.query(`SELECT id FROM pollsters WHERE name = 'CIT'`);
+
+      const antivotos = [
+        { round: 1, candidate: 'Keiko Fujimori',          pct_no: 59.0, pollster_id: ipsos?.id, field_end: '2026-03-22', published_date: '2026-03-24', notes: 'Ipsos 21-22 mar 2026. Campaña R1.' },
+        { round: 1, candidate: 'Roberto Sánchez Palomino', pct_no: 41.0, pollster_id: ipsos?.id, field_end: '2026-03-22', published_date: '2026-03-24', notes: 'Ipsos 21-22 mar 2026. Campaña R1.' },
+        { round: 1, candidate: 'Keiko Fujimori',          pct_no: 62.7, pollster_id: cit?.id,   field_end: '2026-03-23', published_date: '2026-03-25', notes: 'CIT 20-23 mar 2026. Pico de campaña R1.' },
+        { round: 1, candidate: 'Roberto Sánchez Palomino', pct_no: 48.0, pollster_id: cit?.id,   field_end: '2026-03-23', published_date: '2026-03-25', notes: 'CIT 20-23 mar 2026.' },
+        { round: 2, candidate: 'Keiko Fujimori',          pct_no: 59.0, pollster_id: ipsos?.id, field_end: '2026-04-02', published_date: '2026-04-02', notes: 'Ipsos 2 abr 2026. Pre-primera vuelta.' },
+        { round: 2, candidate: 'Roberto Sánchez Palomino', pct_no: 39.0, pollster_id: ipsos?.id, field_end: '2026-04-02', published_date: '2026-04-02', notes: 'Ipsos 2 abr 2026. Pre-primera vuelta.' },
+        { round: 2, candidate: 'Keiko Fujimori',          pct_no: 48.0, pollster_id: ipsos?.id, field_end: '2026-04-24', published_date: '2026-04-26', notes: 'Ipsos 23-24 abr 2026. Post-primera vuelta.' },
+        { round: 2, candidate: 'Roberto Sánchez Palomino', pct_no: 43.0, pollster_id: ipsos?.id, field_end: '2026-04-24', published_date: '2026-04-26', notes: 'Ipsos 23-24 abr 2026. Post-primera vuelta.' },
+      ];
+
+      for (const a of antivotos) {
+        const exists = await db.query(
+          `SELECT 1 FROM antivoto_snapshots WHERE candidate = $1 AND field_end = $2 AND election_round = $3`,
+          [a.candidate, a.field_end, a.round]
+        );
+        if (exists.rows.length === 0) {
+          await db.query(
+            `INSERT INTO antivoto_snapshots (election_round, candidate, pct_no, pollster_id, field_end, published_date, notes)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [a.round, a.candidate, a.pct_no, a.pollster_id, a.field_end, a.published_date, a.notes]
+          );
+          inserted.push(`Antivoto: ${a.candidate} ${a.field_end} R${a.round} = ${a.pct_no}%`);
+        }
+      }
+    } catch (avErr) {
+      console.warn('Antivoto seed falló:', avErr.message);
+    }
+
     // Forzar scrape fresco de Polymarket antes del pipeline
     try {
       await scrapePolymarket();

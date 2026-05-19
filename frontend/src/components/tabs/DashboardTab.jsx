@@ -777,8 +777,8 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
                 </div>
                 {pmTop.map(c => {
                   const party = getPartyColor(c.candidate);
-                  const modelMean = modelMap[c.candidate];
-                  const delta = modelMean != null ? c.probability - modelMean : null;
+                  const modelProb = modelMap[c.candidate];
+                  const delta = modelProb != null ? c.probability - modelProb : null;
                   return (
                     <div key={c.candidate} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',

@@ -60,7 +60,7 @@ function getHouseEffect(pollsterName, candidate) {
  *   { pollster_name, field_end, sample_n, poll_type, margin_error,
  *     results: [{ candidate, pct_raw }] }
  * @param {Object} pollsterWeights - { pollster_name: weight_multiplier }
- * @returns {Object} - { candidate: { weighted_pct, combined_error, n_polls } }
+ * @returns {Object} - { candidate: { weighted_pct, n_polls } }
  */
 function aggregatePolls(polls, pollsterWeights) {
   // Acumuladores por candidato

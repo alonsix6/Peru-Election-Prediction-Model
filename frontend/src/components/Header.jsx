@@ -64,7 +64,7 @@ export default function Header({ status, predictions }) {
             Modelo Electoral Perú 2026
           </h1>
           <p style={{ color: '#6B6560', fontSize: '13px', margin: '2px 0 0' }}>
-            Segunda vuelta {'\u00B7'} 7 junio 2026 {'\u00B7'} Keiko Fujimori vs Roberto S\u00E1nchez
+            Segunda vuelta {'\u00B7'} 7 junio 2026 {'\u00B7'} Keiko Fujimori vs Roberto Sánchez
           </p>
         </div>
 

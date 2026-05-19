@@ -37,9 +37,16 @@ const SIN_POSICION = [
   { name: 'Belmont', pct: 10.2, note: 'Retirado, sin pronunciamiento público.' },
 ];
 
+function parseDate(raw) {
+  if (!raw) return null;
+  // Postgres DATE can arrive as "2026-04-24" or "2026-04-24T00:00:00.000Z"
+  if (typeof raw === 'string' && !raw.includes('T')) return new Date(raw + 'T12:00:00Z');
+  return new Date(raw);
+}
+
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr + 'T12:00:00Z');
+  const d = parseDate(dateStr);
+  if (!d || isNaN(d)) return '—';
   return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
@@ -424,7 +431,7 @@ function AntiVotoTrendChart({ antivoto }) {
   ];
   if (allPoints.length < 2) return null;
 
-  const allDates = allPoints.map(h => new Date(h.field_end + 'T12:00:00Z'));
+  const allDates = allPoints.map(h => parseDate(h.field_end)).filter(Boolean);
   const minDate = new Date(Math.min(...allDates));
   const maxDate = new Date(Math.max(...allDates));
   const startDate = new Date(minDate); startDate.setDate(startDate.getDate() - 6);
@@ -437,11 +444,13 @@ function AntiVotoTrendChart({ antivoto }) {
   const chartH = H - PAD.top - PAD.bottom;
   const yMin = 30, yMax = 72;
 
-  const toX = d => PAD.left + ((new Date(d + 'T12:00:00Z') - startDate) / totalMs) * chartW;
+  const toX = d => PAD.left + ((parseDate(d) - startDate) / totalMs) * chartW;
   const toY = v => PAD.top + ((yMax - v) / (yMax - yMin)) * chartH;
 
+  const sortByDate = arr => [...arr].sort((a, b) => parseDate(a.field_end) - parseDate(b.field_end));
+
   const buildPath = history => {
-    const sorted = [...history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+    const sorted = sortByDate(history);
     return sorted.map((h, i) => `${i === 0 ? 'M' : 'L'}${toX(h.field_end).toFixed(1)},${toY(h.pct_no).toFixed(1)}`).join(' ');
   };
 
@@ -449,7 +458,8 @@ function AntiVotoTrendChart({ antivoto }) {
   const yTicks = [35, 45, 55, 65];
 
   const formatDateLabel = dateStr => {
-    const d = new Date(dateStr + 'T12:00:00Z');
+    const d = parseDate(dateStr);
+    if (!d) return '';
     return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
   };
 
@@ -475,7 +485,7 @@ function AntiVotoTrendChart({ antivoto }) {
 
         {/* Sánchez line + dots */}
         {sanchez?.history?.length > 0 && (() => {
-          const sorted = [...sanchez.history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+          const sorted = sortByDate(sanchez.history);
           return (
             <g>
               <path d={buildPath(sanchez.history)} fill="none" stroke={SANCHEZ_COLOR} strokeWidth="2" />
@@ -502,7 +512,7 @@ function AntiVotoTrendChart({ antivoto }) {
 
         {/* Keiko line + dots */}
         {keiko?.history?.length > 0 && (() => {
-          const sorted = [...keiko.history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+          const sorted = sortByDate(keiko.history);
           return (
             <g>
               <path d={buildPath(keiko.history)} fill="none" stroke={KEIKO_COLOR} strokeWidth="2" />

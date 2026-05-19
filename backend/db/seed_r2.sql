@@ -118,42 +118,28 @@ END $$;
 -- Keiko 31%, Sánchez 32% (intención bruta). Blanco/nulo 24%, NS/NP 13%.
 -- En votos válidos (excl. B/N+NS/NP): Sánchez 50.8%, Keiko 49.2%.
 -- IEP emitió comunicado oficial el 16/05/2026 confirmando que NO hubo encuesta de mayo.
--- Correct any wrong record that was inserted with field_end='2026-05-07' (wrong dates/type).
+-- Cleanup: borra cualquier registro IEP R2 con field_end en mayo 2026 (fechas incorrectas).
+-- Esto cubre field_end en '2026-05-01'..'2026-05-31' independientemente del día exacto.
 DO $$
 DECLARE
   p_id INT;
-  wrong_poll_id INT;
+  bad_id INT;
   poll_id INT;
 BEGIN
   SELECT id INTO p_id FROM pollsters WHERE name = 'IEP';
+  IF p_id IS NULL THEN RETURN; END IF;
 
-  -- Fix wrong record if it exists (had wrong dates, wrong poll_type, wrong pct_raw)
-  SELECT id INTO wrong_poll_id
-  FROM polls
-  WHERE pollster_id = p_id AND field_end = '2026-05-07' AND election_round = 2;
+  -- Borrar todos los registros IEP R2 con fechas de mayo 2026 (fake/incorrectos)
+  FOR bad_id IN
+    SELECT id FROM polls
+    WHERE pollster_id = p_id AND election_round = 2
+      AND field_end BETWEEN '2026-05-01' AND '2026-05-31'
+  LOOP
+    DELETE FROM poll_results WHERE poll_id = bad_id;
+    DELETE FROM polls WHERE id = bad_id;
+  END LOOP;
 
-  IF wrong_poll_id IS NOT NULL THEN
-    UPDATE polls SET
-      field_start   = '2026-04-21',
-      field_end     = '2026-04-25',
-      published_date = '2026-05-02',
-      sample_n      = 1600,
-      margin_error  = 2.80,
-      poll_type     = 'intencion_voto',
-      pct_undecided = 37.0,
-      pct_blank_null = 24.0,
-      notes = 'IEP abr 21-25 2026. Intención de voto segunda vuelta: Sánchez 32%, Keiko 31%, B/N 24%, NS/NP 13%. En votos válidos: Sánchez 50.8%, Keiko 49.2%. IEP emitió comunicado oficial el 16/05/2026 confirmando que no hubo encuesta de mayo.'
-    WHERE id = wrong_poll_id;
-
-    -- Fix wrong poll results (was 49.2/50.8 simulacro values, now 31/32 raw intent)
-    UPDATE poll_results SET pct_raw = 31.0
-    WHERE poll_id = wrong_poll_id AND candidate = 'Keiko Fujimori';
-
-    UPDATE poll_results SET pct_raw = 32.0
-    WHERE poll_id = wrong_poll_id AND candidate = 'Roberto Sánchez Palomino';
-  END IF;
-
-  -- Insert correct record only if neither the corrected nor an original correct record exists
+  -- Insertar el registro correcto si no existe
   IF NOT EXISTS (
     SELECT 1 FROM polls WHERE pollster_id = p_id AND field_end = '2026-04-25' AND election_round = 2
   ) THEN

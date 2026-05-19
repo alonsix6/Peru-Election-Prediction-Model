@@ -128,7 +128,7 @@ function PollsTable({ r2polls }) {
         </div>
       ))}
       <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 6 }}>
-        v.v. = votos válidos (excluye blanco/nulo y NS/NP). Calculado del intento declarado de cada encuesta.
+        Los % principales son <strong>intención de voto bruta</strong> (incluye indecisos y B/N). v.v. = votos válidos calculados de los datos declarados, excluyendo B/N y NS/NP.
       </div>
       <div style={{
         marginTop: 8, background: '#FFFBEB', border: '1px solid #FCD34D',
@@ -200,8 +200,9 @@ function PMvsPollsSection({ polymarket, r2polls }) {
   const sanchezPM = polymarket?.candidates?.find(c => c.candidate?.includes('Sánchez') || c.candidate?.includes('Roberto'));
 
   const polls = r2polls?.polls || [];
-  const keikoPct = keikoPM ? (keikoPM.probability * 100).toFixed(0) : null;
-  const sanchezPct = sanchezPM ? (sanchezPM.probability * 100).toFixed(0) : null;
+  // probability stored as 0-100 in DB (scraper multiplies priceYes * 100)
+  const keikoPct = keikoPM ? parseFloat(keikoPM.probability).toFixed(0) : null;
+  const sanchezPct = sanchezPM ? parseFloat(sanchezPM.probability).toFixed(0) : null;
   const volumeM = polymarket?.volume_usd ? (polymarket.volume_usd / 1e6).toFixed(1) : null;
 
   // Weighted average raw intent from polls

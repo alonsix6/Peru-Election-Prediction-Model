@@ -9,6 +9,7 @@
 // Target: Aliaga P(2da vuelta) ~88-92%, P(ganar) ~55-62%
 
 const { handleError } = require('../errors/errorHandler');
+const { timeToElection } = require('./clock');
 
 /**
  * Correlación de error entre encuestadoras (sección 5.4).
@@ -391,7 +392,11 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
   const nCandidates = candidates.length;
   const basePcts = candidates.map(c => posterior[c].posterior_pct);
 
-  const sigma = 3.0;
+  // Sigma dinámico: crece con días restantes hasta la elección.
+  // Calibrado en σ=3.0 el día de elección (días=0). A 20 días: σ≈6.7.
+  const { days } = timeToElection();
+  const temporalDrift = Math.max(0, days) * 0.30;
+  const sigma = Math.sqrt(9.0 + temporalDrift * temporalDrift);
 
   // Cholesky
   const corrMatrix = buildCorrelationMatrix();
@@ -467,15 +472,20 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
         for (const ri of receivers) perturbed[ri] += perReceiver;
       }
     }
-    // 3c. Shock positivo a candidato menor: 10% de simulaciones
-    //     "Efecto Castillo" — candidato del #3-#6 sube fuerte
+    // 3c. Shock positivo: 10% de simulaciones
+    //     R1: "efecto Castillo" — candidato del #3-#6 sube fuerte
+    //     R2: "efecto debate" — cualquiera de los dos finalistas recibe el swing
     else if (roll < 0.35) {
       const sorted = perturbed.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
       const eligible = sorted.slice(2, 6);
+      const shockSize = 5 + Math.random() * 7; // +5 a +12 pts
       if (eligible.length > 0) {
         const luckyIdx = eligible[Math.floor(Math.random() * eligible.length)].i;
-        const shockSize = 5 + Math.random() * 7; // +5 a +12 pts
         perturbed[luckyIdx] += shockSize;
+      } else {
+        // R2: swing de debate a cualquier finalista con igual probabilidad
+        const debateIdx = Math.random() < 0.5 ? sorted[0].i : sorted[1].i;
+        perturbed[debateIdx] += shockSize;
       }
     }
 

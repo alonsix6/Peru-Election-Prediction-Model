@@ -61,7 +61,7 @@ export function useElectionData() {
         safeFetch(`${API}/api/polymarket`),
         safeFetch(`${API}/api/polls`),
         safeFetch(`${API}/api/polls?round=2`),
-        safeFetch(`${API}/api/antivoto`),
+        safeFetch(`${API}/api/antivoto?round=all`),
       ]);
 
       const normalized = normalizePredictions(predictions);

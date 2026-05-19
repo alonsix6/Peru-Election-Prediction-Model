@@ -411,6 +411,132 @@ function GeographicSection() {
   );
 }
 
+function AntiVotoTrendChart({ antivoto }) {
+  const candidates = antivoto?.candidates || [];
+  const keiko = candidates.find(c => c.candidate?.includes('Keiko'));
+  const sanchez = candidates.find(c => c.candidate?.includes('Sánchez') || c.candidate?.includes('Roberto'));
+
+  if (!keiko?.history?.length && !sanchez?.history?.length) return null;
+
+  const allPoints = [
+    ...(keiko?.history || []),
+    ...(sanchez?.history || []),
+  ];
+  if (allPoints.length < 2) return null;
+
+  const allDates = allPoints.map(h => new Date(h.field_end + 'T12:00:00Z'));
+  const minDate = new Date(Math.min(...allDates));
+  const maxDate = new Date(Math.max(...allDates));
+  const startDate = new Date(minDate); startDate.setDate(startDate.getDate() - 6);
+  const endDate = new Date(maxDate); endDate.setDate(endDate.getDate() + 6);
+  const totalMs = endDate - startDate;
+
+  const W = 420, H = 190;
+  const PAD = { left: 34, right: 12, top: 18, bottom: 28 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+  const yMin = 30, yMax = 72;
+
+  const toX = d => PAD.left + ((new Date(d + 'T12:00:00Z') - startDate) / totalMs) * chartW;
+  const toY = v => PAD.top + ((yMax - v) / (yMax - yMin)) * chartH;
+
+  const buildPath = history => {
+    const sorted = [...history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+    return sorted.map((h, i) => `${i === 0 ? 'M' : 'L'}${toX(h.field_end).toFixed(1)},${toY(h.pct_no).toFixed(1)}`).join(' ');
+  };
+
+  const r1X = toX('2026-04-12');
+  const yTicks = [35, 45, 55, 65];
+
+  const formatDateLabel = dateStr => {
+    const d = new Date(dateStr + 'T12:00:00Z');
+    return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>
+        Tendencia del rechazo definitivo — R1 → R2
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+        {/* Y grid */}
+        {yTicks.map(t => (
+          <g key={t}>
+            <line x1={PAD.left} y1={toY(t)} x2={W - PAD.right} y2={toY(t)}
+              stroke="#F0EDE8" strokeWidth="1" />
+            <text x={PAD.left - 4} y={toY(t) + 3.5} fontSize="8.5" fill="#A8A29E" textAnchor="end">{t}%</text>
+          </g>
+        ))}
+
+        {/* R1 election day marker */}
+        <line x1={r1X} y1={PAD.top} x2={r1X} y2={H - PAD.bottom}
+          stroke="#D97706" strokeWidth="1.5" strokeDasharray="4,3" />
+        <text x={r1X + 3} y={PAD.top + 9} fontSize="8" fill="#D97706" fontWeight="600">R1 12 abr</text>
+
+        {/* Sánchez line + dots */}
+        {sanchez?.history?.length > 0 && (() => {
+          const sorted = [...sanchez.history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+          return (
+            <g>
+              <path d={buildPath(sanchez.history)} fill="none" stroke={SANCHEZ_COLOR} strokeWidth="2" />
+              {sorted.map((h, i) => {
+                const x = toX(h.field_end), y = toY(h.pct_no);
+                const above = i < sorted.length - 1 && sorted[i + 1].pct_no <= h.pct_no;
+                return (
+                  <g key={h.field_end + i}>
+                    <circle cx={x} cy={y} r="4" fill={SANCHEZ_COLOR} />
+                    <text x={x} y={above ? y - 7 : y + 14} fontSize="8.5" fill={SANCHEZ_COLOR} textAnchor="middle" fontWeight="600">
+                      {h.pct_no}%
+                    </text>
+                    {i === 0 || i === sorted.length - 1 ? (
+                      <text x={x} y={H - PAD.bottom + 12} fontSize="8" fill="#8C877F" textAnchor="middle">
+                        {formatDateLabel(h.field_end)}
+                      </text>
+                    ) : null}
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
+
+        {/* Keiko line + dots */}
+        {keiko?.history?.length > 0 && (() => {
+          const sorted = [...keiko.history].sort((a, b) => a.field_end.localeCompare(b.field_end));
+          return (
+            <g>
+              <path d={buildPath(keiko.history)} fill="none" stroke={KEIKO_COLOR} strokeWidth="2" />
+              {sorted.map((h, i) => {
+                const x = toX(h.field_end), y = toY(h.pct_no);
+                return (
+                  <g key={h.field_end + i}>
+                    <circle cx={x} cy={y} r="4" fill={KEIKO_COLOR} />
+                    <text x={x} y={y - 7} fontSize="8.5" fill={KEIKO_COLOR} textAnchor="middle" fontWeight="600">
+                      {h.pct_no}%
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })()}
+
+        {/* Legend */}
+        <rect x={W - PAD.right - 78} y={PAD.top} width="76" height="30" rx="3" fill="white" opacity="0.9" stroke="#F0EDE8" strokeWidth="1" />
+        <line x1={W - PAD.right - 72} y1={PAD.top + 10} x2={W - PAD.right - 58} y2={PAD.top + 10} stroke={KEIKO_COLOR} strokeWidth="2" />
+        <circle cx={W - PAD.right - 65} cy={PAD.top + 10} r="3" fill={KEIKO_COLOR} />
+        <text x={W - PAD.right - 54} y={PAD.top + 13.5} fontSize="8.5" fill="#1C1917">Keiko</text>
+        <line x1={W - PAD.right - 72} y1={PAD.top + 22} x2={W - PAD.right - 58} y2={PAD.top + 22} stroke={SANCHEZ_COLOR} strokeWidth="2" />
+        <circle cx={W - PAD.right - 65} cy={PAD.top + 22} r="3" fill={SANCHEZ_COLOR} />
+        <text x={W - PAD.right - 54} y={PAD.top + 25.5} fontSize="8.5" fill="#1C1917">Sánchez</text>
+      </svg>
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 2 }}>
+        Fuentes: Ipsos (21-22 mar, 2 abr, 23-24 abr 2026) · CIT (20-23 mar 2026)
+      </div>
+    </div>
+  );
+}
+
 function AntiVotoSection({ antivoto }) {
   const candidates = antivoto?.candidates || [];
   const keiko = candidates.find(c => c.candidate?.includes('Keiko'));
@@ -418,7 +544,9 @@ function AntiVotoSection({ antivoto }) {
 
   const renderCard = (data, color, shortName) => {
     if (!data) return null;
-    const prev = data.history?.length > 1 ? data.history[data.history.length - 2] : null;
+    // Delta vs. the previous R2 snapshot only (ignore R1 history for the card delta)
+    const r2hist = (data.history || []).filter(h => h.election_round === 2);
+    const prev = r2hist.length > 1 ? r2hist[r2hist.length - 2] : null;
     const delta = prev ? (data.latest_pct_no - prev.pct_no).toFixed(0) : null;
     const deltaLabel = delta === null ? null
       : delta > 0 ? `+${delta}pp desde ${prev.field_end.slice(5).replace('-', '/')}`
@@ -461,15 +589,15 @@ function AntiVotoSection({ antivoto }) {
             {renderCard(keiko, KEIKO_COLOR, 'Keiko Fujimori')}
             {renderCard(sanchez, SANCHEZ_COLOR, 'Roberto Sánchez')}
           </div>
-          <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '0 0 8px' }}>
-            El antivoto de Keiko bajó 11pp en tres semanas — su mejor registro en segunda vuelta —
-            pero sigue siendo el más alto de los dos candidatos. El de Sánchez subió 4pp a medida que
-            fue conociéndose más (su "no sé quién es" bajó del 30% al 5%).
+          <AntiVotoTrendChart antivoto={antivoto} />
+          <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '12px 0 8px' }}>
+            La trayectoria muestra la convergencia: Keiko cayó ~15pp desde su pico de campaña (62.7% CIT)
+            hasta 48% post-R1, mientras Sánchez sube a medida que fue conociéndose.
+            El "no sé quién es" de Sánchez bajó del 30% al 5% entre marzo y abril.
           </p>
           {(keiko || sanchez) && (
             <p style={{ color: '#8C877F', fontSize: 12, margin: 0 }}>
-              Fuente: {keiko?.pollster || sanchez?.pollster || 'Ipsos'}.
-              Agrega la nueva encuesta en la DB para actualizar automáticamente.
+              Agrega nuevas mediciones en <code>antivoto_snapshots</code> para que el gráfico se actualice automáticamente.
             </p>
           )}
         </>

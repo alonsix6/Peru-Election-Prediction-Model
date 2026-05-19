@@ -15,6 +15,56 @@ CREATE TABLE IF NOT EXISTS antivoto_snapshots (
   created_at     TIMESTAMPTZ  DEFAULT NOW()
 );
 
+-- Antivoto R1: datos históricos de rechazo durante la campaña de primera vuelta.
+-- Fuente Ipsos 21-22 mar 2026 y CIT 20-23 mar 2026.
+-- Permite mostrar la trayectoria completa: R1 → post-R1 → R2.
+DO $$
+DECLARE
+  ipsos_id INT;
+  cit_id INT;
+BEGIN
+  SELECT id INTO ipsos_id FROM pollsters WHERE name = 'Ipsos';
+  SELECT id INTO cit_id FROM pollsters WHERE name = 'CIT';
+
+  -- Ipsos 21-22 mar (durante campaña R1): Keiko 59%, Sánchez 41%
+  IF NOT EXISTS (
+    SELECT 1 FROM antivoto_snapshots
+    WHERE candidate = 'Keiko Fujimori' AND field_end = '2026-03-22' AND election_round = 1
+  ) THEN
+    INSERT INTO antivoto_snapshots (election_round, candidate, pct_no, pollster_id, field_end, published_date, notes)
+    VALUES (1, 'Keiko Fujimori', 59.0, ipsos_id, '2026-03-22', '2026-03-24',
+            'Ipsos 21-22 mar 2026. Campaña primera vuelta. Usado como referencia en modelo undecided.js.');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM antivoto_snapshots
+    WHERE candidate = 'Roberto Sánchez Palomino' AND field_end = '2026-03-22' AND election_round = 1
+  ) THEN
+    INSERT INTO antivoto_snapshots (election_round, candidate, pct_no, pollster_id, field_end, published_date, notes)
+    VALUES (1, 'Roberto Sánchez Palomino', 41.0, ipsos_id, '2026-03-22', '2026-03-24',
+            'Ipsos 21-22 mar 2026. Campaña primera vuelta. Alta NS/NP en ese momento (~30%).');
+  END IF;
+
+  -- CIT 20-23 mar (simulacro R1): Keiko 62.7%, Sánchez 48%
+  IF NOT EXISTS (
+    SELECT 1 FROM antivoto_snapshots
+    WHERE candidate = 'Keiko Fujimori' AND field_end = '2026-03-23' AND election_round = 1
+  ) THEN
+    INSERT INTO antivoto_snapshots (election_round, candidate, pct_no, pollster_id, field_end, published_date, notes)
+    VALUES (1, 'Keiko Fujimori', 62.7, cit_id, '2026-03-23', '2026-03-25',
+            'CIT simulacro 20-23 mar 2026. Rechazo más alto medido — coincide con pico de campaña. Promedio CIT+Ipsos: 60.5%.');
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM antivoto_snapshots
+    WHERE candidate = 'Roberto Sánchez Palomino' AND field_end = '2026-03-23' AND election_round = 1
+  ) THEN
+    INSERT INTO antivoto_snapshots (election_round, candidate, pct_no, pollster_id, field_end, published_date, notes)
+    VALUES (1, 'Roberto Sánchez Palomino', 48.0, cit_id, '2026-03-23', '2026-03-25',
+            'CIT simulacro 20-23 mar 2026. Estimado — Sánchez tenía alta NS/NP en esa fecha. Promedio CIT+Ipsos: 44.2%.');
+  END IF;
+END $$;
+
 -- Update pollster weights based on R1 2026 conteo rápido performance.
 -- Ipsos: MAE 0.28pp (best), Datum: MAE 2.0pp (second best).
 UPDATE pollsters SET

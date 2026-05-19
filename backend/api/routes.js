@@ -217,19 +217,31 @@ router.get('/polls', async (req, res) => {
 });
 
 // ─── GET /api/antivoto ──────────────────────────────────────
-// Historial de rechazo definitivo por candidato. ?round=2 (default).
-// El endpoint más reciente (latest) se usa en el modelo; el historial para tendencia.
+// Historial de rechazo definitivo por candidato.
+// ?round=2 (default) → solo R2 | ?round=1 → solo R1 | ?round=all → todos los rounds
+// El historial completo (round=all) se usa para el trend chart R1→R2.
 router.get('/antivoto', async (req, res) => {
   try {
-    const round = parseInt(req.query.round) || 2;
-    const { rows } = await db.query(`
-      SELECT a.candidate, a.pct_no, a.field_end, a.published_date, a.notes,
-             ps.name as pollster
-      FROM antivoto_snapshots a
-      LEFT JOIN pollsters ps ON a.pollster_id = ps.id
-      WHERE a.election_round = $1
-      ORDER BY a.field_end ASC, a.candidate ASC
-    `, [round]);
+    const roundParam = req.query.round;
+    const allRounds = roundParam === 'all';
+    const round = allRounds ? null : (parseInt(roundParam) || 2);
+
+    const { rows } = allRounds
+      ? await db.query(`
+          SELECT a.candidate, a.pct_no, a.field_end, a.published_date, a.notes,
+                 a.election_round, ps.name as pollster
+          FROM antivoto_snapshots a
+          LEFT JOIN pollsters ps ON a.pollster_id = ps.id
+          ORDER BY a.field_end ASC, a.candidate ASC
+        `)
+      : await db.query(`
+          SELECT a.candidate, a.pct_no, a.field_end, a.published_date, a.notes,
+                 a.election_round, ps.name as pollster
+          FROM antivoto_snapshots a
+          LEFT JOIN pollsters ps ON a.pollster_id = ps.id
+          WHERE a.election_round = $1
+          ORDER BY a.field_end ASC, a.candidate ASC
+        `, [round]);
 
     // Agrupa por candidato: historial completo + latest
     const byCandidate = {};
@@ -241,18 +253,26 @@ router.get('/antivoto', async (req, res) => {
         published_date: r.published_date,
         pollster: r.pollster,
         notes: r.notes,
+        election_round: r.election_round,
       });
     }
 
-    const candidates = Object.entries(byCandidate).map(([candidate, snapshots]) => ({
-      candidate,
-      latest_pct_no: snapshots[snapshots.length - 1].pct_no,
-      latest_field_end: snapshots[snapshots.length - 1].field_end,
-      pollster: snapshots[snapshots.length - 1].pollster,
-      history: snapshots,
-    }));
+    const candidates = Object.entries(byCandidate).map(([candidate, snapshots]) => {
+      // "latest" = most recent R2 measurement if available; else overall most recent
+      const r2snaps = snapshots.filter(s => s.election_round === 2);
+      const latest = r2snaps.length > 0
+        ? r2snaps[r2snaps.length - 1]
+        : snapshots[snapshots.length - 1];
+      return {
+        candidate,
+        latest_pct_no: latest.pct_no,
+        latest_field_end: latest.field_end,
+        pollster: latest.pollster,
+        history: snapshots,
+      };
+    });
 
-    res.json({ election_round: round, candidates });
+    res.json({ election_round: allRounds ? 'all' : round, candidates });
   } catch (err) {
     await handleError('DB_CONNECTION_FAILED', { module: 'api/antivoto' }, err);
     res.status(500).json({ error: 'Database error' });

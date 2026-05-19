@@ -46,4 +46,4 @@ function electoralPhase() {
   return 'post_election';
 }
 
-module.exports = { nowPeru, timeToElection, electoralPhase, PERU_TIMEZONE };
+module.exports = { nowPeru, timeToElection, electoralPhase, PERU_TIMEZONE, ELECTION_DAY };

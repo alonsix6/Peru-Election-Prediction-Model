@@ -21,14 +21,14 @@ function getPolymarketWeight(volumeUSD = 5_100_000) {
       const vedaHours = 7 * 24; // 168 horas de veda
       const hoursInVeda = vedaHours - Math.max(0, totalHours);
       const vedaProgress = Math.min(1, hoursInVeda / vedaHours);
-      // Curva exponencial (^0.6): sube rápido al inicio de veda
-      // Víspera: ~74%, día elección: 77%
-      // Encuestas mantienen al menos 23% de peso siempre
-      return 0.30 + (Math.pow(vedaProgress, 0.6) * 0.47);
+      // Curva exponencial (^0.6): sube rápido al inicio de veda.
+      // Capped at 0.65 for R2 — en 2 candidatos PM sí refleja P(win), pero
+      // gap de 27pp (PM 65% Keiko vs encuestas 38-38) sugiere sobreponderación.
+      return Math.min(0.65, 0.30 + (Math.pow(vedaProgress, 0.6) * 0.47));
     }
 
     case 'election_day':
-      return 0.77;
+      return 0.65; // Cap R2 — encuestas mantienen 35% de peso
 
     case 'post_election':
       return null;

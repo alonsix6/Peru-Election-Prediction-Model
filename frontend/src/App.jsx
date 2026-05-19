@@ -41,27 +41,24 @@ class ErrorBoundary extends Component {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { status, predictions, polymarket, polls, loading, error, lastUpdated, refresh } = useElectionData();
+  const { status, predictions, r1predictions, polymarket, polls, loading, error, lastUpdated, refresh } = useElectionData();
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-page)' }}>
       <Header status={status} predictions={predictions} />
       <TabNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Banner FOTO FINAL — visible solo cuando el modelo está congelado */}
+      {/* Banner FOTO FINAL R2 — visible solo cuando el modelo de segunda vuelta está congelado */}
       {predictions?.is_frozen && (
         <div style={{
           background: '#FFFBEB', borderBottom: '2px solid #F59E0B',
           padding: '16px 20px', textAlign: 'center',
         }}>
           <div style={{ color: '#92400E', fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
-            FOTO FINAL DEL MODELO — 12 de abril de 2026, 6:00pm Lima
+            FOTO FINAL DEL MODELO — 7 de junio de 2026, 6:00pm Lima
           </div>
           <div style={{ color: '#A16207', fontSize: 13, lineHeight: 1.5 }}>
-            El modelo se ha detenido. Esta predicción será evaluada contra los resultados oficiales de la ONPE.
-          </div>
-          <div style={{ color: '#A16207', fontSize: 13, lineHeight: 1.5 }}>
-            Los datos son solo de referencia hasta que se publiquen los resultados reales. NO son resultados oficiales.
+            El modelo segunda vuelta se ha detenido. Esta predicción será evaluada contra los resultados oficiales de la ONPE.
           </div>
           {predictions.frozen_at && (
             <div style={{ color: '#B45309', fontSize: 11, marginTop: 6 }}>
@@ -99,7 +96,7 @@ function AppContent() {
               <DashboardTab predictions={predictions} polymarket={polymarket} polls={polls} status={status} />
             )}
             {activeTab === 'primera' && (
-              <PrimeraVueltaTab predictions={predictions} polls={polls} />
+              <PrimeraVueltaTab predictions={r1predictions} polls={polls} />
             )}
             {activeTab === 'segunda' && (
               <SegundaVueltaTab predictions={predictions} />
@@ -123,7 +120,7 @@ function AppContent() {
             </div>
           )}
           <div style={{ color: '#8C877F', fontSize: 12 }}>
-            Modelo v2.0 — Alonso Ternero + Claude — Abril 2026
+            Modelo v2.0 — Alonso Ternero + Claude — Segunda vuelta Junio 2026
           </div>
         </div>
       </main>

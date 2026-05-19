@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { nowPeru, electoralPhase } = require('../model/clock');
+const { nowPeru, electoralPhase, timeToElection } = require('../model/clock');
 const { handleError } = require('../errors/errorHandler');
 const db = require('../db');
 
@@ -40,12 +40,8 @@ const CANDIDATE_MAP = {
   'Enrique Valderrama':       'Enrique Valderrama'
 };
 
-// Candidatos que esperamos encontrar en la API (los del seed con encuestas)
-const EXPECTED_CANDIDATES = [
-  'Rafael López Aliaga', 'Keiko Fujimori', 'Carlos Álvarez',
-  'Roberto Sánchez Palomino', 'López Chau', 'Jorge Nieto',
-  'Wolfgang Grozo', 'César Acuña', 'Ricardo Belmont', 'Yonhy Lescano'
-];
+// Segunda vuelta: solo los 2 finalistas.
+const EXPECTED_CANDIDATES = ['Keiko Fujimori', 'Roberto Sánchez Palomino'];
 
 /**
  * Extrae el nombre del candidato del question de cada mercado binario.
@@ -137,7 +133,12 @@ async function fetchPolymarketData() {
       });
     }
 
-    return { candidates, volume: eventVolume };
+    // Para R2: filtrar a solo los candidatos esperados (Keiko + Sánchez).
+    // Si la API aún muestra R1 candidates con precios residuales, los excluimos.
+    const r2Candidates = candidates.filter(c => EXPECTED_CANDIDATES.includes(c.candidate));
+    const useList = r2Candidates.length >= 1 ? r2Candidates : candidates;
+
+    return { candidates: useList, volume: eventVolume };
 
   } finally {
     clearTimeout(timeout);
@@ -197,8 +198,8 @@ async function saveSnapshot(candidates) {
   for (const c of candidates) {
     await db.query(
       `INSERT INTO polymarket_snapshots
-       (captured_at_lima, candidate, probability, price_yes, price_no, volume_usd, market_slug, phase)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+       (captured_at_lima, candidate, probability, price_yes, price_no, volume_usd, market_slug, phase, election_round)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 2)`,
       [now.toISO(), c.candidate, c.probability, c.price_yes, c.price_no,
        c.volume_usd, EVENT_SLUG, phase]
     );
@@ -267,44 +268,45 @@ async function scrapePolymarket() {
  */
 async function checkElectionFreeze() {
   const now = nowPeru();
-  const isElectionDay = now.toISODate() === '2026-04-12';
-  const pastCutoff = now.hour >= 18; // Ampliado: mesas extendidas hasta 6pm por JNE/ONPE
-
-  // Post-elección: siempre congelado
   const phase = electoralPhase();
+
+  // Post-elección R2: siempre congelado
   if (phase === 'post_election') {
-    console.log('🗳️ Post-elección — modelo congelado permanentemente.');
+    console.log('🗳️ Post-elección R2 — modelo congelado permanentemente.');
     return true;
   }
 
+  // Verificar si es día de elección (R2: 7 junio 2026) y pasó el corte de 6pm
+  const { isElectionDay } = timeToElection();
+  const pastCutoff = now.hour >= 18;
+
   if (!isElectionDay || !pastCutoff) return false;
 
-  // Verificar si la foto final ya existe
+  // Verificar si la foto final R2 ya existe
   const { rows } = await db.query(
-    "SELECT COUNT(*) FROM model_predictions WHERE trigger = 'final_election_day'"
+    "SELECT COUNT(*) FROM model_predictions WHERE trigger = 'final_election_day' AND election_round = 2"
   );
   const finalExists = parseInt(rows[0].count) > 0;
 
   if (!finalExists) {
-    // Ejecutar una última corrida como foto final
-    console.log('🗳️ 5pm Lima — ejecutando FOTO FINAL del modelo...');
+    console.log('🗳️ 6pm Lima — ejecutando FOTO FINAL R2 del modelo...');
     try {
       await scrapePolymarket();
     } catch (err) {
-      console.error('Scrape final falló:', err.message);
+      console.error('Scrape final R2 falló:', err.message);
     }
     try {
       const { runFullPipeline } = require('../model/pipeline');
-      await runFullPipeline({ saveToDB: true, trigger: 'final_election_day' });
-      console.log('🗳️ FOTO FINAL guardada. Modelo congelado.');
+      await runFullPipeline({ saveToDB: true, trigger: 'final_election_day', electionRound: 2 });
+      console.log('🗳️ FOTO FINAL R2 guardada. Modelo congelado.');
     } catch (err) {
-      console.error('Pipeline final falló:', err.message);
+      console.error('Pipeline final R2 falló:', err.message);
     }
   } else {
-    console.log('🗳️ Modelo ya congelado — foto final ya existe.');
+    console.log('🗳️ Modelo R2 ya congelado — foto final ya existe.');
   }
 
-  return true; // Modelo congelado, no correr más
+  return true;
 }
 
 function startPolymarketCron() {

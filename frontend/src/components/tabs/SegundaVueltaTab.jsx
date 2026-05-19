@@ -98,9 +98,19 @@ function PollsTable({ r2polls }) {
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: KEIKO_COLOR, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                     {keiko ? keiko.pct_raw.toFixed(0) + '%' : '—'}
+                    {keiko && sanchez && (
+                      <div style={{ color: '#A8A29E', fontSize: 9, fontWeight: 400, marginTop: 1 }}>
+                        {((keiko.pct_raw / (keiko.pct_raw + sanchez.pct_raw)) * 100).toFixed(1)}% v.v.
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: SANCHEZ_COLOR, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                     {sanchez ? sanchez.pct_raw.toFixed(0) + '%' : '—'}
+                    {keiko && sanchez && (
+                      <div style={{ color: '#A8A29E', fontSize: 9, fontWeight: 400, marginTop: 1 }}>
+                        {((sanchez.pct_raw / (keiko.pct_raw + sanchez.pct_raw)) * 100).toFixed(1)}% v.v.
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: '#78716C', fontVariantNumeric: 'tabular-nums' }}>
                     {p.pct_blank_null != null ? p.pct_blank_null.toFixed(0) + '%' : '—'}
@@ -117,8 +127,11 @@ function PollsTable({ r2polls }) {
           <strong>{p.pollster}:</strong> {p.notes}
         </div>
       ))}
+      <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 6 }}>
+        v.v. = votos válidos (excluye blanco/nulo y NS/NP). Calculado del intento declarado de cada encuesta.
+      </div>
       <div style={{
-        marginTop: 10, background: '#FFFBEB', border: '1px solid #FCD34D',
+        marginTop: 8, background: '#FFFBEB', border: '1px solid #FCD34D',
         borderRadius: 6, padding: '6px 10px', fontSize: 11, color: '#92400E',
       }}>
         Circulan encuestas falsas atribuidas a Datum, Ipsos e IEP. Solo las encuestas mostradas aquí han sido verificadas. IEP emitió comunicado el 16/05/2026 confirmando que no publicó ninguna encuesta de mayo.
@@ -559,8 +572,8 @@ function AntiVotoSection({ antivoto }) {
     const prev = r2hist.length > 1 ? r2hist[r2hist.length - 2] : null;
     const delta = prev ? (data.latest_pct_no - prev.pct_no).toFixed(0) : null;
     const deltaLabel = delta === null ? null
-      : delta > 0 ? `+${delta}pp desde ${prev.field_end.slice(5).replace('-', '/')}`
-      : `${delta}pp desde ${prev.field_end.slice(5).replace('-', '/')}`;
+      : delta > 0 ? `+${delta}pp desde ${formatDate(prev.field_end)}`
+      : `${delta}pp desde ${formatDate(prev.field_end)}`;
 
     return (
       <div style={{ flex: 1, minWidth: 160, background: '#F7F4EF', borderRadius: 8, padding: 12 }}>
@@ -576,7 +589,7 @@ function AntiVotoSection({ antivoto }) {
         )}
         {data.pollster && (
           <div style={{ color: '#A8A29E', fontSize: 10, marginTop: 4 }}>
-            {data.pollster} · {data.latest_field_end}
+            {data.pollster} · {formatDate(data.latest_field_end)}
           </div>
         )}
       </div>

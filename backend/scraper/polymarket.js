@@ -134,11 +134,15 @@ async function fetchPolymarketData() {
     }
 
     // Para R2: filtrar a solo los candidatos esperados (Keiko + Sánchez).
-    // Si la API aún muestra R1 candidates con precios residuales, los excluimos.
+    // Si la API devuelve candidatos R1 con precios residuales, los descartamos.
+    // Si no se encuentra ningún candidato R2, omitimos el snapshot (no fallback a R1).
     const r2Candidates = candidates.filter(c => EXPECTED_CANDIDATES.includes(c.candidate));
-    const useList = r2Candidates.length >= 1 ? r2Candidates : candidates;
+    if (r2Candidates.length === 0) {
+      console.warn('⚠️ Ningún candidato R2 encontrado en la API — snapshot omitido');
+      return { candidates: [], volume: 0 };
+    }
 
-    return { candidates: useList, volume: eventVolume };
+    return { candidates: r2Candidates, volume: eventVolume };
 
   } finally {
     clearTimeout(timeout);

@@ -63,6 +63,7 @@ export function useElectionData() {
       const normalized = normalizePredictions(predictions);
       const normalizedR1 = normalizePredictions(r1predictions);
       const anyFailed = [status, normalized, polymarket, polls].some(d => d === null);
+      // normalizedR1 fallo no bloquea la app (R1 es frozen/opcional), pero sí lo reportamos
 
       setData({
         status,

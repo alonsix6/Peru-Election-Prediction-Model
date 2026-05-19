@@ -1,5 +1,3 @@
-import { getPartyColor } from '../../config/partyColors';
-
 // Encuestas R2 publicadas (hardcoded — se actualizan cuando entren nuevas encuestas)
 const R2_POLLS = [
   {
@@ -192,7 +190,7 @@ export default function SegundaVueltaTab({ predictions }) {
         <p style={{ color: '#78716C', fontSize: 13, lineHeight: 1.7, margin: '0 0 8px' }}>
           A diferencia de la primera vuelta, en R2 Polymarket <em>sí</em> cotiza directamente P(ganar la presidencia) — que es exactamente lo que mide la segunda vuelta.
           El gap de 27pp entre PM y encuestas sugiere que el mercado está incorporando información no capturada en las encuestas
-          (encuestas internas de campaña, alianzes en formación, percepción mediática) o bien que existe una burbuja especulativa.
+          (encuestas internas de campaña, alianzas en formación, percepción mediática) o bien que existe una burbuja especulativa.
         </p>
         <p style={{ color: '#8C877F', fontSize: 12, margin: 0 }}>
           El modelo usa α=0.65 (cap reducido desde 0.77 en R1) para evitar sobreponderación del mercado ante este gap inusual.

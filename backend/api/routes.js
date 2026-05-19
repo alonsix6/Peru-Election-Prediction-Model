@@ -46,22 +46,40 @@ router.get('/predictions', async (req, res) => {
     const isFrozen = parseInt(finalCheck[0].count) > 0;
     const triggerFilter = isFrozen ? 'final_election_day' : 'auto_polymarket_update';
 
-    const { rows } = await db.query(`
-      SELECT candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
-             prob_first_round, prob_win_overall, electoral_phase,
-             polymarket_weight, polls_weight, generated_at_lima, model_version,
-             runoff_json, polls_pct, polymarket_pct, posterior_pct, risk_json,
-             frozen_at
+    // Prefer predictions that include Polymarket (weight > 0).
+    // Fallback to most recent run of any weight so the UI shows polls-only data
+    // while waiting for the first Polymarket scrape to complete.
+    const selectCols = `
+      candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+      prob_first_round, prob_win_overall, electoral_phase,
+      polymarket_weight, polls_weight, generated_at_lima, model_version,
+      runoff_json, polls_pct, polymarket_pct, posterior_pct, risk_json, frozen_at`;
+
+    let { rows } = await db.query(`
+      SELECT ${selectCols}
       FROM model_predictions
-      WHERE trigger = $1
-        AND election_round = $2
-        AND polymarket_weight > 0
+      WHERE trigger = $1 AND election_round = $2 AND polymarket_weight > 0
         AND generated_at_lima = (
           SELECT MAX(generated_at_lima) FROM model_predictions
           WHERE trigger = $1 AND election_round = $2 AND polymarket_weight > 0
         )
       ORDER BY predicted_pct_mean DESC
     `, [triggerFilter, round]);
+
+    if (rows.length === 0) {
+      // Fallback: any run (polls-only counts while Polymarket hasn't scraped yet)
+      const { rows: fallback } = await db.query(`
+        SELECT ${selectCols}
+        FROM model_predictions
+        WHERE trigger = $1 AND election_round = $2
+          AND generated_at_lima = (
+            SELECT MAX(generated_at_lima) FROM model_predictions
+            WHERE trigger = $1 AND election_round = $2
+          )
+        ORDER BY predicted_pct_mean DESC
+      `, [triggerFilter, round]);
+      rows = fallback;
+    }
 
     if (rows.length === 0) {
       return res.json({ message: 'No predictions yet.', candidates: [], runoff_scenarios: [] });

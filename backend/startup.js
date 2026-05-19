@@ -62,6 +62,26 @@ async function autoMigrate() {
     console.log('   ✅ migration_r2.sql ejecutado (columna election_round agregada)');
   }
 
+  // Migration antivoto_snapshots: crear tabla si no existe (independiente del seed R2)
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS antivoto_snapshots (
+        id             SERIAL PRIMARY KEY,
+        election_round INT          DEFAULT 2,
+        candidate      VARCHAR(100) NOT NULL,
+        pct_no         NUMERIC(5,2) NOT NULL,
+        pollster_id    INT          REFERENCES pollsters(id),
+        field_end      DATE         NOT NULL,
+        published_date DATE,
+        notes          TEXT,
+        created_at     TIMESTAMPTZ  DEFAULT NOW()
+      )
+    `);
+    console.log('   ✅ antivoto_snapshots: tabla verificada');
+  } catch (e) {
+    console.warn('⚠️  antivoto_snapshots migration falló:', e.message);
+  }
+
   // Seed R2: actualizar pesos de encuestadoras e insertar encuestas R2 (idempotent)
   try {
     const seed2 = fs.readFileSync(path.join(__dirname, 'db', 'seed_r2.sql'), 'utf8');

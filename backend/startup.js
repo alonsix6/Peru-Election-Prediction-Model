@@ -131,10 +131,11 @@ async function autoMigrate() {
     console.warn('⚠️  IEP insert falló:', e.message);
   }
 
-  // 3. Actualizar pesos de encuestadoras R2 (Ipsos mejor rendimiento R1)
+  // 3. Actualizar pesos de encuestadoras R2
+  // Ipsos 1.30: mejor rendimiento R1 2026. Datum 1.15: mejor track record R2 histórico (1.4pp prom).
   try {
     await db.query(`UPDATE pollsters SET weight_multiplier = 1.30 WHERE name = 'Ipsos'`);
-    await db.query(`UPDATE pollsters SET weight_multiplier = 1.05 WHERE name = 'Datum'`);
+    await db.query(`UPDATE pollsters SET weight_multiplier = 1.15 WHERE name = 'Datum'`);
   } catch (e) {
     console.warn('⚠️  Pollster weights update falló:', e.message);
   }

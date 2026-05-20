@@ -264,7 +264,7 @@ function PolymarketModal({ polymarket, onClose }) {
     },
     scales: {
       x: { grid: { color: '#E5E0D8' }, ticks: { color: '#8C877F', font: { size: 9 }, maxRotation: 45, maxTicksLimit: 10 } },
-      y: { min: 0, max: 50, grid: { color: '#E5E0D8' }, ticks: { color: '#8C877F', callback: v => v + '%', font: { size: 11 } } }
+      y: { min: 0, grid: { color: '#E5E0D8' }, ticks: { color: '#8C877F', callback: v => v + '%', font: { size: 11 } } }
     }
   };
 
@@ -450,7 +450,9 @@ function SimulationCard() {
 // ─── Risk Scenarios ─────────────────────────────────────────
 function RiskScenarios({ risk, candidates }) {
   if (!risk) return null;
-  const isR2 = risk.p_close_race !== undefined && risk.top2_not_expected === undefined;
+  // Use candidates length as ground truth for R2 detection — risk_json in DB may be
+  // stale (old format had top2_not_expected:0 even for R2, not undefined).
+  const isR2 = (candidates?.length ?? 0) <= 2;
   const topCands = risk.candidates || [];
 
   // R2: 3 escenarios analíticos claros

@@ -50,7 +50,8 @@ router.get('/predictions', async (req, res) => {
     // Fallback to most recent run of any weight so the UI shows polls-only data
     // while waiting for the first Polymarket scrape to complete.
     const selectCols = `
-      candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+      candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p25,
+      predicted_pct_p40, predicted_pct_p60, predicted_pct_p75, predicted_pct_p90,
       prob_first_round, prob_win_overall, electoral_phase,
       polymarket_weight, polls_weight, generated_at_lima, model_version,
       runoff_json, polls_pct, polymarket_pct, posterior_pct, risk_json, frozen_at`;
@@ -104,13 +105,17 @@ router.get('/predictions', async (req, res) => {
       candidates: rows.map(r => ({
         candidate: r.candidate,
         predicted_pct_mean: parseFloat(r.predicted_pct_mean),
-        predicted_pct_p10: parseFloat(r.predicted_pct_p10),
-        predicted_pct_p90: parseFloat(r.predicted_pct_p90),
-        prob_first_round: parseFloat(r.prob_first_round),
-        prob_win_overall: parseFloat(r.prob_win_overall),
-        polls_pct: r.polls_pct ? parseFloat(r.polls_pct) : null,
-        polymarket_pct: r.polymarket_pct ? parseFloat(r.polymarket_pct) : null,
-        posterior_pct: r.posterior_pct ? parseFloat(r.posterior_pct) : null,
+        predicted_pct_p10:  parseFloat(r.predicted_pct_p10),
+        predicted_pct_p25:  r.predicted_pct_p25  != null ? parseFloat(r.predicted_pct_p25)  : null,
+        predicted_pct_p40:  r.predicted_pct_p40  != null ? parseFloat(r.predicted_pct_p40)  : null,
+        predicted_pct_p60:  r.predicted_pct_p60  != null ? parseFloat(r.predicted_pct_p60)  : null,
+        predicted_pct_p75:  r.predicted_pct_p75  != null ? parseFloat(r.predicted_pct_p75)  : null,
+        predicted_pct_p90:  parseFloat(r.predicted_pct_p90),
+        prob_first_round:   parseFloat(r.prob_first_round),
+        prob_win_overall:   parseFloat(r.prob_win_overall),
+        polls_pct:          r.polls_pct       ? parseFloat(r.polls_pct)       : null,
+        polymarket_pct:     r.polymarket_pct  ? parseFloat(r.polymarket_pct)  : null,
+        posterior_pct:      r.posterior_pct   ? parseFloat(r.posterior_pct)   : null,
       })),
       runoff_scenarios,
       risk_scenarios

@@ -135,10 +135,10 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     // Opción E: P(voto blanco/nulo) por rechazo bilateral calibrado.
     // P(blank) = [P(rechaza KF) × P(rechaza RSP) + ρ × σ_KF × σ_RSP] × franchise_factor
     // ρ ≈ -0.20: correlación negativa — izquierda rechaza KF, derecha rechaza RSP → grupos distintos.
-    // Tasas de rechazo de REJECTION_RATES (montecarlo.js): KF=60.5%, RSP=44.2%.
+    // Tasas post-R1 (Ipsos 23-24 abr 2026): KF=48%, RSP=43%.
     // franchise_factor=0.75: encuestas sobreestiman blanqueo 1.3-1.5x históricamente.
-    const rejKF  = 60.5 / 100;
-    const rejRSP = 44.2 / 100;
+    const rejKF  = 48.0 / 100;
+    const rejRSP = 43.0 / 100;
     const rhoBlank  = -0.20;
     const sigmaKF   = Math.sqrt(rejKF  * (1 - rejKF));
     const sigmaRSP  = Math.sqrt(rejRSP * (1 - rejRSP));
@@ -159,13 +159,15 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
       await db.query(`
         INSERT INTO model_predictions
           (generated_at_lima, electoral_phase, polymarket_weight, polls_weight,
-           candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p90,
+           candidate, predicted_pct_mean, predicted_pct_p10, predicted_pct_p25,
+           predicted_pct_p40, predicted_pct_p60, predicted_pct_p75, predicted_pct_p90,
            prob_first_round, prob_win_overall, model_version, trigger, runoff_json,
            polls_pct, polymarket_pct, posterior_pct, risk_json,
            is_final_snapshot, frozen_at, election_round)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
       `, [overrideTimestamp || now.toISO(), phase, α, 1 - α,
-          candidate, data.mean, data.p10, data.p90,
+          candidate, data.mean, data.p10, data.p25 ?? null,
+          data.p40 ?? null, data.p60 ?? null, data.p75 ?? null, data.p90,
           data.prob_runoff, data.prob_win, '2.0', trigger, runoffJson,
           bc?.polls_pct ?? null, bc?.polymarket_pct ?? null, bc?.posterior_pct ?? null, riskJson,
           isFinal, isFinal ? (overrideTimestamp || now.toISO()) : null,
@@ -193,7 +195,15 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     polymarket_candidates: Object.keys(polymarketData).length,
     candidates: sorted.map(([candidate, data]) => ({
       candidate,
-      ...data,
+      mean: data.mean,
+      p10: data.p10,
+      p25: data.p25 ?? null,
+      p40: data.p40 ?? null,
+      p60: data.p60 ?? null,
+      p75: data.p75 ?? null,
+      p90: data.p90,
+      prob_runoff: data.prob_runoff,
+      prob_win: data.prob_win,
       polls_pct: bayesian.candidates[candidate]?.polls_pct ?? null,
       polymarket_pct: bayesian.candidates[candidate]?.polymarket_pct ?? null,
       posterior_pct: bayesian.candidates[candidate]?.posterior_pct ?? null

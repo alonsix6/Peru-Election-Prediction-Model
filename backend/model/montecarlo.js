@@ -35,12 +35,14 @@ const POLLSTER_ORDER = ['Ipsos', 'CPI', 'Datum', 'IEP', 'CIT'];
  * Techo duro: si 62.7% dice "definitivamente NO Keiko", ese % no le transferirá votos.
  */
 // Promedio ponderado CIT marzo (40%) + Ipsos abril (60%)
+// Post-R1 (Ipsos 23-24 abr 2026): Keiko 48%, Sánchez 43%.
+// CIT campaña tenía Keiko 60.5% — caída de 12.5pp tras concretar R2.
 const REJECTION_RATES = {
   'Rafael López Aliaga': 50.9,
-  'Keiko Fujimori':      60.5,
+  'Keiko Fujimori':      48.0,
   'Carlos Álvarez':      42.9,
   'López Chau':          45.9,
-  'Roberto Sánchez Palomino': 44.2,
+  'Roberto Sánchez Palomino': 43.0,
   'Wolfgang Grozo':      45.6
 };
 
@@ -569,14 +571,22 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
     const sims = simResults[i].sort((a, b) => a - b);
     const mean = sims.reduce((s, v) => s + v, 0) / nSimulations;
     const p10 = sims[Math.floor(nSimulations * 0.10)];
+    const p25 = sims[Math.floor(nSimulations * 0.25)];
+    const p40 = sims[Math.floor(nSimulations * 0.40)];
+    const p60 = sims[Math.floor(nSimulations * 0.60)];
+    const p75 = sims[Math.floor(nSimulations * 0.75)];
     const p90 = sims[Math.floor(nSimulations * 0.90)];
 
     results[candidates[i]] = {
       mean: parseFloat(mean.toFixed(2)),
-      p10: parseFloat(p10.toFixed(2)),
-      p90: parseFloat(p90.toFixed(2)),
+      p10:  parseFloat(p10.toFixed(2)),
+      p25:  parseFloat(p25.toFixed(2)),
+      p40:  parseFloat(p40.toFixed(2)),
+      p60:  parseFloat(p60.toFixed(2)),
+      p75:  parseFloat(p75.toFixed(2)),
+      p90:  parseFloat(p90.toFixed(2)),
       prob_runoff: parseFloat(((runoffCount[i] / nSimulations) * 100).toFixed(2)),
-      prob_win: parseFloat(((winCount[i] / nSimulations) * 100).toFixed(2))
+      prob_win:    parseFloat(((winCount[i] / nSimulations) * 100).toFixed(2))
     };
   }
 

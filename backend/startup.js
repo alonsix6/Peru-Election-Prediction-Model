@@ -30,7 +30,11 @@ async function autoMigrate() {
   // Migrar columnas nuevas si faltan
   const { rows: cols } = await db.query(`
     SELECT column_name FROM information_schema.columns
-    WHERE table_name = 'model_predictions' AND column_name IN ('trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct', 'risk_json', 'is_final_snapshot', 'frozen_at')
+    WHERE table_name = 'model_predictions' AND column_name IN (
+      'trigger', 'runoff_json', 'polls_pct', 'polymarket_pct', 'posterior_pct',
+      'risk_json', 'is_final_snapshot', 'frozen_at',
+      'predicted_pct_p25', 'predicted_pct_p40', 'predicted_pct_p60', 'predicted_pct_p75'
+    )
   `);
   const existing = cols.map(c => c.column_name);
 
@@ -43,6 +47,10 @@ async function autoMigrate() {
     ['risk_json', `ALTER TABLE model_predictions ADD COLUMN risk_json TEXT`],
     ['is_final_snapshot', `ALTER TABLE model_predictions ADD COLUMN is_final_snapshot BOOLEAN DEFAULT FALSE`],
     ['frozen_at', `ALTER TABLE model_predictions ADD COLUMN frozen_at TIMESTAMPTZ`],
+    ['predicted_pct_p25', `ALTER TABLE model_predictions ADD COLUMN predicted_pct_p25 DECIMAL(5,2)`],
+    ['predicted_pct_p40', `ALTER TABLE model_predictions ADD COLUMN predicted_pct_p40 DECIMAL(5,2)`],
+    ['predicted_pct_p60', `ALTER TABLE model_predictions ADD COLUMN predicted_pct_p60 DECIMAL(5,2)`],
+    ['predicted_pct_p75', `ALTER TABLE model_predictions ADD COLUMN predicted_pct_p75 DECIMAL(5,2)`],
   ];
   for (const [col, sql] of migrations) {
     if (!existing.includes(col)) {

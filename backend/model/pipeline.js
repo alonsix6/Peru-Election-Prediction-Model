@@ -135,10 +135,10 @@ async function runFullPipeline({ saveToDB = false, trigger = 'auto_polymarket_up
     // Opción E: P(voto blanco/nulo) por rechazo bilateral calibrado.
     // P(blank) = [P(rechaza KF) × P(rechaza RSP) + ρ × σ_KF × σ_RSP] × franchise_factor
     // ρ ≈ -0.20: correlación negativa — izquierda rechaza KF, derecha rechaza RSP → grupos distintos.
-    // Tasas de rechazo de REJECTION_RATES (montecarlo.js): KF=60.5%, RSP=44.2%.
+    // Tasas post-R1 (Ipsos 23-24 abr 2026): KF=48%, RSP=43%.
     // franchise_factor=0.75: encuestas sobreestiman blanqueo 1.3-1.5x históricamente.
-    const rejKF  = 60.5 / 100;
-    const rejRSP = 44.2 / 100;
+    const rejKF  = 48.0 / 100;
+    const rejRSP = 43.0 / 100;
     const rhoBlank  = -0.20;
     const sigmaKF   = Math.sqrt(rejKF  * (1 - rejKF));
     const sigmaRSP  = Math.sqrt(rejRSP * (1 - rejRSP));

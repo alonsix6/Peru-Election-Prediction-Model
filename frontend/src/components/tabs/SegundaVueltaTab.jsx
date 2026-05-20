@@ -147,6 +147,7 @@ function HeadToHead({ predictions }) {
   const cands = predictions?.candidates || [];
   const keiko = cands.find(c => c.candidate?.includes('Keiko') || c.candidate?.includes('Fujimori'));
   const sanchez = cands.find(c => c.candidate?.includes('Sánchez') || c.candidate?.includes('Roberto'));
+  const blankPct = predictions?.risk_scenarios?.expected_blank_null ?? null;
 
   if (!keiko && !sanchez) {
     return (
@@ -165,35 +166,55 @@ function HeadToHead({ predictions }) {
   ];
 
   return (
-    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-      {candidates.map(({ data, name, party, color }) => (
-        <div key={name} style={{
-          flex: 1, minWidth: 200, background: '#FFFFFF',
-          border: `2px solid ${color}20`, borderRadius: 12, padding: 20,
-        }}>
-          <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 6 }}>{party}</div>
-          <div style={{ color: '#1C1917', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{name}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {candidates.map(({ data, name, party, color }) => (
+          <div key={name} style={{
+            flex: 1, minWidth: 200, background: '#FFFFFF',
+            border: `2px solid ${color}20`, borderRadius: 12, padding: 20,
+          }}>
+            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 6 }}>{party}</div>
+            <div style={{ color: '#1C1917', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>{name}</div>
 
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>% votos válidos (estimación MC)</div>
-            <div style={{ color, fontWeight: 700, fontSize: 28, fontVariantNumeric: 'tabular-nums' }}>
-              {data ? data.mean.toFixed(1) : '—'}%
-            </div>
-            {data && (
-              <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 2 }}>
-                IC 90% v.v.: [{data.p10.toFixed(1)}%, {data.p90.toFixed(1)}%]
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>% votos válidos (estimación MC)</div>
+              <div style={{ color, fontWeight: 700, fontSize: 28, fontVariantNumeric: 'tabular-nums' }}>
+                {data ? data.mean.toFixed(1) : '—'}%
               </div>
-            )}
-          </div>
-
-          <div>
-            <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>P(ganar segunda vuelta)</div>
-            <div style={{ color, fontWeight: 600, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>
-              {data ? data.prob_win.toFixed(1) : '—'}%
+              {data && (
+                <div style={{ color: '#A8A29E', fontSize: 11, marginTop: 2 }}>
+                  IC 90% v.v.: [{data.p10.toFixed(1)}%, {data.p90.toFixed(1)}%]
+                </div>
+              )}
             </div>
+
+            <div>
+              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>P(ganar segunda vuelta)</div>
+              <div style={{ color, fontWeight: 600, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>
+                {data ? data.prob_win.toFixed(1) : '—'}%
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {blankPct !== null && (
+        <div style={{
+          background: '#F7F4EF', borderRadius: 10, padding: '10px 16px',
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+        }}>
+          <div>
+            <div style={{ color: '#78716C', fontSize: 11, marginBottom: 2 }}>Voto blanco / nulo estimado</div>
+            <div style={{ color: '#1C1917', fontWeight: 700, fontSize: 20, fontVariantNumeric: 'tabular-nums' }}>
+              {blankPct.toFixed(1)}%
+            </div>
+          </div>
+          <div style={{ color: '#A8A29E', fontSize: 11, flex: 1, minWidth: 180 }}>
+            Estimación del modelo: doble rechazo bilateral (antivoto KF × antivoto RSP, ρ=−0.20).
+            Históricamente entre 2–5% en R2 peruano (2016: 2.5%, 2021: 3.1%).
           </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }

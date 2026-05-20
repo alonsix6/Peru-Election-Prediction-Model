@@ -35,12 +35,14 @@ const POLLSTER_ORDER = ['Ipsos', 'CPI', 'Datum', 'IEP', 'CIT'];
  * Techo duro: si 62.7% dice "definitivamente NO Keiko", ese % no le transferirá votos.
  */
 // Promedio ponderado CIT marzo (40%) + Ipsos abril (60%)
+// Post-R1 (Ipsos 23-24 abr 2026): Keiko 48%, Sánchez 43%.
+// CIT campaña tenía Keiko 60.5% — caída de 12.5pp tras concretar R2.
 const REJECTION_RATES = {
   'Rafael López Aliaga': 50.9,
-  'Keiko Fujimori':      60.5,
+  'Keiko Fujimori':      48.0,
   'Carlos Álvarez':      42.9,
   'López Chau':          45.9,
-  'Roberto Sánchez Palomino': 44.2,
+  'Roberto Sánchez Palomino': 43.0,
   'Wolfgang Grozo':      45.6
 };
 

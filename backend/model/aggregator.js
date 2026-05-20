@@ -10,33 +10,33 @@ const HOUSE_EFFECTS = {
     'Rafael López Aliaga': +3.5,
     'Keiko Fujimori':      +1.5,
     'López Chau':          +0.5,
-    'Roberto Sánchez Palomino': 0.0,  // sin datos R2 CIT disponibles
+    'Roberto Sánchez Palomino': 0.0,
   },
   CPI: {
     'Rafael López Aliaga': +1.2,
     'Keiko Fujimori':      -0.5,
     'López Chau':          +0.8,
-    'Roberto Sánchez Palomino': 0.0,  // sin datos R2 CPI disponibles
+    'Roberto Sánchez Palomino': 0.0,
   },
   Ipsos: {
     'Rafael López Aliaga': -0.5,
     'Keiko Fujimori':      +0.5,
     'López Chau':          -0.3,
-    // R2: Ipsos (38%) muestra a Sánchez ~6pp más alto que IEP (32%) → sesgo relativo +3pp
-    'Roberto Sánchez Palomino': +3.0,
+    // Sin corrección para Sánchez: el gap Ipsos/IEP refleja incertidumbre metodológica,
+    // no un sesgo calibrado contra ground truth. La incertidumbre la absorbe el IC del MC.
+    'Roberto Sánchez Palomino': 0.0,
   },
   Datum: {
     'Rafael López Aliaga': -0.8,
     'Keiko Fujimori':      +0.8,
     'López Chau':          -0.3,
-    'Roberto Sánchez Palomino': 0.0,  // sin datos R2 Datum disponibles
+    'Roberto Sánchez Palomino': 0.0,
   },
   IEP: {
     'Rafael López Aliaga': -1.5,
     'Keiko Fujimori':      -0.5,
     'López Chau':          +0.2,
-    // R2: IEP (32%) muestra a Sánchez ~6pp más bajo que Ipsos (38%) → sesgo relativo -3pp
-    'Roberto Sánchez Palomino': -3.0,
+    'Roberto Sánchez Palomino': 0.0,
   }
 };
 

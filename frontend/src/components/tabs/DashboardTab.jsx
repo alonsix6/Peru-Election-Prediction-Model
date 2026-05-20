@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getPartyColor } from '../../config/partyColors';
 import { Activity, TrendingUp, BarChart3, X, ExternalLink, Loader2, Play, RefreshCcw, Info, AlertTriangle, ShieldAlert, ChevronDown } from 'lucide-react';
+import WinProbabilityNeedle from '../WinProbabilityNeedle';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js';
 
@@ -669,6 +670,11 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
   const topParty = getPartyColor(top.candidate);
   const secondParty = getPartyColor(second.candidate);
 
+  // R2 detection: use candidates.length as ground truth (DB risk_json may be stale format)
+  const isR2 = (predictions.candidates?.length ?? 0) <= 2;
+  const keiko      = isR2 ? predictions.candidates.find(c => c.candidate?.includes('Keiko') || c.candidate?.includes('Fujimori')) : null;
+  const sanchezCand = isR2 ? predictions.candidates.find(c => c.candidate?.includes('Sánchez') || c.candidate?.includes('Roberto')) : null;
+
   const modelMap = {};
   for (const c of predictions.candidates) modelMap[c.candidate] = c.prob_win;
   const pmTop = polymarket?.candidates?.slice(0, 5) || [];
@@ -692,51 +698,55 @@ export default function DashboardTab({ predictions, polymarket, polls, status })
     <>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <h2 style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>Resumen del modelo</h2>
-          {/* Hero Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-            {/* Card 1: Favorito */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Favorito · P(Ganar)</div>
-              <div style={{ color: topParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{top.prob_win.toFixed(1)}%</div>
-              <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{top.candidate}</div>
-              <div style={{ color: '#78716C', fontSize: 11 }}>{topParty.party}</div>
-            </div>
+          {/* Hero: Needle (R2) o KPI cards (R1) */}
+          {isR2 ? (
+            <WinProbabilityNeedle keiko={keiko} sanchez={sanchezCand} />
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+              {/* Card 1: Favorito */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Favorito · P(Ganar)</div>
+                <div style={{ color: topParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{top.prob_win.toFixed(1)}%</div>
+                <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{top.candidate}</div>
+                <div style={{ color: '#78716C', fontSize: 11 }}>{topParty.party}</div>
+              </div>
 
-            {/* Card 2: Segundo */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Segundo · P(Ganar)</div>
-              <div style={{ color: secondParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{second.prob_win.toFixed(1)}%</div>
-              <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{second.candidate}</div>
-              <div style={{ color: '#78716C', fontSize: 11 }}>{secondParty.party}</div>
-            </div>
+              {/* Card 2: Segundo */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Segundo · P(Ganar)</div>
+                <div style={{ color: secondParty.primary, fontSize: 32, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{second.prob_win.toFixed(1)}%</div>
+                <div style={{ color: '#1C1917', fontSize: 13, marginTop: 2 }}>{second.candidate}</div>
+                <div style={{ color: '#78716C', fontSize: 11 }}>{secondParty.party}</div>
+              </div>
 
-            {/* Card 3: Escenario probable */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>2da vuelta más probable</div>
-              {runoff && runoffC1 && runoffC2 ? (
-                <>
-                  <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 8, marginBottom: 6 }}>
-                    <div style={{ width: `${runoff.wins[runoffC1]}%`, background: runoffC1Party.primary, height: '100%' }} />
-                    <div style={{ width: `${runoff.wins[runoffC2]}%`, background: runoffC2Party.primary, height: '100%' }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
-                    <span style={{ color: '#1C1917' }}>{abbrev(runoffC1)} {runoff.wins[runoffC1].toFixed(0)}%</span>
-                    <span style={{ color: '#1C1917' }}>{abbrev(runoffC2)} {runoff.wins[runoffC2].toFixed(0)}%</span>
-                  </div>
-                  <div style={{ color: '#78716C', fontSize: 11, marginTop: 4 }}>{runoff.frequency}% de simulaciones</div>
-                </>
-              ) : (
-                <div style={{ color: '#1C1917', fontSize: 16, fontWeight: 600, marginTop: 4 }}>---</div>
-              )}
-            </div>
+              {/* Card 3: Escenario probable */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>2da vuelta más probable</div>
+                {runoff && runoffC1 && runoffC2 ? (
+                  <>
+                    <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 8, marginBottom: 6 }}>
+                      <div style={{ width: `${runoff.wins[runoffC1]}%`, background: runoffC1Party.primary, height: '100%' }} />
+                      <div style={{ width: `${runoff.wins[runoffC2]}%`, background: runoffC2Party.primary, height: '100%' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ color: '#1C1917' }}>{abbrev(runoffC1)} {runoff.wins[runoffC1].toFixed(0)}%</span>
+                      <span style={{ color: '#1C1917' }}>{abbrev(runoffC2)} {runoff.wins[runoffC2].toFixed(0)}%</span>
+                    </div>
+                    <div style={{ color: '#78716C', fontSize: 11, marginTop: 4 }}>{runoff.frequency}% de simulaciones</div>
+                  </>
+                ) : (
+                  <div style={{ color: '#1C1917', fontSize: 16, fontWeight: 600, marginTop: 4 }}>---</div>
+                )}
+              </div>
 
-            {/* Card 4: Voto blanco */}
-            <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
-              <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Voto blanco esperado</div>
-              <div style={{ color: '#1C1917', fontSize: 30, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{blankPct ? `~${blankPct.toFixed(0)}%` : '---'}</div>
-              {runoff && <div style={{ color: '#78716C', fontSize: 11, marginTop: 2 }}>En {runoff.pair.split(' vs ').map(n => n.split(' ').pop()).join(' vs ')}</div>}
+              {/* Card 4: Voto blanco */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E5E0D8', borderRadius: 12, padding: 16 }}>
+                <div style={{ color: '#8C877F', fontSize: 11, marginBottom: 4 }}>Voto blanco esperado</div>
+                <div style={{ color: '#1C1917', fontSize: 30, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{blankPct ? `~${blankPct.toFixed(0)}%` : '---'}</div>
+                {runoff && <div style={{ color: '#78716C', fontSize: 11, marginTop: 2 }}>En {runoff.pair.split(' vs ').map(n => n.split(' ').pop()).join(' vs ')}</div>}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 3-column layout: Candidatos | Polymarket+Simulación | Historial+Fuentes */}
           <div className="dashboard-3col" style={{

@@ -571,14 +571,22 @@ function runMonteCarlo(posterior, nSimulations = 10_000) {
     const sims = simResults[i].sort((a, b) => a - b);
     const mean = sims.reduce((s, v) => s + v, 0) / nSimulations;
     const p10 = sims[Math.floor(nSimulations * 0.10)];
+    const p25 = sims[Math.floor(nSimulations * 0.25)];
+    const p40 = sims[Math.floor(nSimulations * 0.40)];
+    const p60 = sims[Math.floor(nSimulations * 0.60)];
+    const p75 = sims[Math.floor(nSimulations * 0.75)];
     const p90 = sims[Math.floor(nSimulations * 0.90)];
 
     results[candidates[i]] = {
       mean: parseFloat(mean.toFixed(2)),
-      p10: parseFloat(p10.toFixed(2)),
-      p90: parseFloat(p90.toFixed(2)),
+      p10:  parseFloat(p10.toFixed(2)),
+      p25:  parseFloat(p25.toFixed(2)),
+      p40:  parseFloat(p40.toFixed(2)),
+      p60:  parseFloat(p60.toFixed(2)),
+      p75:  parseFloat(p75.toFixed(2)),
+      p90:  parseFloat(p90.toFixed(2)),
       prob_runoff: parseFloat(((runoffCount[i] / nSimulations) * 100).toFixed(2)),
-      prob_win: parseFloat(((winCount[i] / nSimulations) * 100).toFixed(2))
+      prob_win:    parseFloat(((winCount[i] / nSimulations) * 100).toFixed(2))
     };
   }
 
